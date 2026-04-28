@@ -121,7 +121,9 @@
               </button>
             </div>
             <div class="forgot-password">
-              <a href="javascript:void(0)" (click)="goToForgetPassword()">Forgot password?</a>
+              <a href="javascript:void(0)" (click)="goToForgetPassword()"
+                >Forgot password?</a
+              >
             </div>
             <p *ngIf="passwordError" class="error-message">
               {{ passwordError }}
