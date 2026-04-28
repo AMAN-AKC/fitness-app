@@ -1,1 +1,146 @@
-<p>login works!</p>
+<div class="login-container">
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <!-- Logo -->
+    <div class="logo-section">
+      <div class="logo-icon">
+        <svg
+          class="dumbbell-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path d="M6 4h12M6 4v16M18 4v16M8 7h8M8 17h8"></path>
+        </svg>
+      </div>
+      <span class="logo-text">FitClub</span>
+    </div>
+
+    <!-- Content -->
+    <div class="left-panel-content">
+      <div class="quote-mark">"</div>
+      <h1 class="main-title">Your fitness club.<br />Fully managed.</h1>
+      <p class="subtitle">One platform. Every role. Zero chaos.</p>
+
+      <!-- Features -->
+      <div class="features-list">
+        <div *ngFor="let feature of features" class="feature-item">
+          <div class="feature-icon">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
+              ></path>
+            </svg>
+          </div>
+          <span class="feature-text">{{ feature }}</span>
+        </div>
+      </div>
+
+      <!-- Testimonial -->
+      <div class="testimonial-card">
+        <div class="testimonial-avatar">PR</div>
+        <div class="testimonial-content">
+          <p class="testimonial-text">
+            "FitClub reduced our admin overhead by 60% in the first month."
+          </p>
+          <div class="testimonial-author">
+            — Priya R., Manager, PowerFit Bangalore
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="login-form-wrapper">
+      <div class="login-card">
+        <a href="#" (click)="goToLanding()" class="back-link">← Back to Home</a>
+        <h2 class="form-title">Welcome back</h2>
+        <p class="form-subtitle">Sign in to your account</p>
+
+        <form
+          [formGroup]="loginForm"
+          (ngSubmit)="onSubmit()"
+          class="login-form"
+        >
+          <!-- Email Field -->
+          <div class="form-group">
+            <label class="form-label">Email address</label>
+            <input
+              type="email"
+              formControlName="email"
+              placeholder="you@fitclub.com"
+              class="form-input"
+              [class.error]="emailError"
+            />
+            <p *ngIf="emailError" class="error-message">{{ emailError }}</p>
+          </div>
+
+          <!-- Password Field -->
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <div class="password-field">
+              <input
+                [type]="showPassword ? 'text' : 'password'"
+                formControlName="password"
+                placeholder="••••••••"
+                class="form-input"
+                [class.error]="passwordError"
+              />
+              <button
+                type="button"
+                class="toggle-password"
+                (click)="togglePasswordVisibility()"
+              >
+                <svg
+                  *ngIf="!showPassword"
+                  class="eye-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg
+                  *ngIf="showPassword"
+                  class="eye-icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                  ></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+            <div class="forgot-password">
+              <a href="javascript:void(0)" (click)="goToForgetPassword()">Forgot password?</a>
+            </div>
+            <p *ngIf="passwordError" class="error-message">
+              {{ passwordError }}
+            </p>
+          </div>
+
+          <!-- Sign In Button -->
+          <button type="submit" class="sign-in-button" [disabled]="isLoading">
+            <span *ngIf="!isLoading">Sign In</span>
+            <div *ngIf="isLoading" class="spinner"></div>
+          </button>
+        </form>
+
+        <!-- Sign Up Link -->
+        <p class="signup-prompt">
+          Don't have an account?
+          <a href="#" class="signup-link">Sign up here</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

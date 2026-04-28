@@ -1,0 +1,488 @@
+/* Login Component Styles */
+
+.login-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* LEFT PANEL */
+.left-panel {
+  display: none;
+  width: 50%;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 64px;
+  background-color: #f8f9fc;
+}
+
+@media (min-width: 1024px) {
+  .left-panel {
+    display: flex;
+  }
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: #2563eb;
+  border-radius: 6px;
+}
+
+.dumbbell-icon {
+  width: 20px;
+  height: 20px;
+  color: white;
+}
+
+.logo-text {
+  font-family: "Syne", sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.left-panel-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.quote-mark {
+  font-size: 120px;
+  color: #e8ecf4;
+  line-height: 1;
+  margin-bottom: 24px;
+}
+
+.main-title {
+  font-family: "Syne", sans-serif;
+  font-weight: 800;
+  font-size: 40px;
+  color: #0f172a;
+  line-height: 1.2;
+  margin-bottom: 16px;
+}
+
+.subtitle {
+  font-family: "DM Sans", sans-serif;
+  font-weight: 300;
+  font-size: 17px;
+  color: #475569;
+  margin-bottom: 40px;
+}
+
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  background-color: #2563eb;
+  border-radius: 50%;
+}
+
+.check-icon {
+  width: 12px;
+  height: 12px;
+  color: white;
+}
+
+.feature-text {
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  color: #475569;
+}
+
+.testimonial-card {
+  background-color: #ffffff;
+  border: 1px solid #e8ecf4;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.testimonial-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background-color: #7c3aed;
+  border-radius: 50%;
+  font-family: "Syne", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.testimonial-content {
+  flex: 1;
+}
+
+.testimonial-text {
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  font-style: italic;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.testimonial-author {
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* RIGHT PANEL */
+.right-panel {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  padding: 64px 32px;
+}
+
+@media (min-width: 1024px) {
+  .right-panel {
+    width: 50%;
+  }
+}
+
+.login-form-wrapper {
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-card {
+  background-color: #ffffff;
+  border: 1px solid #e8ecf4;
+  border-radius: 20px;
+  padding: 40px 44px;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+}
+
+.back-link {
+  display: inline-block;
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  color: #2563eb;
+  text-decoration: none;
+  margin-bottom: 24px;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.form-title {
+  font-family: "Syne", sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.form-subtitle {
+  font-family: "DM Sans", sans-serif;
+  font-weight: 300;
+  font-size: 15px;
+  color: #475569;
+  margin-bottom: 32px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  font-family: "DM Sans", sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  height: 46px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.form-input.error {
+  border-color: #dc2626;
+}
+
+.form-input.error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field .form-input {
+  padding-right: 44px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eye-icon {
+  width: 16px;
+  height: 16px;
+  color: #94a3b8;
+}
+
+.forgot-password {
+  text-align: right;
+  margin-top: 8px;
+}
+
+.forgot-password a {
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  color: #2563eb;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  font-family: "DM Sans", sans-serif;
+  font-size: 12px;
+  color: #dc2626;
+  margin-top: 4px;
+}
+
+.sign-in-button {
+  width: 100%;
+  height: 48px;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-family: "Syne", sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  margin-top: 8px;
+  transition: all 0.3s ease;
+}
+
+.sign-in-button:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.sign-in-button:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #ffffff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.divider-section {
+  position: relative;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background-color: #e8ecf4;
+}
+
+.divider-text {
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.social-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.social-button {
+  height: 44px;
+  background-color: #ffffff;
+  border: 1px solid #e8ecf4;
+  border-radius: 8px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  color: #0f172a;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.social-button:hover {
+  background-color: #f8f9fc;
+}
+
+.signup-text {
+  text-align: center;
+  font-family: "DM Sans", sans-serif;
+  font-weight: 300;
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* SIGN UP PROMPT */
+.signup-prompt {
+  text-align: center;
+  font-family: "DM Sans", sans-serif;
+  font-weight: 300;
+  font-size: 14px;
+  color: #475569;
+  margin: 24px 0 0 0;
+}
+
+.signup-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.signup-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* ALERTS */
+.alerts-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.alert {
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.alert-warning {
+  background-color: #fffbeb;
+  border-left: 3px solid #d97706;
+}
+
+.alert-info {
+  background-color: #eff5ff;
+  border-left: 3px solid #2563eb;
+}
+
+.alert-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.alert-message {
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.alert-warning .alert-message {
+  color: #78350f;
+}
+
+.alert-info .alert-message {
+  color: #1e3a8a;
+}

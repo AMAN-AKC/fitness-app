@@ -34,7 +34,7 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.css", "src\bootstrap.min.css"],
+            "styles": ["src/styles.css", "src/bootstrap.min.css"],
             "scripts": [],
             "server": "src/main.server.ts",
             "prerender": true,
