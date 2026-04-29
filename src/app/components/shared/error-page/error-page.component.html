@@ -1,0 +1,91 @@
+<div class="error-showcase-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">FitClub System States</h1>
+    <p class="page-subtitle">
+      Error pages, empty states, and toast notifications reference.
+    </p>
+  </div>
+
+  <div class="showcase-grid">
+    <!-- ERROR SCREENS (1-4) -->
+    <div *ngFor="let error of errors.slice(0, 4)" class="error-card">
+      <!-- Icon -->
+      <div class="icon-container" [style.backgroundColor]="error.iconBg">
+        <div
+          [innerHTML]="getIconSvg(error.icon)"
+          [style.color]="error.iconColor"
+        ></div>
+      </div>
+
+      <!-- Code Label -->
+      <div class="code-label">{{ error.code }}</div>
+
+      <!-- Title -->
+      <h2 class="error-title">{{ error.title }}</h2>
+
+      <!-- Body Text -->
+      <p class="error-body">{{ error.body }}</p>
+
+      <!-- Action Buttons -->
+      <div *ngIf="error.code !== '500'" class="button-group">
+        <button class="btn btn-primary">{{ error.button }}</button>
+        <p *ngIf="error.secondaryText" class="secondary-link">
+          {{ error.secondaryText }}
+        </p>
+      </div>
+
+      <!-- 500 Error: Retry & Support Buttons + Countdown -->
+      <div *ngIf="error.code === '500'" class="button-group-row">
+        <button class="btn btn-primary" (click)="resetCountdown()">
+          {{ error.button }}
+        </button>
+        <button class="btn btn-secondary">{{ error.secondaryButton }}</button>
+        <p class="countdown-text">Auto-retrying in {{ retryCountdown }}s...</p>
+      </div>
+    </div>
+
+    <!-- EMPTY STATE SCREEN -->
+    <div class="error-card empty-state-card">
+      <!-- Icon (Large, no background) -->
+      <div class="empty-icon" [style.color]="errors[4].iconColor">
+        <div [innerHTML]="getIconSvg(errors[4].icon)"></div>
+      </div>
+
+      <!-- Title -->
+      <h2 class="error-title">{{ errors[4].title }}</h2>
+
+      <!-- Body Text -->
+      <p class="error-body">{{ errors[4].body }}</p>
+
+      <!-- Ghost Button -->
+      <button class="btn btn-ghost">{{ errors[4].button }}</button>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS SCREEN -->
+    <div class="toast-showcase-card">
+      <h3 class="toast-title">Toast Notifications</h3>
+      <div class="toasts-container">
+        <div
+          *ngFor="let toast of toasts; let i = index"
+          class="toast"
+          [ngClass]="'toast-' + toast.type"
+          [style.animationDelay]="i * 50 + 'ms'"
+        >
+          <div class="toast-icon" [ngClass]="'toast-icon-' + toast.type">
+            {{ toast.icon }}
+          </div>
+          <div class="toast-content">
+            <span class="toast-message">{{ toast.message }}</span>
+          </div>
+          <button class="toast-close">×</button>
+        </div>
+      </div>
+
+      <p class="toast-note">
+        Position note: Toasts appear bottom-right, stacked, 16px gap,
+        auto-dismiss
+      </p>
+    </div>
+  </div>
+</div>

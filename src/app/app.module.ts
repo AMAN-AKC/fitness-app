@@ -4,12 +4,18 @@ import {
   provideClientHydration,
 } from '@angular/platform-browser';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { LandingComponent } from './components/landing/landing.component';
 import { LoginComponent } from './components/login/login.component';
 import { ResetpasswordComponent } from './components/resetpassword/resetpassword.component';
+import { GlobalDashboardComponent } from './components/global-dashboard/global-dashboard.component';
+import { ErrorPageComponent } from './components/shared/error-page/error-page.component';
+import { EmptyStateComponent } from './components/shared/empty-state/empty-state.component';
+import { ToastComponent } from './components/shared/toast/toast.component';
+import { MemberDashboardComponent } from './components/member-dashboard/member-dashboard.component';
 
 @NgModule({
   declarations: [
@@ -17,8 +23,19 @@ import { ResetpasswordComponent } from './components/resetpassword/resetpassword
     LandingComponent,
     LoginComponent,
     ResetpasswordComponent,
+    GlobalDashboardComponent,
+    ErrorPageComponent,
+    EmptyStateComponent,
+    ToastComponent,
+    MemberDashboardComponent,
   ],
-  imports: [BrowserModule, AppRoutingModule, ReactiveFormsModule, FormsModule],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    ReactiveFormsModule,
+    FormsModule,
+    CommonModule,
+  ],
   providers: [provideClientHydration()],
   bootstrap: [AppComponent],
 })

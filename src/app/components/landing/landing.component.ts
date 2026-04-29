@@ -87,7 +87,7 @@ export class LandingComponent implements OnInit {
 
   ngOnInit(): void {}
 
-  @HostListener('window:scroll', ['$event'])
+  @HostListener('window:scroll')
   onScroll(): void {
     this.scrolled = window.scrollY > 100;
   }

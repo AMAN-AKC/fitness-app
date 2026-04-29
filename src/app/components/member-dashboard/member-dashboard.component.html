@@ -1,0 +1,189 @@
+<div class="member-dashboard-container">
+  <!-- ALERT BANNER -->
+  <div *ngIf="showAlert" class="alert-banner">
+    <div class="alert-content">
+      <span class="alert-icon">⚠</span>
+      <span class="alert-text">
+        Your health consent form needs renewal. It expired on 14 Jan 2025.
+      </span>
+      <a href="#" class="alert-link">Update Now →</a>
+    </div>
+    <button class="alert-close" (click)="closeAlert()">×</button>
+  </div>
+
+  <!-- KPI CARDS ROW -->
+  <div class="kpi-grid">
+    <!-- 1. Membership Status -->
+    <div class="kpi-card">
+      <div class="status-badge">ACTIVE</div>
+      <h3 class="kpi-title">Membership Status</h3>
+      <p class="kpi-subtitle">Renewed on {{ renewalDate }}</p>
+    </div>
+
+    <!-- 2. Current Plan -->
+    <div class="kpi-card">
+      <div class="kpi-label">Current Plan</div>
+      <h3 class="kpi-title-plan">{{ currentPlan }}</h3>
+      <p class="kpi-plan-description">{{ planDescription }}</p>
+    </div>
+
+    <!-- 3. Days Remaining -->
+    <div class="kpi-card">
+      <div class="kpi-label">Days Remaining</div>
+      <div class="kpi-days">{{ daysRemaining }}</div>
+      <div class="progress-bar">
+        <div
+          class="progress-fill"
+          [style.width.%]="daysRemainingProgress"
+        ></div>
+      </div>
+      <p class="kpi-subtitle">Expires {{ expirationDate }}</p>
+    </div>
+
+    <!-- 4. Classes Booked -->
+    <div class="kpi-card">
+      <div class="kpi-label">Classes Booked This Month</div>
+      <div class="kpi-days">{{ classesBooked }}</div>
+      <div class="chart-bars">
+        <div
+          *ngFor="let height of chartData.chartData"
+          class="chart-bar"
+          [style.height.%]="height"
+        ></div>
+      </div>
+      <div class="upcoming-badge">{{ upcomingCount }} upcoming</div>
+    </div>
+  </div>
+
+  <!-- MIDDLE ROW -->
+  <div class="middle-grid">
+    <!-- LEFT - Upcoming Classes -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Upcoming Classes</h3>
+        <a href="#" class="view-all">View All →</a>
+      </div>
+
+      <div class="classes-list">
+        <div
+          *ngFor="let classItem of upcomingClasses; let last = last"
+          class="class-item"
+          [class.last-item]="last"
+        >
+          <div class="class-content">
+            <div
+              class="category-dot"
+              [style.backgroundColor]="classItem.categoryColor"
+            ></div>
+            <div class="class-details">
+              <div class="class-name">{{ classItem.name }}</div>
+              <div class="class-meta">
+                {{ classItem.trainer }} · {{ classItem.room }}
+              </div>
+              <div class="class-date-badge">
+                {{ classItem.date }} · {{ classItem.time }}
+              </div>
+            </div>
+          </div>
+          <button
+            class="cancel-btn"
+            [disabled]="!classItem.canCancel"
+            [title]="
+              !classItem.canCancel
+                ? 'Cannot cancel within 2 hours of class start'
+                : ''
+            "
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT - My Trainer -->
+    <div class="card">
+      <h3 class="card-title">My Personal Trainer</h3>
+
+      <div class="trainer-card">
+        <div class="trainer-avatar" [style.backgroundColor]="trainerColor">
+          {{ trainerInitials }}
+        </div>
+        <div class="trainer-info">
+          <h4 class="trainer-name">{{ trainerName }}</h4>
+          <div class="trainer-specialties">
+            <span
+              *ngFor="let specialty of trainerSpecialties"
+              class="specialty-badge"
+            >
+              {{ specialty }}
+            </span>
+          </div>
+          <div class="trainer-rating">
+            <span
+              *ngFor="let i of [1, 2, 3, 4, 5]"
+              class="star"
+              [class.filled]="i <= 4"
+            >
+              ★
+            </span>
+            <span class="rating-text">{{ trainerRating }}</span>
+          </div>
+          <div class="trainer-certs">
+            <span *ngFor="let cert of trainerCertifications" class="cert-badge">
+              {{ cert }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <button class="book-session-btn">Book PT Session →</button>
+      <p class="sessions-remaining">
+        {{ sessionsRemaining }} sessions remaining in your package
+      </p>
+    </div>
+  </div>
+
+  <!-- BOTTOM - Recent Invoices -->
+  <div class="card invoices-card">
+    <div class="invoices-header">
+      <h3 class="card-title">Recent Invoices</h3>
+      <button class="download-all-btn">📥 Download All</button>
+    </div>
+
+    <table class="invoices-table">
+      <thead>
+        <tr class="table-header">
+          <th>Invoice #</th>
+          <th>Plan</th>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let invoice of invoices; let i = index"
+          [style.backgroundColor]="alternateRowColor(i)"
+        >
+          <td class="invoice-id">{{ invoice.id }}</td>
+          <td>{{ invoice.plan }}</td>
+          <td class="date-col">{{ invoice.date }}</td>
+          <td class="amount-col">{{ invoice.amount }}</td>
+          <td>
+            <span
+              class="status-badge-table"
+              [style.backgroundColor]="getStatusColor(invoice.status)"
+              [style.color]="getStatusTextColor(invoice.status)"
+            >
+              {{ invoice.status }}
+            </span>
+          </td>
+          <td>
+            <a href="#" class="download-link">Download PDF</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

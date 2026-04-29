@@ -1,0 +1,24 @@
+<div class="empty-state-wrapper">
+  <div class="empty-state-content">
+    <!-- Icon -->
+    <div class="empty-icon-container" [style.backgroundColor]="iconBgColor">
+      <div [innerHTML]="getIconSvg()" [style.color]="iconColor"></div>
+    </div>
+
+    <!-- Title -->
+    <h2 class="empty-title">{{ title }}</h2>
+
+    <!-- Description -->
+    <p class="empty-description">{{ description }}</p>
+
+    <!-- Action Button -->
+    <button
+      *ngIf="buttonText"
+      class="empty-button"
+      [ngClass]="isGhost ? 'btn-ghost' : 'btn-primary'"
+      (click)="onButtonClick()"
+    >
+      {{ buttonText }}
+    </button>
+  </div>
+</div>
