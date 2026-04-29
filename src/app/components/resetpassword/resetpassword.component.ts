@@ -3,11 +3,11 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NavigationService } from '../../services/navigation.service';
 
 @Component({
-  selector: 'app-restpassword',
-  templateUrl: './restpassword.component.html',
-  styleUrls: ['./restpassword.component.css'],
+  selector: 'app-resetpassword',
+  templateUrl: './resetpassword.component.html',
+  styleUrls: ['./resetpassword.component.css'],
 })
-export class RestpasswordComponent implements OnInit {
+export class ResetpasswordComponent implements OnInit {
   resetForm!: FormGroup;
   passwordForm!: FormGroup;
 

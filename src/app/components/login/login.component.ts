@@ -72,6 +72,6 @@ export class LoginComponent implements OnInit {
   }
 
   goToForgetPassword(): void {
-    this.navigationService.navigateTo('restpassword');
+    this.navigationService.navigateTo('resetpassword');
   }
 }
