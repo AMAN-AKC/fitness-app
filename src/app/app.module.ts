@@ -16,6 +16,9 @@ import { ErrorPageComponent } from './components/shared/error-page/error-page.co
 import { EmptyStateComponent } from './components/shared/empty-state/empty-state.component';
 import { ToastComponent } from './components/shared/toast/toast.component';
 import { MemberDashboardComponent } from './components/member-dashboard/member-dashboard.component';
+import { FrontdeskDashboardComponent } from './components/frontdesk-dashboard/frontdesk-dashboard.component';
+import { MemberRegistrationComponent } from './components/member-registration/member-registration.component';
+import { TrainerDashboardComponent } from './components/trainer-dashboard/trainer-dashboard.component';
 
 @NgModule({
   declarations: [
@@ -28,6 +31,9 @@ import { MemberDashboardComponent } from './components/member-dashboard/member-d
     EmptyStateComponent,
     ToastComponent,
     MemberDashboardComponent,
+    FrontdeskDashboardComponent,
+    MemberRegistrationComponent,
+    TrainerDashboardComponent,
   ],
   imports: [
     BrowserModule,

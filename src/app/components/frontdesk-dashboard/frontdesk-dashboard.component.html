@@ -1,0 +1,280 @@
+<div class="frontdesk-dashboard-container">
+  <!-- HEADER -->
+  <div class="header-section">
+    <div class="header-left">
+      <h1 class="header-title">Front Desk</h1>
+      <p class="header-subtitle">Manage check-ins and today's classes.</p>
+    </div>
+    <div class="current-date-time">
+      {{ currentDateTime }}
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <!-- Check-Ins Today -->
+    <div class="kpi-card kpi-card--primary">
+      <div class="kpi-status-indicator"></div>
+      <div class="kpi-content">
+        <div class="kpi-label-with-dot">
+          <span class="status-dot"></span>
+          <span class="kpi-label">Check-Ins Today</span>
+        </div>
+        <div class="kpi-value">{{ checkInsToday }}</div>
+      </div>
+    </div>
+
+    <!-- New Members -->
+    <div class="kpi-card kpi-card--success">
+      <div class="kpi-status-indicator kpi-status-indicator--success"></div>
+      <div class="kpi-content">
+        <div class="kpi-label-with-dot">
+          <span class="status-dot status-dot--success"></span>
+          <span class="kpi-label">New Members</span>
+        </div>
+        <div class="kpi-value">{{ newMembers }}</div>
+        <p class="kpi-trend">↑ 3 vs last week</p>
+      </div>
+    </div>
+
+    <!-- Pending Consents -->
+    <div class="kpi-card kpi-card--warning">
+      <div class="kpi-content">
+        <div class="kpi-label">Pending Consents</div>
+        <div class="kpi-value kpi-value--warning">{{ pendingConsents }}</div>
+        <p class="kpi-trend kpi-trend--warning">Need renewal today</p>
+      </div>
+    </div>
+
+    <!-- Expiring Plans -->
+    <div class="kpi-card kpi-card--danger">
+      <div class="kpi-content">
+        <div class="kpi-label">Expiring Plans</div>
+        <div class="kpi-value kpi-value--danger">{{ expiringPlans }}</div>
+        <p class="kpi-trend kpi-trend--danger">7 days remaining</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK CHECK-IN CARD -->
+  <div class="quick-checkin-card">
+    <div class="quick-checkin-badge">
+      <span class="live-indicator"></span> Live Check-In Active
+    </div>
+
+    <h2 class="quick-checkin-title">Quick Check-In</h2>
+
+    <ng-container *ngIf="!memberFound">
+      <!-- QR Code Area -->
+      <div class="qr-scan-area">
+        <svg
+          width="48"
+          height="48"
+          viewBox="0 0 48 48"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M4 4H16V16H4V4M20 4H32V16H20V4M36 4H48V16H36V4M4 20H16V32H4V20M36 20H48V32H36V20M4 36H16V48H4V36M20 36H32V48H20V36M36 36H48V48H36V36"
+            stroke="#CBD5E1"
+            stroke-width="2"
+            fill="none"
+          />
+        </svg>
+        <span class="qr-scan-text">Scan Member QR Code</span>
+      </div>
+
+      <div class="divider">
+        <span>or</span>
+      </div>
+
+      <!-- Search Form -->
+      <form (ngSubmit)="handleSearch($event)" class="search-form">
+        <input
+          type="text"
+          [(ngModel)]="searchValue"
+          name="search"
+          placeholder="Search by name or Member ID..."
+          class="search-input"
+        />
+        <button
+          *ngIf="searchValue"
+          type="button"
+          (click)="clearSearch()"
+          class="clear-search"
+        >
+          ×
+        </button>
+      </form>
+    </ng-container>
+
+    <!-- Member Found - OK Status -->
+    <ng-container *ngIf="memberFound && memberFound.status === 'ok'">
+      <div class="member-result member-result--ok">
+        <div class="member-avatar" [style.background-color]="'#EFF5FF'">
+          <span [style.color]="'#2563EB'">{{ memberFound.avatar }}</span>
+        </div>
+
+        <div class="member-info">
+          <h3 class="member-name">{{ memberFound.name }}</h3>
+          <div class="member-badges">
+            <span class="member-id">{{ memberFound.id }}</span>
+            <span class="member-plan">{{ memberFound.plan }}</span>
+          </div>
+          <div *ngIf="memberFound.dues" class="member-dues">
+            <span>⚠ Unpaid Dues — {{ memberFound.dues }}</span>
+          </div>
+        </div>
+
+        <button (click)="confirmCheckIn()" class="confirm-checkin-btn">
+          ✓ Confirm Check-In
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- Member Found - Blocked Status -->
+    <ng-container *ngIf="memberFound && memberFound.status === 'blocked'">
+      <div class="member-result member-result--blocked">
+        <div
+          class="member-avatar"
+          [style.background-color]="'#ffffff'"
+          [style.border]="'2px solid #DC2626'"
+        >
+          <span [style.color]="'#DC2626'">{{ memberFound.avatar }}</span>
+        </div>
+
+        <div class="member-info">
+          <h3 class="member-name">{{ memberFound.name }}</h3>
+          <p class="member-id">{{ memberFound.id }}</p>
+          <div class="member-alert">
+            <span>✕ {{ memberFound.alert }}</span>
+          </div>
+          <p class="member-alert-note">
+            Redirect to front desk for renewal processing.
+          </p>
+        </div>
+
+        <div class="member-actions">
+          <button class="action-btn action-btn--primary">
+            Process Renewal
+          </button>
+          <button
+            (click)="clearSearch()"
+            class="action-btn action-btn--secondary"
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- CONTENT GRID -->
+  <div class="content-grid">
+    <!-- RECENT CHECK-INS -->
+    <div class="content-card">
+      <div class="content-header">
+        <h3 class="content-title">
+          Recent Check-Ins
+          <span class="live-dot"></span>
+        </h3>
+        <span class="auto-refresh-text">Auto-refreshing...</span>
+      </div>
+
+      <div class="content-body">
+        <div *ngFor="let checkin of recentCheckIns" class="checkin-item">
+          <div class="checkin-left">
+            <div class="checkin-avatar">{{ checkin.avatar }}</div>
+            <div class="checkin-details">
+              <h4 class="checkin-name">{{ checkin.name }}</h4>
+              <span class="checkin-time">{{ checkin.time }}</span>
+            </div>
+          </div>
+          <div
+            [ngClass]="
+              'method-badge method-badge--' +
+              (checkin.method === 'QR Code' ? 'qr' : 'manual')
+            "
+          >
+            {{ checkin.method }}
+          </div>
+        </div>
+      </div>
+
+      <div class="content-footer">
+        <button class="view-full-btn">View Full Log →</button>
+      </div>
+    </div>
+
+    <!-- TODAY'S CLASS ROSTERS -->
+    <div class="content-card">
+      <div class="content-header">
+        <h3 class="content-title">Today's Class Rosters</h3>
+      </div>
+
+      <div class="content-body">
+        <ng-container *ngFor="let cls of todaysClasses">
+          <div class="class-item">
+            <div
+              class="class-header"
+              (click)="toggleClassExpanded(cls.id)"
+              [class.expanded]="expandedClass === cls.id"
+            >
+              <div class="class-info">
+                <h4 class="class-name">{{ cls.name }}</h4>
+                <span class="class-time">{{ cls.time }}</span>
+              </div>
+              <div class="class-meta">
+                <span
+                  [ngClass]="{
+                    'enrollment-badge': true,
+                    'enrollment-full': cls.enrolled === cls.cap,
+                  }"
+                >
+                  {{ cls.enrolled }}/{{ cls.cap }}
+                </span>
+                <span class="chevron" [class.rotated]="expandedClass === cls.id"
+                  >⌄</span
+                >
+              </div>
+            </div>
+
+            <!-- Expanded Class Roster -->
+            <div *ngIf="expandedClass === cls.id" class="class-expanded">
+              <div class="class-header-expanded">
+                <span class="member-list-label">Member List</span>
+                <button (click)="markAllPresent()" class="mark-all-btn">
+                  Mark All Present
+                </button>
+              </div>
+
+              <div class="members-list">
+                <div *ngFor="let member of classMembers" class="member-item">
+                  <span class="member-name">{{ member.name }}</span>
+                  <div class="status-buttons">
+                    <button
+                      (click)="markMemberStatus(member, 'present')"
+                      [class.active]="member.status === 'present'"
+                      class="status-btn status-btn--present"
+                      title="Present"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      (click)="markMemberStatus(member, 'absent')"
+                      [class.active]="member.status === 'absent'"
+                      class="status-btn status-btn--absent"
+                      title="Absent"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+</div>
