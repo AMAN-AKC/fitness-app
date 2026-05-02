@@ -23,7 +23,12 @@ interface CompletedSession {
 interface ClassSchedule {
   day: string;
   date: number;
-  classes: Array<{ name: string; time: string; color: string; isSubstitute?: boolean }>;
+  classes: Array<{
+    name: string;
+    time: string;
+    color: string;
+    isSubstitute?: boolean;
+  }>;
 }
 
 @Component({

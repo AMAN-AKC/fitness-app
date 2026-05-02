@@ -9,8 +9,12 @@
       <div class="completion-badge">MEM-20240422-0847</div>
       <p class="completion-info">Rahul Kumar · Platinum Pro · Indiranagar</p>
       <div class="completion-actions">
-        <button (click)="resetForm()" class="action-btn action-btn--secondary">Register Another Member</button>
-        <a href="/member-profile" class="action-btn action-btn--primary">View Member Profile</a>
+        <button (click)="resetForm()" class="action-btn action-btn--secondary">
+          Register Another Member
+        </button>
+        <a href="/member-profile" class="action-btn action-btn--primary"
+          >View Member Profile</a
+        >
       </div>
     </div>
   </ng-container>
@@ -27,9 +31,9 @@
             <div
               [ngClass]="{
                 'stepper-dot': true,
-                'completed': isStepCompleted(i + 1),
-                'active': isStepActive(i + 1),
-                'upcoming': isStepUpcoming(i + 1),
+                completed: isStepCompleted(i + 1),
+                active: isStepActive(i + 1),
+                upcoming: isStepUpcoming(i + 1),
               }"
             >
               <span *ngIf="isStepCompleted(i + 1)">✓</span>
@@ -38,9 +42,9 @@
             <span
               [ngClass]="{
                 'stepper-label': true,
-                'active': isStepActive(i + 1),
-                'completed': isStepCompleted(i + 1),
-                'upcoming': isStepUpcoming(i + 1),
+                active: isStepActive(i + 1),
+                completed: isStepCompleted(i + 1),
+                upcoming: isStepUpcoming(i + 1),
               }"
             >
               {{ stepLabel }}
@@ -62,8 +66,10 @@
 
     <!-- FORM CONTENT -->
     <div class="form-container">
-      <form [ngSwitch]="step" (ngSubmit)="step === 4 ? handleFinish($event) : handleNext($event)">
-        
+      <form
+        [ngSwitch]="step"
+        (ngSubmit)="step === 4 ? handleFinish($event) : handleNext($event)"
+      >
         <!-- STEP 1: PERSONAL DETAILS -->
         <ng-container *ngSwitchCase="1">
           <div class="form-step">
@@ -82,9 +88,16 @@
               <div class="form-group form-group--full-md-1-3">
                 <label class="form-label">Gender</label>
                 <div class="gender-buttons">
-                  <ng-container *ngFor="let gender of ['Male', 'Female', 'Other']">
+                  <ng-container
+                    *ngFor="let gender of ['Male', 'Female', 'Other']"
+                  >
                     <label class="gender-button">
-                      <input type="radio" [(ngModel)]="formData.gender" [value]="gender" name="gender" />
+                      <input
+                        type="radio"
+                        [(ngModel)]="formData.gender"
+                        [value]="gender"
+                        name="gender"
+                      />
                       <span>{{ gender }}</span>
                     </label>
                   </ng-container>
@@ -109,11 +122,22 @@
             <div class="form-group">
               <label class="form-label">Photo / ID Upload</label>
               <div class="upload-area">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                  ></path>
                   <circle cx="12" cy="13" r="4"></circle>
                 </svg>
-                <span class="upload-text">Drag photo or ID here / Click to browse</span>
+                <span class="upload-text"
+                  >Drag photo or ID here / Click to browse</span
+                >
                 <span class="upload-hint">JPG, PNG · Max 5MB</span>
               </div>
             </div>
@@ -231,7 +255,11 @@
             </div>
 
             <div class="form-actions form-actions--between">
-              <button type="button" (click)="handlePrev($event)" class="btn btn--secondary">
+              <button
+                type="button"
+                (click)="handlePrev($event)"
+                class="btn btn--secondary"
+              >
                 <span class="btn-arrow">←</span> Previous
               </button>
               <button type="submit" class="btn btn--primary">
@@ -249,11 +277,18 @@
               <div class="branch-grid">
                 <ng-container *ngFor="let branch of branches">
                   <label class="branch-card">
-                    <input type="radio" [(ngModel)]="formData.branch" [value]="branch.name" name="branch" />
+                    <input
+                      type="radio"
+                      [(ngModel)]="formData.branch"
+                      [value]="branch.name"
+                      name="branch"
+                    />
                     <div class="branch-content">
                       <h4 class="branch-name">{{ branch.name }}</h4>
                       <p class="branch-address">{{ branch.address }}</p>
-                      <span class="branch-active">{{ branch.active }} Active</span>
+                      <span class="branch-active"
+                        >{{ branch.active }} Active</span
+                      >
                     </div>
                     <div class="branch-radio"></div>
                   </label>
@@ -266,7 +301,12 @@
               <div class="plan-list">
                 <ng-container *ngFor="let plan of plans">
                   <label class="plan-card">
-                    <input type="radio" [(ngModel)]="formData.plan" [value]="plan.name" name="plan" />
+                    <input
+                      type="radio"
+                      [(ngModel)]="formData.plan"
+                      [value]="plan.name"
+                      name="plan"
+                    />
                     <div class="plan-radio"></div>
                     <div class="plan-info">
                       <h4 class="plan-name">{{ plan.name }}</h4>
@@ -286,7 +326,11 @@
               <div class="addons-list">
                 <ng-container *ngFor="let addon of addOns; let i = index">
                   <label class="addon-item">
-                    <input type="checkbox" [(ngModel)]="addon.selected" [name]="'addon-' + i" />
+                    <input
+                      type="checkbox"
+                      [(ngModel)]="addon.selected"
+                      [name]="'addon-' + i"
+                    />
                     <span class="addon-label">{{ addon.label }}</span>
                     <span class="addon-price">{{ addon.price }}</span>
                   </label>
@@ -295,7 +339,11 @@
             </div>
 
             <div class="form-actions form-actions--between">
-              <button type="button" (click)="handlePrev($event)" class="btn btn--secondary">
+              <button
+                type="button"
+                (click)="handlePrev($event)"
+                class="btn btn--secondary"
+              >
                 <span class="btn-arrow">←</span> Previous
               </button>
               <button type="submit" class="btn btn--primary">
@@ -313,29 +361,47 @@
             <div class="terms-box">
               <h4 class="terms-heading">Terms and Conditions of Membership</h4>
               <p>
-                By signing this agreement, you acknowledge that participation in physical exercise activities poses inherent risks. You agree to assume all such
-                risks and to hold FitClub, its staff, and its affiliates harmless from any liability arising out of injury or illness incurred while utilizing the
-                facility.
+                By signing this agreement, you acknowledge that participation in
+                physical exercise activities poses inherent risks. You agree to
+                assume all such risks and to hold FitClub, its staff, and its
+                affiliates harmless from any liability arising out of injury or
+                illness incurred while utilizing the facility.
               </p>
               <p>
-                You certify that you are in good health and have consulted a physician before starting any exercise program. If your health condition changes,
-                you agree to notify the front desk immediately.
+                You certify that you are in good health and have consulted a
+                physician before starting any exercise program. If your health
+                condition changes, you agree to notify the front desk
+                immediately.
               </p>
               <p>
-                Membership dues are non-refundable after a 7-day cooling-off period. Cancellation requests must be submitted in writing 30 days prior to the
-                next billing cycle.
+                Membership dues are non-refundable after a 7-day cooling-off
+                period. Cancellation requests must be submitted in writing 30
+                days prior to the next billing cycle.
               </p>
               <p>
-                FitClub reserves the right to modify class schedules, facility access hours, and operational policies without prior notice. Management may
-                revoke membership privileges at their discretion for violation of club rules.
+                FitClub reserves the right to modify class schedules, facility
+                access hours, and operational policies without prior notice.
+                Management may revoke membership privileges at their discretion
+                for violation of club rules.
               </p>
-              <p>This waiver remains in effect for the duration of your membership and any subsequent renewals unless explicitly revoked in writing.</p>
+              <p>
+                This waiver remains in effect for the duration of your
+                membership and any subsequent renewals unless explicitly revoked
+                in writing.
+              </p>
             </div>
 
             <label class="consent-checkbox">
-              <input type="checkbox" [(ngModel)]="termsAgreed" name="termsAgreed" required />
+              <input
+                type="checkbox"
+                [(ngModel)]="termsAgreed"
+                name="termsAgreed"
+                required
+              />
               <span class="checkbox-text">
-                I have read and agree to the terms of the liability waiver. I accept that this digital agreement serves as my legally binding signature.
+                I have read and agree to the terms of the liability waiver. I
+                accept that this digital agreement serves as my legally binding
+                signature.
               </span>
             </label>
 
@@ -346,10 +412,18 @@
             </div>
 
             <div class="form-actions form-actions--between">
-              <button type="button" (click)="handlePrev($event)" class="btn btn--secondary">
+              <button
+                type="button"
+                (click)="handlePrev($event)"
+                class="btn btn--secondary"
+              >
                 <span class="btn-arrow">←</span> Previous
               </button>
-              <button type="submit" class="btn btn--primary btn--finish" [disabled]="!termsAgreed">
+              <button
+                type="submit"
+                class="btn btn--primary btn--finish"
+                [disabled]="!termsAgreed"
+              >
                 Create Member Account
               </button>
             </div>

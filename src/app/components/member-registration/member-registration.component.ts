@@ -47,7 +47,12 @@ export class MemberRegistrationComponent implements OnInit {
     plan: 'Gold Annual',
   };
 
-  steps = ['Personal Details', 'Contact & Emergency', 'Plan & Branch', 'Consent & Finish'];
+  steps = [
+    'Personal Details',
+    'Contact & Emergency',
+    'Plan & Branch',
+    'Consent & Finish',
+  ];
 
   branches: Branch[] = [
     { name: 'Indiranagar', address: '12th Main Road, Bangalore', active: 247 },
@@ -56,9 +61,24 @@ export class MemberRegistrationComponent implements OnInit {
   ];
 
   plans: Plan[] = [
-    { name: 'Basic Starter', duration: 'Monthly', price: '₹1,499', features: 'Gym Access Only' },
-    { name: 'Gold Annual', duration: 'Annual', price: '₹24,999', features: 'All Access + Pool' },
-    { name: 'Platinum Pro', duration: 'Annual', price: '₹41,988', features: 'All Access + PT' },
+    {
+      name: 'Basic Starter',
+      duration: 'Monthly',
+      price: '₹1,499',
+      features: 'Gym Access Only',
+    },
+    {
+      name: 'Gold Annual',
+      duration: 'Annual',
+      price: '₹24,999',
+      features: 'All Access + Pool',
+    },
+    {
+      name: 'Platinum Pro',
+      duration: 'Annual',
+      price: '₹41,988',
+      features: 'All Access + PT',
+    },
   ];
 
   addOns: AddOn[] = [
@@ -148,7 +168,10 @@ export class MemberRegistrationComponent implements OnInit {
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
     return age.toString();
