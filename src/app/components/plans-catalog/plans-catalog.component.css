@@ -1,0 +1,15 @@
+/* Scaling on hover */
+.lg\:scale-105 {
+  scale: 1.05;
+}
+
+@media (max-width: 1024px) {
+  .lg\:scale-105 {
+    scale: 1;
+  }
+}
+
+/* Ring styling */
+.ring-2 {
+  box-shadow: 0 0 0 2px #2563eb;
+}

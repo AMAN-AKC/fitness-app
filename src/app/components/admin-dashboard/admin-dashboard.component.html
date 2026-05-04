@@ -1,0 +1,471 @@
+<div
+  class="flex flex-col gap-6 text-[#0F172A] w-full max-w-[1600px] mx-auto pb-10"
+>
+  <!-- HEADER -->
+  <div class="flex items-center justify-between">
+    <h1 class="font-bold text-[24px]">Admin Dashboard</h1>
+    <div
+      class="flex items-center gap-2 text-[13px] text-[#475569] font-medium bg-white px-3 py-1.5 rounded-full border border-[#E8ECF4] shadow-sm"
+    >
+      <div class="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></div>
+      All Systems Operational
+    </div>
+  </div>
+
+  <!-- KPI TILES (6) -->
+  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+    <!-- Total Members -->
+    <div
+      class="bg-white rounded-[12px] p-4 border border-[#E8ECF4] shadow-sm flex flex-col justify-between"
+    >
+      <div class="flex justify-between items-start mb-2">
+        <div
+          class="w-8 h-8 rounded-full bg-[#EFF5FF] flex items-center justify-center text-[#2563EB]"
+        >
+          <i class="text-lg">👥</i>
+        </div>
+      </div>
+      <div>
+        <div
+          class="text-[12px] font-bold text-[#475569] uppercase tracking-[0.05em] mb-0.5"
+        >
+          Total Members
+        </div>
+        <div class="font-bold text-[24px] leading-tight">3,847</div>
+      </div>
+    </div>
+
+    <!-- Active Memberships -->
+    <div
+      class="bg-white rounded-[12px] p-4 border border-[#E8ECF4] shadow-sm flex flex-col justify-between"
+    >
+      <div class="flex justify-between items-start mb-2">
+        <div
+          class="w-8 h-8 rounded-full bg-[#F0FDF4] flex items-center justify-center text-[#16A34A]"
+        >
+          <i class="text-lg">⚡</i>
+        </div>
+      </div>
+      <div>
+        <div
+          class="text-[12px] font-bold text-[#475569] uppercase tracking-[0.05em] mb-0.5"
+        >
+          Active Plans
+        </div>
+        <div
+          class="font-bold text-[24px] text-[#16A34A] leading-tight flex items-baseline gap-2"
+        >
+          3,201
+          <span class="text-[11px] font-bold text-[#94A3B8]">83% of total</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Revenue MTD -->
+    <div
+      class="bg-white rounded-[12px] p-4 border border-[#E8ECF4] shadow-sm flex flex-col justify-between"
+    >
+      <div class="flex justify-between items-start mb-2">
+        <div
+          class="w-8 h-8 rounded-full bg-[#EFF5FF] flex items-center justify-center text-[#2563EB]"
+        >
+          <i class="text-lg">₹</i>
+        </div>
+      </div>
+      <div>
+        <div
+          class="text-[12px] font-bold text-[#475569] uppercase tracking-[0.05em] mb-0.5"
+        >
+          Revenue MTD
+        </div>
+        <div
+          class="font-bold text-[24px] leading-tight flex items-baseline gap-2"
+        >
+          ₹12.4L
+          <span class="text-[11px] font-bold text-[#16A34A]">↗ +12%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Branches -->
+    <div
+      class="bg-white rounded-[12px] p-4 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:border-[#2563EB]/50 transition-colors cursor-pointer group"
+    >
+      <div class="flex justify-between items-start mb-2">
+        <div
+          class="w-8 h-8 rounded-full bg-[#F8F9FC] flex items-center justify-center text-[#475569] group-hover:bg-[#EFF5FF] group-hover:text-[#2563EB] transition-colors"
+        >
+          <i class="text-lg">📍</i>
+        </div>
+        <span
+          class="text-[#94A3B8] group-hover:text-[#2563EB] opacity-0 group-hover:opacity-100 transition-all"
+          >→</span
+        >
+      </div>
+      <div>
+        <div
+          class="text-[12px] font-bold text-[#475569] uppercase tracking-[0.05em] mb-0.5 group-hover:text-[#2563EB] transition-colors"
+        >
+          Branches
+        </div>
+        <div class="font-bold text-[24px] leading-tight">7</div>
+      </div>
+    </div>
+
+    <!-- Staff Accounts -->
+    <div
+      class="bg-white rounded-[12px] p-4 border border-[#E8ECF4] shadow-sm flex flex-col justify-between"
+    >
+      <div class="flex justify-between items-start mb-2">
+        <div
+          class="w-8 h-8 rounded-full bg-[#F8F9FC] flex items-center justify-center text-[#475569]"
+        >
+          <i class="text-lg">🛡️</i>
+        </div>
+        <div
+          class="px-2 py-0.5 rounded-[4px] bg-[#FFFBEB] text-[#D97706] text-[10px] font-bold border border-[#D97706]/20"
+        >
+          2 locked
+        </div>
+      </div>
+      <div>
+        <div
+          class="text-[12px] font-bold text-[#475569] uppercase tracking-[0.05em] mb-0.5"
+        >
+          Staff Accounts
+        </div>
+        <div class="font-bold text-[24px] leading-tight">34</div>
+      </div>
+    </div>
+
+    <!-- Pending Audit Items -->
+    <div
+      class="bg-[#FFFBEB] rounded-[12px] p-4 border border-[#D97706]/20 shadow-sm flex flex-col justify-between"
+    >
+      <div class="flex justify-between items-start mb-2">
+        <div
+          class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#D97706] shadow-sm"
+        >
+          <i class="text-lg">⚠️</i>
+        </div>
+      </div>
+      <div>
+        <div
+          class="text-[12px] font-bold text-[#D97706] uppercase tracking-[0.05em] mb-0.5"
+        >
+          Pending Audits
+        </div>
+        <div class="font-bold text-[24px] text-[#D97706] leading-tight">6</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THREE-COLUMN MIDDLE ROW -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <!-- LEFT: System Health / Feature Flags -->
+    <div
+      class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm flex flex-col h-[480px]"
+    >
+      <div
+        class="px-5 py-4 border-b border-[#E8ECF4] flex items-center justify-between bg-[#F8F9FC]/50 rounded-t-[12px]"
+      >
+        <h2 class="font-bold text-[15px] flex items-center gap-2">
+          Feature Flags
+        </h2>
+        <div
+          class="flex items-center gap-1.5 text-[11px] font-bold text-[#16A34A]"
+        >
+          <i class="text-sm">✓</i> Healthy
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto p-1 custom-scrollbar">
+        <div
+          *ngFor="let flag of flags"
+          class="flex items-center justify-between p-4 border-b border-[#E8ECF4] last:border-b-0 hover:bg-[#F8F9FC] transition-colors rounded-[8px]"
+        >
+          <div>
+            <div class="font-medium text-[14px] text-[#0F172A] mb-0.5">
+              {{ flag.name }}
+            </div>
+            <div class="text-[11px] text-[#94A3B8]">
+              Last modified by {{ flag.by }} · {{ flag.lastModified }}
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span
+              [class]="
+                'text-[10px] font-bold tracking-wide w-6 text-right ' +
+                (flag.enabled ? 'text-[#16A34A]' : 'text-[#94A3B8]')
+              "
+            >
+              {{ flag.enabled ? "ON" : "OFF" }}
+            </span>
+            <button
+              (click)="toggleFlag(flag.id)"
+              [class]="
+                'w-9 h-5 rounded-full relative transition-colors ' +
+                (flag.enabled ? 'bg-[#2563EB]' : 'bg-[#CBD5E1]')
+              "
+            >
+              <div
+                [class]="
+                  'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
+                  (flag.enabled ? 'translate-x-4' : 'translate-x-0')
+                "
+              ></div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: Recent Audit Log -->
+    <div
+      class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm flex flex-col h-[480px]"
+    >
+      <div
+        class="px-5 py-4 border-b border-[#E8ECF4] flex items-center justify-between bg-[#F8F9FC]/50 rounded-t-[12px]"
+      >
+        <h2 class="font-bold text-[15px]">Recent Audit Log</h2>
+        <button
+          class="text-[12px] font-bold text-[#2563EB] hover:text-[#1D4ED8] flex items-center gap-1"
+        >
+          View All →
+        </button>
+      </div>
+      <div class="flex-1 p-2 overflow-y-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr>
+              <th
+                class="px-3 py-2 text-[11px] uppercase text-[#94A3B8] font-bold w-[30%]"
+              >
+                User
+              </th>
+              <th
+                class="px-3 py-2 text-[11px] uppercase text-[#94A3B8] font-bold w-[30%]"
+              >
+                Entity
+              </th>
+              <th
+                class="px-3 py-2 text-[11px] uppercase text-[#94A3B8] font-bold text-right"
+              >
+                Action
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *ngFor="let log of auditLogs; let i = index"
+              [class]="
+                'border-b border-[#E8ECF4]/50 last:border-0 ' +
+                (i === auditLogs.length - 1 ? 'opacity-60' : '')
+              "
+            >
+              <td class="px-3 py-4">
+                <div class="text-[13px] font-bold text-[#0F172A]">
+                  {{ log.user }}
+                </div>
+                <div class="text-[11px] text-[#94A3B8]">{{ log.time }}</div>
+              </td>
+              <td class="px-3 py-4 text-[13px] text-[#475569] font-medium">
+                {{ log.entity }}
+              </td>
+              <td class="px-3 py-4 text-right">
+                <span
+                  class="inline-flex px-2 py-1 rounded-[4px] text-[10px] font-bold tracking-wide"
+                  [style.backgroundColor]="log.color + '15'"
+                  [style.color]="log.color"
+                  [style.border]="'1px solid ' + log.color + '30'"
+                >
+                  {{ log.action }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RIGHT: Branch Overview -->
+    <div
+      class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm flex flex-col h-[480px]"
+    >
+      <div
+        class="px-5 py-4 border-b border-[#E8ECF4] flex items-center justify-between bg-[#F8F9FC]/50 rounded-t-[12px]"
+      >
+        <h2 class="font-bold text-[15px]">Branch Overview</h2>
+        <span
+          class="bg-[#EFF5FF] text-[#2563EB] text-[11px] font-bold px-2 py-0.5 rounded-full"
+          >{{ branches.length }} Total</span
+        >
+      </div>
+      <div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
+        <div
+          *ngFor="let branch of branches"
+          class="p-3 border-b border-[#E8ECF4] last:border-0 hover:bg-[#F8F9FC] transition-colors rounded-[8px]"
+        >
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <div class="font-bold text-[14px] text-[#0F172A]">
+                {{ branch.name }}
+              </div>
+              <div class="text-[12px] text-[#94A3B8]">{{ branch.city }}</div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div
+                *ngIf="branch.active"
+                class="w-2 h-2 rounded-full bg-[#16A34A]"
+              ></div>
+              <div
+                *ngIf="!branch.active"
+                class="w-2 h-2 rounded-full bg-[#94A3B8]"
+              ></div>
+              <span
+                *ngIf="branch.active"
+                class="text-[11px] font-medium text-[#475569]"
+                >Active</span
+              >
+              <span
+                *ngIf="!branch.active"
+                class="text-[11px] font-medium text-[#94A3B8]"
+                >Inactive</span
+              >
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <span
+              class="inline-flex items-center gap-1.5 px-2 py-1 bg-[#EFF5FF] text-[#2563EB] rounded-md text-[11px] font-bold border border-[#2563EB]/20"
+            >
+              👥 {{ formatNumber(branch.members) }} members
+            </span>
+            <span
+              class="inline-flex items-center gap-1.5 px-2 py-1 bg-[#F0FDFA] text-[#0D9488] rounded-md text-[11px] font-bold border border-[#0D9488]/20"
+            >
+              ⚡ {{ branch.classes }} classes today
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="p-3 border-t border-[#E8ECF4]">
+        <button
+          (click)="onAddBranch()"
+          class="w-full h-10 border border-[#E8ECF4] bg-white hover:bg-[#F8F9FC] hover:border-[#CBD5E1] text-[#475569] font-bold text-[13px] rounded-[8px] transition-all flex items-center justify-center gap-2 shadow-sm"
+        >
+          ➕ Add Branch
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM: Code Quality Metrics Strip -->
+  <div
+    class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm p-6 w-full"
+  >
+    <h2
+      class="font-bold text-[14px] text-[#94A3B8] uppercase tracking-widest mb-4"
+    >
+      Code Quality Metrics
+    </h2>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div class="flex items-center gap-3">
+        <div
+          class="w-12 h-12 rounded-[8px] bg-[#F0FDF4] border border-[#16A34A]/20 flex items-center justify-center font-bold text-[20px] text-[#16A34A]"
+        >
+          A
+        </div>
+        <div>
+          <div
+            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
+          >
+            Security
+          </div>
+          <div class="text-[13px] font-bold text-[#0F172A]">Passing</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div
+          class="w-12 h-12 rounded-[8px] bg-[#F0FDF4] border border-[#16A34A]/20 flex items-center justify-center font-bold text-[20px] text-[#16A34A]"
+        >
+          A
+        </div>
+        <div>
+          <div
+            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
+          >
+            Reliability
+          </div>
+          <div class="text-[13px] font-bold text-[#0F172A]">Passing</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div
+          class="w-12 h-12 rounded-[8px] bg-[#F8F9FC] border border-[#E8ECF4] flex items-center justify-center font-bold text-[20px] text-[#475569]"
+        >
+          3
+        </div>
+        <div>
+          <div
+            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
+          >
+            Issues
+          </div>
+          <div class="text-[13px] font-bold text-[#0F172A]">Low severity</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div
+          class="w-12 h-12 rounded-[8px] bg-[#F0FDF4] border border-[#16A34A]/20 flex items-center justify-center font-bold text-[18px] text-[#16A34A]"
+        >
+          84<span class="text-[12px]">%</span>
+        </div>
+        <div>
+          <div
+            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
+          >
+            Coverage
+          </div>
+          <div class="text-[13px] font-bold text-[#0F172A]">Adequate</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div
+          class="w-12 h-12 rounded-[8px] bg-[#F0FDF4] border border-[#16A34A]/20 flex items-center justify-center font-bold text-[18px] text-[#16A34A]"
+        >
+          1.2<span class="text-[12px]">%</span>
+        </div>
+        <div>
+          <div
+            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
+          >
+            Duplications
+          </div>
+          <div class="text-[13px] font-bold text-[#0F172A]">
+            &lt; 3.0% threshold
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div
+          class="w-12 h-12 rounded-[8px] bg-[#F0FDF4] border border-[#16A34A]/20 flex items-center justify-center font-bold text-[20px] text-[#16A34A]"
+        >
+          A
+        </div>
+        <div>
+          <div
+            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
+          >
+            Security Hotspots
+          </div>
+          <div class="text-[13px] font-bold text-[#0F172A]">100% Reviewed</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,50 @@
+<div class="max-w-[1000px] mx-auto pb-10 py-12 px-4">
+  <div class="mb-12">
+    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Error States</h1>
+    <p class="text-[#475569] text-[14px]">
+      UI examples for different error scenarios
+    </p>
+  </div>
+
+  <!-- ERROR SELECTOR -->
+  <div class="flex gap-2 mb-8 overflow-x-auto pb-2">
+    <button
+      *ngFor="let error of errorStates"
+      (click)="selectError(error)"
+      [class]="
+        'px-4 py-2 rounded-[8px] font-bold text-[13px] whitespace-nowrap transition-colors ' +
+        (selectedError === error
+          ? 'bg-[#2563EB] text-white'
+          : 'bg-[#F8F9FC] text-[#475569] hover:bg-[#E8ECF4]')
+      "
+    >
+      {{ error }}
+    </button>
+  </div>
+
+  <!-- ERROR DISPLAY -->
+  <div
+    class="bg-white border border-[#E8ECF4] rounded-[14px] p-12 shadow-sm text-center min-h-[400px] flex flex-col items-center justify-center"
+  >
+    <div class="text-[96px] mb-6">{{ getErrorDetails().icon }}</div>
+    <h2 class="font-bold text-[32px] text-[#0F172A] mb-3">
+      {{ getErrorDetails().title }}
+    </h2>
+    <p class="text-[16px] text-[#475569] max-w-[400px] mb-8">
+      {{ getErrorDetails().message }}
+    </p>
+
+    <div class="flex gap-3">
+      <button
+        class="px-6 h-11 bg-white border border-[#E8ECF4] text-[#475569] font-bold rounded-[8px] hover:bg-[#F8F9FC]"
+      >
+        Go Back
+      </button>
+      <button
+        class="px-6 h-11 bg-[#2563EB] text-white font-bold rounded-[8px] hover:bg-[#1D4ED8]"
+      >
+        Go Home
+      </button>
+    </div>
+  </div>
+</div>

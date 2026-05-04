@@ -1,0 +1,141 @@
+<div class="max-w-[700px] mx-auto pb-10">
+  <div class="mb-6">
+    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Notifications</h1>
+    <p class="text-[#475569] text-[14px]">
+      Stay updated with your membership and class information
+    </p>
+  </div>
+
+  <!-- CONTROLS -->
+  <div
+    class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 mb-6 flex justify-between items-center sticky top-0 z-10"
+  >
+    <div class="flex gap-2">
+      <button
+        (click)="filterType = 'all'"
+        [class]="
+          'px-3 py-1.5 rounded-[6px] text-[12px] font-bold transition-all ' +
+          (filterType === 'all'
+            ? 'bg-[#2563EB] text-white'
+            : 'bg-[#F8F9FC] text-[#475569] hover:text-[#0F172A]')
+        "
+      >
+        All ({{ notifications.length }})
+      </button>
+      <button
+        (click)="filterType = 'unread'"
+        [class]="
+          'px-3 py-1.5 rounded-[6px] text-[12px] font-bold transition-all ' +
+          (filterType === 'unread'
+            ? 'bg-[#2563EB] text-white'
+            : 'bg-[#F8F9FC] text-[#475569] hover:text-[#0F172A]')
+        "
+      >
+        Unread ({{ unreadCount }})
+      </button>
+    </div>
+
+    <div class="flex gap-2">
+      <button
+        (click)="markAllAsRead()"
+        class="text-[12px] font-medium text-[#2563EB] hover:underline"
+      >
+        Mark all as read
+      </button>
+      <button
+        (click)="deleteAllNotifications()"
+        class="text-[12px] font-medium text-[#DC2626] hover:underline"
+      >
+        Clear all
+      </button>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS LIST -->
+  <div
+    *ngIf="filteredNotifications.length > 0; else emptyState"
+    class="space-y-3"
+  >
+    <div
+      *ngFor="let notification of filteredNotifications"
+      [class]="
+        'p-4 rounded-[12px] border-l-4 transition-all cursor-pointer ' +
+        getNotificationBgColor(notification.type) +
+        (notification.read ? ' opacity-60' : ' shadow-sm')
+      "
+      (click)="markAsRead(notification)"
+    >
+      <div class="flex gap-4">
+        <div
+          [class]="
+            'text-[20px] mt-0.5 flex-shrink-0 ' +
+            getNotificationIconColor(notification.type)
+          "
+        >
+          {{ getNotificationIcon(notification.type) }}
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-start gap-2 mb-1">
+            <h3
+              [class]="
+                'font-bold text-[14px] ' +
+                (notification.read ? 'text-[#475569]' : 'text-[#0F172A]')
+              "
+            >
+              {{ notification.title }}
+            </h3>
+            <span
+              *ngIf="!notification.read"
+              class="flex-shrink-0 w-2 h-2 bg-[#2563EB] rounded-full"
+            ></span>
+          </div>
+
+          <p class="text-[13px] text-[#475569] mb-2">
+            {{ notification.message }}
+          </p>
+
+          <div class="flex justify-between items-center">
+            <span class="text-[11px] text-[#94A3B8]">{{
+              notification.timestamp
+            }}</span>
+            <button
+              (click)="
+                deleteNotification(notification.id); $event.stopPropagation()
+              "
+              class="text-[11px] text-[#94A3B8] hover:text-[#DC2626] font-medium"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <ng-template #emptyState>
+    <div class="text-center py-12">
+      <div class="text-[48px] mb-4">📭</div>
+      <h3 class="font-bold text-[16px] text-[#0F172A] mb-2">
+        {{
+          filterType === "unread" ? "All caught up!" : "No notifications yet"
+        }}
+      </h3>
+      <p class="text-[13px] text-[#475569] mb-6">
+        {{
+          filterType === "unread"
+            ? "You have no unread notifications"
+            : "You'll see notifications here soon"
+        }}
+      </p>
+      <button
+        *ngIf="filterType === 'unread'"
+        (click)="filterType = 'all'"
+        class="text-[#2563EB] text-[13px] font-medium hover:underline"
+      >
+        View all notifications
+      </button>
+    </div>
+  </ng-template>
+</div>

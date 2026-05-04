@@ -1,0 +1,29 @@
+<div class="fixed top-4 right-4 z-50 space-y-3 max-w-[400px]">
+  <div
+    *ngFor="let alert of alerts"
+    [class]="
+      'p-4 rounded-[10px] border-l-4 flex items-start gap-3 animate-in slide-in-from-top duration-300 ' +
+      getAlertBgColor(alert.type) +
+      ' ' +
+      getAlertBorderColor(alert.type)
+    "
+  >
+    <span
+      [class]="'text-[18px] flex-shrink-0 ' + getAlertTextColor(alert.type)"
+    >
+      {{ getAlertIcon(alert.type) }}
+    </span>
+    <div class="flex-1 min-w-0">
+      <p [class]="'text-[13px] font-medium ' + getAlertTextColor(alert.type)">
+        {{ alert.message }}
+      </p>
+    </div>
+    <button
+      *ngIf="alert.dismissible"
+      (click)="removeAlert(alert.id)"
+      [class]="'text-[#94A3B8] hover:text-[#0F172A] flex-shrink-0'"
+    >
+      ✕
+    </button>
+  </div>
+</div>

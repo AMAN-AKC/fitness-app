@@ -1,0 +1,119 @@
+<div class="max-w-[1000px] mx-auto pb-10">
+  <div class="mb-8">
+    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Data Management</h1>
+    <p class="text-[#475569] text-[14px]">
+      Import and export your fitness club data
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- IMPORT -->
+    <div class="bg-white border border-[#E8ECF4] rounded-[14px] p-8 shadow-sm">
+      <h2 class="font-bold text-[20px] text-[#0F172A] mb-6">📥 Import Data</h2>
+
+      <div
+        class="bg-[#F8F9FC] border-2 border-dashed border-[#E8ECF4] rounded-[12px] p-8 text-center mb-4"
+      >
+        <div class="text-[48px] mb-3">📁</div>
+        <p class="text-[14px] font-medium text-[#0F172A] mb-2">
+          Choose CSV or Excel file
+        </p>
+        <p class="text-[12px] text-[#94A3B8] mb-4">Max file size: 10MB</p>
+        <input
+          type="file"
+          (change)="onFileSelected($event)"
+          accept=".csv,.xlsx,.xls"
+          class="hidden"
+          #fileInput
+        />
+        <button
+          (click)="fileInput.click()"
+          class="px-6 h-11 bg-[#2563EB] text-white font-bold rounded-[8px] hover:bg-[#1D4ED8]"
+        >
+          Select File
+        </button>
+      </div>
+
+      <div
+        *ngIf="selectedFile"
+        class="p-3 bg-[#EFF5FF] border border-[#2563EB] rounded-[8px] mb-4"
+      >
+        <p class="text-[13px] font-medium text-[#0F172A]">
+          {{ selectedFile.name }}
+        </p>
+      </div>
+
+      <div
+        *ngIf="importStatus"
+        [class]="
+          'p-3 rounded-[8px] mb-4 text-[13px] font-medium ' +
+          (importStatus.includes('Success')
+            ? 'bg-[#F0FDF4] text-[#15803D]'
+            : 'bg-[#EFF5FF] text-[#0F172A]')
+        "
+      >
+        {{ importStatus }}
+      </div>
+
+      <button
+        (click)="importData()"
+        [disabled]="!selectedFile"
+        class="w-full h-12 bg-[#2563EB] text-white font-bold rounded-[8px] hover:bg-[#1D4ED8] disabled:bg-[#94A3B8]"
+      >
+        Import Data
+      </button>
+
+      <button
+        (click)="downloadTemplate()"
+        class="w-full h-11 bg-white border border-[#E8ECF4] text-[#2563EB] font-bold rounded-[8px] hover:bg-[#F8F9FC] mt-3"
+      >
+        📋 Download Template
+      </button>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="bg-white border border-[#E8ECF4] rounded-[14px] p-8 shadow-sm">
+      <h2 class="font-bold text-[20px] text-[#0F172A] mb-6">📤 Export Data</h2>
+
+      <div class="space-y-3 mb-6">
+        <button
+          (click)="exportMembers()"
+          class="w-full h-12 bg-white border border-[#E8ECF4] text-[#0F172A] font-bold rounded-[8px] hover:bg-[#F8F9FC] text-left pl-4 flex items-center gap-3"
+        >
+          <span>👥 Members Data</span>
+          <span class="ml-auto text-[12px] text-[#94A3B8]">CSV</span>
+        </button>
+        <button
+          (click)="exportTransactions()"
+          class="w-full h-12 bg-white border border-[#E8ECF4] text-[#0F172A] font-bold rounded-[8px] hover:bg-[#F8F9FC] text-left pl-4 flex items-center gap-3"
+        >
+          <span>💰 Transactions</span>
+          <span class="ml-auto text-[12px] text-[#94A3B8]">CSV</span>
+        </button>
+        <button
+          (click)="exportClasses()"
+          class="w-full h-12 bg-white border border-[#E8ECF4] text-[#0F172A] font-bold rounded-[8px] hover:bg-[#F8F9FC] text-left pl-4 flex items-center gap-3"
+        >
+          <span>📅 Classes Schedule</span>
+          <span class="ml-auto text-[12px] text-[#94A3B8]">CSV</span>
+        </button>
+      </div>
+
+      <div
+        *ngIf="exportStatus"
+        [class]="
+          'p-3 rounded-[8px] mb-4 text-[13px] font-medium ' +
+          (exportStatus.includes('Success')
+            ? 'bg-[#F0FDF4] text-[#15803D]'
+            : 'bg-[#EFF5FF] text-[#0F172A]')
+        "
+      >
+        {{ exportStatus }}
+      </div>
+
+      <p class="text-[12px] text-[#94A3B8]">
+        💡 Exported files will be downloaded to your computer automatically
+      </p>
+    </div>
+  </div>
+</div>

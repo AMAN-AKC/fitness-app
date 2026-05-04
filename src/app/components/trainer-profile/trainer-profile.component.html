@@ -1,0 +1,262 @@
+<div class="flex flex-col gap-6 max-w-[1400px] mx-auto pb-10">
+  <!-- HEADER -->
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="font-bold text-[28px] text-[#0F172A]">Find Your Trainer</h1>
+      <p class="text-[#475569] text-[14px] mt-1">
+        Book certified personal trainers for 1-on-1 sessions
+      </p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- TRAINER LIST -->
+    <div class="lg:col-span-1 flex flex-col gap-3">
+      <h2 class="font-bold text-[16px] text-[#0F172A] px-2">
+        Available Trainers
+      </h2>
+      <div
+        *ngFor="let trainer of trainers"
+        (click)="selectTrainer(trainer)"
+        [class]="
+          'p-4 rounded-[12px] border cursor-pointer transition-all ' +
+          (selectedTrainer?.id === trainer.id
+            ? 'bg-[#EFF5FF] border-[#2563EB]'
+            : 'bg-white border-[#E8ECF4] hover:border-[#2563EB]/50')
+        "
+      >
+        <div class="flex items-start gap-3">
+          <span class="text-[32px]">{{ trainer.image }}</span>
+          <div class="flex-1">
+            <h3 class="font-bold text-[14px] text-[#0F172A]">
+              {{ trainer.name }}
+            </h3>
+            <p class="text-[12px] text-[#475569]">{{ trainer.specialty }}</p>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-[12px] font-bold text-[#D97706]">★</span>
+              <span
+                class="text-[12px] font-bold"
+                [class]="getRatingColor(trainer.rating)"
+                >{{ trainer.rating }}</span
+              >
+              <span class="text-[11px] text-[#94A3B8]"
+                >({{ trainer.reviews }} reviews)</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRAINER DETAIL -->
+    <div
+      *ngIf="selectedTrainer"
+      class="lg:col-span-2 bg-white border border-[#E8ECF4] rounded-[14px] p-8 shadow-sm"
+    >
+      <!-- HEADER -->
+      <div class="flex gap-6 mb-8 pb-8 border-b border-[#E8ECF4]">
+        <div class="text-[64px]">{{ selectedTrainer.image }}</div>
+        <div class="flex-1">
+          <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">
+            {{ selectedTrainer.name }}
+          </h1>
+          <p class="text-[14px] text-[#475569] mb-4">
+            {{ selectedTrainer.specialty }}
+          </p>
+
+          <div class="flex flex-wrap gap-4 mb-4">
+            <div>
+              <span class="text-[11px] text-[#94A3B8] uppercase font-bold"
+                >Rating</span
+              >
+              <p
+                class="font-bold text-[18px]"
+                [class]="getRatingColor(selectedTrainer.rating)"
+              >
+                {{ selectedTrainer.rating }} ⭐
+              </p>
+            </div>
+            <div>
+              <span class="text-[11px] text-[#94A3B8] uppercase font-bold"
+                >Experience</span
+              >
+              <p class="font-bold text-[18px] text-[#0F172A]">
+                {{ selectedTrainer.experience }}+ Years
+              </p>
+            </div>
+            <div>
+              <span class="text-[11px] text-[#94A3B8] uppercase font-bold"
+                >Session Price</span
+              >
+              <p class="font-bold text-[18px] text-[#2563EB]">
+                ₹{{ selectedTrainer.price }}
+              </p>
+            </div>
+          </div>
+
+          <button
+            (click)="openBookingDrawer()"
+            class="px-6 h-11 rounded-[8px] bg-[#2563EB] text-white font-bold text-[14px] hover:bg-[#1D4ED8] transition-colors"
+          >
+            Book Session ➕
+          </button>
+        </div>
+      </div>
+
+      <!-- BIO -->
+      <div class="mb-8">
+        <h3 class="font-bold text-[16px] text-[#0F172A] mb-3">About</h3>
+        <p class="text-[14px] text-[#475569] leading-relaxed">
+          {{ selectedTrainer.bio }}
+        </p>
+      </div>
+
+      <!-- CERTIFICATIONS -->
+      <div class="mb-8">
+        <h3 class="font-bold text-[16px] text-[#0F172A] mb-3">
+          Certifications
+        </h3>
+        <div class="flex flex-wrap gap-2">
+          <span
+            *ngFor="let cert of selectedTrainer.certifications"
+            class="px-3 py-1.5 bg-[#EFF5FF] text-[#2563EB] rounded-full text-[12px] font-bold border border-[#2563EB]/20"
+          >
+            {{ cert }}
+          </span>
+        </div>
+      </div>
+
+      <!-- REVIEWS -->
+      <div>
+        <h3 class="font-bold text-[16px] text-[#0F172A] mb-4">
+          Recent Reviews
+        </h3>
+        <div class="space-y-4">
+          <div
+            *ngFor="let review of reviews"
+            class="p-4 bg-[#F8F9FC] rounded-[10px] border border-[#E8ECF4]"
+          >
+            <div class="flex justify-between items-start mb-2">
+              <span class="font-bold text-[14px] text-[#0F172A]">{{
+                review.memberName
+              }}</span>
+              <span class="text-[12px] text-[#94A3B8]">{{ review.date }}</span>
+            </div>
+            <div class="flex items-center gap-1 mb-2">
+              <span *ngFor="let i of [1, 2, 3, 4, 5]" class="text-[13px]">{{
+                i <= review.rating ? "⭐" : "☆"
+              }}</span>
+            </div>
+            <p class="text-[13px] text-[#475569]">{{ review.comment }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKING DRAWER -->
+  <div
+    *ngIf="isBookingDrawerOpen"
+    class="fixed inset-0 z-40 backdrop-blur-[1px]"
+  >
+    <div
+      class="fixed inset-0 bg-[#0F172A]/20 z-40"
+      (click)="closeBookingDrawer()"
+    ></div>
+    <div
+      class="fixed top-0 right-0 bottom-0 w-[480px] bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300"
+    >
+      <div
+        class="p-6 border-b border-[#E8ECF4] flex justify-between items-center"
+      >
+        <h2 class="font-bold text-[18px] text-[#0F172A]">Book a Session</h2>
+        <button
+          (click)="closeBookingDrawer()"
+          class="text-[#94A3B8] hover:text-[#0F172A] p-1"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+        <div>
+          <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
+            >Select Date</label
+          >
+          <input
+            type="date"
+            [(ngModel)]="selectedDate"
+            class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB]"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[13px] font-bold text-[#0F172A] mb-3"
+            >Available Time Slots</label
+          >
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              *ngFor="let slot of availableSlots"
+              (click)="selectedSlot = slot"
+              [class]="
+                'h-11 rounded-[8px] border font-medium text-[13px] transition-all ' +
+                (selectedSlot === slot
+                  ? 'bg-[#2563EB] text-white border-[#2563EB]'
+                  : 'bg-white border-[#E8ECF4] text-[#0F172A] hover:border-[#2563EB]')
+              "
+            >
+              {{ slot }}
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-[#F8F9FC] rounded-[8px] p-4 border border-[#E8ECF4]">
+          <div class="text-[13px] font-medium text-[#0F172A] mb-3">
+            Booking Summary
+          </div>
+          <div class="space-y-2 text-[12px] text-[#475569]">
+            <div class="flex justify-between">
+              <span>Trainer:</span>
+              <span class="font-bold text-[#0F172A]">{{
+                selectedTrainer?.name
+              }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Date:</span>
+              <span class="font-bold text-[#0F172A]">{{
+                selectedDate || "-"
+              }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span>Time:</span>
+              <span class="font-bold text-[#0F172A]">{{
+                selectedSlot || "-"
+              }}</span>
+            </div>
+            <div
+              class="border-t border-[#E8ECF4] pt-2 mt-2 flex justify-between text-[13px] font-bold"
+            >
+              <span>Total:</span>
+              <span class="text-[#2563EB]">₹{{ selectedTrainer?.price }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-6 border-t border-[#E8ECF4] flex gap-3">
+        <button
+          (click)="closeBookingDrawer()"
+          class="flex-1 bg-white border border-[#E8ECF4] text-[#475569] font-bold h-12 rounded-[8px] hover:bg-[#F8F9FC]"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="bookSession()"
+          class="flex-[2] bg-[#2563EB] text-white font-bold h-12 rounded-[8px] hover:bg-[#1D4ED8]"
+        >
+          Confirm Booking
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

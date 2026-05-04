@@ -1,0 +1,78 @@
+/* Admin User Management Component Styles */
+
+/* Scrollbar styling for table container */
+:host ::ng-deep .custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+:host ::ng-deep .custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:host ::ng-deep .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #e8ecf4;
+  border-radius: 10px;
+}
+
+:host ::ng-deep .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* Input range slider styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2563eb;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #2563eb;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+/* Table hover effects */
+table tbody tr {
+  transition: background-color 150ms ease-in-out;
+}
+
+table tbody tr:hover {
+  background-color: var(--hover-bg);
+}
+
+/* Animation classes */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.slide-in-from-right {
+  animation: slideInFromRight 300ms ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+}

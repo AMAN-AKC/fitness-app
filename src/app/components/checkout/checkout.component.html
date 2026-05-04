@@ -1,0 +1,141 @@
+<div class="max-w-[1000px] mx-auto pb-10">
+  <div class="mb-8">
+    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Checkout</h1>
+    <p class="text-[#475569] text-[14px]">Complete your purchase</p>
+  </div>
+
+  <div
+    *ngIf="orderPlaced"
+    class="mb-6 p-6 bg-[#F0FDF4] border border-[#16A34A] rounded-[12px] text-center"
+  >
+    <div class="text-[48px] mb-2">✓</div>
+    <p class="font-bold text-[16px] text-[#15803D] mb-1">
+      Order Placed Successfully!
+    </p>
+    <p class="text-[13px] text-[#15803D]">
+      Your membership and services have been activated.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- ITEMS -->
+    <div class="lg:col-span-2">
+      <div
+        class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm"
+      >
+        <div class="p-6 border-b border-[#E8ECF4]">
+          <h2 class="font-bold text-[18px] text-[#0F172A]">Order Summary</h2>
+        </div>
+
+        <div class="divide-y divide-[#E8ECF4]">
+          <div
+            *ngFor="let item of items"
+            class="p-6 flex justify-between items-center"
+          >
+            <div class="flex-1">
+              <h3 class="font-bold text-[14px] text-[#0F172A] mb-1">
+                {{ item.name }}
+              </h3>
+              <p class="text-[12px] text-[#475569]">
+                ₹{{ item.price | number }} × {{ item.quantity }}
+              </p>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2">
+                <button
+                  (click)="updateQuantity(item.id, item.quantity - 1)"
+                  class="w-8 h-8 rounded border border-[#E8ECF4] text-[#475569] hover:bg-[#F8F9FC]"
+                >
+                  −
+                </button>
+                <span class="w-8 text-center font-bold">{{
+                  item.quantity
+                }}</span>
+                <button
+                  (click)="updateQuantity(item.id, item.quantity + 1)"
+                  class="w-8 h-8 rounded border border-[#E8ECF4] text-[#475569] hover:bg-[#F8F9FC]"
+                >
+                  +
+                </button>
+              </div>
+              <span class="font-bold text-[14px] text-[#0F172A] w-20 text-right"
+                >₹{{ item.price * item.quantity | number }}</span
+              >
+              <button
+                (click)="removeItem(item.id)"
+                class="text-[#DC2626] text-[13px] font-medium hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAYMENT METHOD -->
+      <div
+        class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm mt-6"
+      >
+        <div class="p-6 border-b border-[#E8ECF4]">
+          <h2 class="font-bold text-[18px] text-[#0F172A]">Payment Method</h2>
+        </div>
+
+        <div class="p-6 space-y-3">
+          <label
+            *ngFor="let method of paymentMethods"
+            class="flex items-center gap-3 p-4 border border-[#E8ECF4] rounded-[10px] cursor-pointer hover:bg-[#F8F9FC] transition-colors"
+          >
+            <input
+              type="radio"
+              [(ngModel)]="selectedPaymentMethod"
+              [value]="method.id"
+              class="w-5 h-5 accent-[#2563EB]"
+            />
+            <span class="font-medium text-[14px] text-[#0F172A]">{{
+              method.label
+            }}</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRICE SUMMARY -->
+    <div
+      class="bg-white border border-[#E8ECF4] rounded-[12px] p-6 shadow-sm h-fit"
+    >
+      <h3 class="font-bold text-[16px] text-[#0F172A] mb-4">Price Details</h3>
+
+      <div class="space-y-3 mb-4 pb-4 border-b border-[#E8ECF4]">
+        <div class="flex justify-between text-[13px]">
+          <span class="text-[#475569]">Subtotal</span>
+          <span class="font-bold text-[#0F172A]"
+            >₹{{ getSubtotal() | number }}</span
+          >
+        </div>
+        <div class="flex justify-between text-[13px]">
+          <span class="text-[#475569]">GST (18%)</span>
+          <span class="font-bold text-[#0F172A]">₹{{ getTax() | number }}</span>
+        </div>
+      </div>
+
+      <div class="flex justify-between mb-6 pb-6 border-b border-[#E8ECF4]">
+        <span class="font-bold text-[14px] text-[#0F172A]">Total Amount</span>
+        <span class="font-bold text-[18px] text-[#2563EB]"
+          >₹{{ getTotal() | number }}</span
+        >
+      </div>
+
+      <button
+        (click)="placeOrder()"
+        [disabled]="items.length === 0 || orderPlaced"
+        class="w-full h-12 bg-[#2563EB] text-white font-bold rounded-[8px] hover:bg-[#1D4ED8] disabled:bg-[#94A3B8] transition-colors"
+      >
+        {{ orderPlaced ? "Processing..." : "Place Order" }}
+      </button>
+
+      <p class="text-[11px] text-[#94A3B8] text-center mt-4">
+        By placing order, you agree to our Terms & Conditions
+      </p>
+    </div>
+  </div>
+</div>

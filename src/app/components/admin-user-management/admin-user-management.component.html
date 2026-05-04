@@ -1,0 +1,607 @@
+<div
+  class="flex flex-col gap-6 text-[#0F172A] w-full max-w-[1600px] mx-auto pb-10"
+>
+  <!-- FILTER BAR -->
+  <div
+    class="bg-white rounded-[12px] p-4 px-6 border border-[#E8ECF4] shadow-sm flex items-center justify-between"
+  >
+    <div class="flex items-center gap-3 flex-1">
+      <div class="relative">
+        <span
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] text-lg"
+          >🔍</span
+        >
+        <input
+          type="text"
+          placeholder="Search users by name or email..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchChange()"
+          class="w-[280px] h-10 pl-9 pr-3 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-[#F8F9FC]"
+        />
+      </div>
+
+      <select
+        [(ngModel)]="roleFilter"
+        (ngModelChange)="onRoleFilterChange()"
+        class="h-10 px-3 pr-8 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white cursor-pointer appearance-none font-medium"
+      >
+        <option value="All">All Roles</option>
+        <option value="Member">Member</option>
+        <option value="Front-Desk">Front-Desk</option>
+        <option value="Trainer">Trainer</option>
+        <option value="Manager">Manager</option>
+        <option value="Admin">Admin</option>
+      </select>
+
+      <select
+        [(ngModel)]="statusFilter"
+        (ngModelChange)="onStatusFilterChange()"
+        class="h-10 px-3 pr-8 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white cursor-pointer appearance-none font-medium"
+      >
+        <option value="All">All Statuses</option>
+        <option value="Active">Active</option>
+        <option value="Locked">Locked</option>
+        <option value="Deactivated">Deactivated</option>
+      </select>
+    </div>
+    <button
+      class="px-5 h-10 rounded-[8px] text-[14px] font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors shadow-sm flex items-center gap-1.5 shrink-0"
+    >
+      Create Staff Account ➕
+    </button>
+  </div>
+
+  <!-- USERS TABLE -->
+  <div
+    class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm overflow-hidden"
+  >
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[1000px]">
+        <thead>
+          <tr class="bg-[#F8F9FC] border-b border-[#E8ECF4]">
+            <th
+              class="px-6 py-4 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              User
+            </th>
+            <th
+              class="px-6 py-4 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Email
+            </th>
+            <th
+              class="px-6 py-4 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Role
+            </th>
+            <th
+              class="px-6 py-4 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Branch
+            </th>
+            <th
+              class="px-6 py-4 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Last Login
+            </th>
+            <th
+              class="px-6 py-4 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Status
+            </th>
+            <th
+              class="px-6 py-4 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider text-right"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let user of filteredUsers"
+            [class]="
+              'border-b border-[#E8ECF4] h-[56px] transition-colors group ' +
+              (user.status === 'Locked'
+                ? 'bg-[#FEF2F2] hover:bg-[#FEE2E2]'
+                : 'bg-white hover:bg-[#F8F9FC]')
+            "
+          >
+            <td class="px-6 py-2">
+              <div class="flex items-center gap-3">
+                <div class="relative">
+                  <div
+                    [class]="
+                      'w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold ' +
+                      roleColors[user.role]
+                    "
+                  >
+                    {{ getInitials(user.name) }}
+                  </div>
+                  <div
+                    *ngIf="user.status === 'Locked'"
+                    class="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 shadow-sm text-[#DC2626]"
+                  >
+                    🔒
+                  </div>
+                </div>
+                <span class="font-bold text-[14px] text-[#0F172A]">{{
+                  user.name
+                }}</span>
+              </div>
+            </td>
+            <td class="px-6 py-2 text-[13px] text-[#475569]">
+              {{ user.email }}
+            </td>
+            <td class="px-6 py-2">
+              <span
+                [class]="
+                  'inline-flex px-2.5 py-1 text-[11px] font-bold rounded border ' +
+                  roleColors[user.role]
+                "
+              >
+                {{ user.role }}
+              </span>
+            </td>
+            <td class="px-6 py-2">
+              <span
+                class="inline-block px-2.5 py-1 bg-[#F1F5F9] text-[#475569] text-[11px] font-bold rounded-md border border-[#E8ECF4]"
+              >
+                {{ user.branch }}
+              </span>
+            </td>
+            <td class="px-6 py-2 text-[13px] text-[#94A3B8] font-light">
+              {{ user.lastLogin }}
+            </td>
+            <td class="px-6 py-2">
+              <div class="relative inline-block group/tooltip cursor-help">
+                <span
+                  [class]="
+                    'flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold rounded border ' +
+                    (user.status === 'Active'
+                      ? 'bg-[#F0FDF4] text-[#16A34A] border-[#16A34A]/20'
+                      : user.status === 'Locked'
+                        ? 'bg-white text-[#DC2626] border-[#DC2626]/20'
+                        : 'bg-[#F8F9FC] text-[#94A3B8] border-[#E8ECF4]')
+                  "
+                >
+                  {{ user.status === "Locked" ? "🔒" : "" }}
+                  {{ user.status }}
+                </span>
+                <div
+                  *ngIf="user.status === 'Locked' && user.lockedDetail"
+                  class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-max px-3 py-1.5 bg-[#0F172A] text-white text-[12px] rounded-[6px] opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none shadow-lg z-10"
+                >
+                  {{ user.lockedDetail }}
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-2 text-right">
+              <div
+                class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <button
+                  (click)="handleEdit(user)"
+                  title="Edit User"
+                  class="p-1.5 rounded-[6px] bg-white border border-[#E8ECF4] text-[#475569] hover:text-[#2563EB] hover:border-[#2563EB]/30 transition-all shadow-sm"
+                >
+                  ✏️
+                </button>
+                <button
+                  title="Reset Password"
+                  class="p-1.5 rounded-[6px] bg-white border border-[#E8ECF4] text-[#475569] hover:text-[#0F172A] hover:border-[#CBD5E1] transition-all shadow-sm"
+                >
+                  🔑
+                </button>
+                <button
+                  *ngIf="user.status === 'Locked'"
+                  (click)="handleAction(user.id, 'unlock')"
+                  title="Unlock Account"
+                  class="p-1.5 rounded-[6px] bg-white border border-[#E8ECF4] text-[#16A34A] hover:bg-[#F0FDF4] hover:border-[#16A34A]/30 transition-all shadow-sm"
+                >
+                  🔓
+                </button>
+                <button
+                  *ngIf="user.status !== 'Locked'"
+                  (click)="handleAction(user.id, 'lock')"
+                  title="Lock Account"
+                  class="p-1.5 rounded-[6px] bg-white border border-[#E8ECF4] text-[#D97706] hover:bg-[#FFFBEB] hover:border-[#D97706]/30 transition-all shadow-sm"
+                >
+                  🔒
+                </button>
+                <button
+                  *ngIf="user.status === 'Deactivated'"
+                  (click)="handleAction(user.id, 'activate')"
+                  title="Reactivate"
+                  class="p-1.5 rounded-[6px] bg-white border border-[#E8ECF4] text-[#16A34A] hover:bg-[#F0FDF4] hover:border-[#16A34A]/30 transition-all shadow-sm"
+                >
+                  ✓
+                </button>
+                <button
+                  *ngIf="user.status !== 'Deactivated'"
+                  (click)="handleAction(user.id, 'deactivate')"
+                  title="Deactivate Account"
+                  class="p-1.5 rounded-[6px] bg-white border border-[#E8ECF4] text-[#DC2626] hover:bg-[#FEF2F2] hover:border-[#DC2626]/30 transition-all shadow-sm"
+                >
+                  ⊘
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredUsers.length === 0">
+            <td
+              colSpan="7"
+              class="px-6 py-10 text-center text-[#94A3B8] font-medium text-[14px]"
+            >
+              No users found matching your filters.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PASSWORD POLICY SETTINGS -->
+  <div class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm mt-2">
+    <div
+      class="px-6 py-5 border-b border-[#E8ECF4] flex justify-between items-center"
+    >
+      <div>
+        <h3 class="font-bold text-[16px] text-[#0F172A]">
+          Password & Session Policy
+        </h3>
+        <p class="text-[13px] text-[#94A3B8] mt-0.5">Last updated Apr 10</p>
+      </div>
+    </div>
+
+    <div class="p-6 grid grid-cols-2 gap-12">
+      <!-- Left Column -->
+      <div class="flex flex-col gap-6">
+        <div>
+          <div class="flex justify-between items-center mb-3">
+            <label class="text-[14px] font-bold text-[#0F172A]"
+              >Minimum Password Length</label
+            >
+            <span
+              class="bg-[#EFF5FF] text-[#2563EB] text-[13px] font-bold px-2 py-0.5 rounded border border-[#2563EB]/20"
+              >{{ passwordPolicy.minPasswordLength }} chars</span
+            >
+          </div>
+          <input
+            type="range"
+            min="8"
+            max="20"
+            [(ngModel)]="passwordPolicy.minPasswordLength"
+            class="w-full h-2 bg-[#E8ECF4] rounded-lg appearance-none cursor-pointer accent-[#2563EB]"
+          />
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center justify-between">
+            <span class="text-[14px] font-medium text-[#475569]"
+              >Require uppercase letter</span
+            >
+            <button
+              (click)="
+                passwordPolicy.requireUppercase =
+                  !passwordPolicy.requireUppercase
+              "
+              [class]="
+                'w-11 h-6 rounded-full relative transition-colors ' +
+                (passwordPolicy.requireUppercase
+                  ? 'bg-[#2563EB]'
+                  : 'bg-[#CBD5E1]')
+              "
+            >
+              <div
+                [class]="
+                  'absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
+                  (passwordPolicy.requireUppercase
+                    ? 'translate-x-5'
+                    : 'translate-x-0')
+                "
+              ></div>
+            </button>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-[14px] font-medium text-[#475569]"
+              >Require number</span
+            >
+            <button
+              (click)="
+                passwordPolicy.requireNumber = !passwordPolicy.requireNumber
+              "
+              [class]="
+                'w-11 h-6 rounded-full relative transition-colors ' +
+                (passwordPolicy.requireNumber ? 'bg-[#2563EB]' : 'bg-[#CBD5E1]')
+              "
+            >
+              <div
+                [class]="
+                  'absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
+                  (passwordPolicy.requireNumber
+                    ? 'translate-x-5'
+                    : 'translate-x-0')
+                "
+              ></div>
+            </button>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-[14px] font-medium text-[#475569]"
+              >Require special character</span
+            >
+            <button
+              (click)="
+                passwordPolicy.requireSpecialChar =
+                  !passwordPolicy.requireSpecialChar
+              "
+              [class]="
+                'w-11 h-6 rounded-full relative transition-colors ' +
+                (passwordPolicy.requireSpecialChar
+                  ? 'bg-[#2563EB]'
+                  : 'bg-[#CBD5E1]')
+              "
+            >
+              <div
+                [class]="
+                  'absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
+                  (passwordPolicy.requireSpecialChar
+                    ? 'translate-x-5'
+                    : 'translate-x-0')
+                "
+              ></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="flex flex-col gap-6">
+        <div>
+          <label class="block text-[14px] font-bold text-[#0F172A] mb-2"
+            >Session Timeout</label
+          >
+          <select
+            [(ngModel)]="passwordPolicy.sessionTimeout"
+            class="w-full h-11 px-3 pr-8 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white cursor-pointer appearance-none shadow-sm"
+          >
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">60 minutes</option>
+            <option value="120">120 minutes</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-[14px] font-bold text-[#0F172A] mb-2"
+              >Max Failed Attempts</label
+            >
+            <div
+              class="flex items-center border border-[#E8ECF4] rounded-[8px] h-11 bg-white shadow-sm overflow-hidden"
+            >
+              <button
+                (click)="decrementFailedAttempts()"
+                class="px-4 text-[#475569] hover:bg-[#F8F9FC] hover:text-[#0F172A] h-full transition-colors font-bold"
+              >
+                −
+              </button>
+              <div
+                class="flex-1 text-center font-bold text-[14px] text-[#0F172A]"
+              >
+                {{ passwordPolicy.maxFailedAttempts }}
+              </div>
+              <button
+                (click)="incrementFailedAttempts()"
+                class="px-4 text-[#475569] hover:bg-[#F8F9FC] hover:text-[#0F172A] h-full transition-colors font-bold"
+              >
+                +
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[14px] font-bold text-[#0F172A] mb-2"
+              >Lockout Duration</label
+            >
+            <div
+              class="flex items-center border border-[#E8ECF4] rounded-[8px] h-11 bg-white shadow-sm overflow-hidden pr-3"
+            >
+              <input
+                type="number"
+                [(ngModel)]="passwordPolicy.lockoutDuration"
+                class="flex-1 h-full pl-3 text-[14px] font-bold text-[#0F172A] outline-none"
+              />
+              <span class="text-[13px] text-[#94A3B8] font-medium"
+                >minutes</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button
+            (click)="savePasswordPolicy()"
+            class="px-6 h-11 rounded-[8px] text-[14px] font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors shadow-sm"
+          >
+            Save Policy
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT USER DRAWER -->
+  <div
+    *ngIf="isDrawerOpen && editingUser"
+    class="fixed inset-0 z-40 backdrop-blur-[1px]"
+  >
+    <div
+      class="fixed inset-0 bg-[#0F172A]/20 z-40"
+      (click)="closeDrawer()"
+    ></div>
+    <div
+      class="fixed top-0 right-0 bottom-0 w-[480px] bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300"
+    >
+      <div
+        class="p-6 border-b border-[#E8ECF4] flex justify-between items-center bg-[#F8F9FC]/50"
+      >
+        <h2 class="font-bold text-[18px] text-[#0F172A]">
+          Edit User — {{ editingUser.name }}
+        </h2>
+        <button
+          (click)="closeDrawer()"
+          class="text-[#94A3B8] hover:text-[#0F172A] p-1 bg-white rounded-md shadow-sm border border-[#E8ECF4] transition-colors"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 text-[14px]">
+        <!-- Read Only Info -->
+        <div
+          class="bg-[#F8F9FC] rounded-[8px] p-4 border border-[#E8ECF4] mb-6 flex flex-col gap-2"
+        >
+          <div class="flex justify-between">
+            <span class="text-[#94A3B8] text-[13px]">Full Name</span>
+            <span class="font-bold text-[#0F172A] text-[13px]">{{
+              editingUser.name
+            }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[#94A3B8] text-[13px]">Email Address</span>
+            <span class="font-bold text-[#0F172A] text-[13px]">{{
+              editingUser.email
+            }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[#94A3B8] text-[13px]">Member/Staff ID</span>
+            <span class="font-bold text-[#0F172A] text-[13px] font-mono">{{
+              editingUser.memberId
+            }}</span>
+          </div>
+        </div>
+
+        <!-- Form Areas -->
+        <div class="flex flex-col gap-6">
+          <div>
+            <label class="block text-[14px] font-bold text-[#0F172A] mb-2"
+              >Assign Role</label
+            >
+            <div class="relative">
+              <select
+                [(ngModel)]="drawerRole"
+                class="w-full h-12 pl-3 pr-8 text-[14px] font-bold border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white shadow-sm appearance-none cursor-pointer"
+              >
+                <option value="Member">Member</option>
+                <option value="Front-Desk">Front-Desk</option>
+                <option value="Trainer">Trainer</option>
+                <option value="Manager">Manager</option>
+                <option value="Admin">Admin</option>
+              </select>
+              <div
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none"
+              >
+                ▼
+              </div>
+            </div>
+            <p
+              class="mt-2 text-[13px] text-[#475569] leading-relaxed bg-[#EFF5FF] p-3 rounded-[8px] border border-[#2563EB]/10"
+            >
+              🛡️ {{ roleDescriptions[drawerRole] }}
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-[14px] font-bold text-[#0F172A] mb-2"
+              >Branch Access</label
+            >
+            <div
+              class="border border-[#E8ECF4] rounded-[8px] overflow-hidden shadow-sm"
+            >
+              <label
+                class="flex items-center gap-3 p-3 bg-[#F8F9FC] border-b border-[#E8ECF4] cursor-pointer hover:bg-[#E8ECF4]/50 transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  [checked]="editingUser.branch === 'All Branches'"
+                  class="w-4 h-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
+                />
+                <span class="text-[14px] font-bold text-[#0F172A]"
+                  >All Branches (Global Access)</span
+                >
+              </label>
+              <div class="bg-white flex flex-col">
+                <label
+                  *ngFor="
+                    let b of [
+                      'Downtown Main',
+                      'Westside Flex',
+                      'Koramangala Elite',
+                      'Pune East',
+                    ];
+                    let i = index
+                  "
+                  [class]="
+                    'flex items-center gap-3 p-3 cursor-pointer hover:bg-[#F8F9FC] transition-colors ' +
+                    (i > 0 ? 'border-t border-[#E8ECF4]' : '')
+                  "
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="
+                      editingUser.branch === b ||
+                      editingUser.branch === 'All Branches'
+                    "
+                    class="w-4 h-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
+                  />
+                  <span class="text-[14px] text-[#475569]">{{ b }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="flex items-center justify-between p-4 border border-[#E8ECF4] rounded-[8px] bg-white shadow-sm mt-2"
+          >
+            <div>
+              <div class="font-bold text-[14px] text-[#0F172A]">
+                Account is active
+              </div>
+              <div class="text-[12px] text-[#94A3B8]">
+                Allow user to login and access the system
+              </div>
+            </div>
+            <button
+              (click)="drawerActive = !drawerActive"
+              [class]="
+                'w-11 h-6 rounded-full relative transition-colors ' +
+                (drawerActive ? 'bg-[#16A34A]' : 'bg-[#CBD5E1]')
+              "
+            >
+              <div
+                [class]="
+                  'absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
+                  (drawerActive ? 'translate-x-5' : 'translate-x-0')
+                "
+              ></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-6 border-t border-[#E8ECF4] bg-[#F8F9FC]/50 flex gap-3">
+        <button
+          (click)="closeDrawer()"
+          class="flex-1 bg-white border border-[#E8ECF4] text-[#475569] font-bold text-[14px] h-12 rounded-[8px] hover:bg-[#F8F9FC] transition-colors shadow-sm"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="saveChanges()"
+          class="flex-[2] bg-[#2563EB] text-white font-bold text-[14px] h-12 rounded-[8px] hover:bg-[#1D4ED8] transition-colors shadow-sm"
+        >
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,9 @@
+/* Table hover effect */
+tbody tr:hover {
+  background-color: #f8f9fc;
+}
+
+/* Badge styling */
+.inline-flex {
+  display: inline-flex;
+}

@@ -1,0 +1,174 @@
+<div class="max-w-[1200px] mx-auto pb-10">
+  <div class="mb-8">
+    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Book Your Classes</h1>
+    <p class="text-[#475569] text-[14px]">
+      Reserve spots in our upcoming fitness classes
+    </p>
+  </div>
+
+  <!-- FILTERS -->
+  <div
+    class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 mb-6 flex gap-4"
+  >
+    <div class="flex-1">
+      <input
+        type="text"
+        [(ngModel)]="searchText"
+        (ngModelChange)="onSearchChange()"
+        placeholder="Search classes or trainer..."
+        class="w-full h-11 px-4 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
+      />
+    </div>
+    <select
+      [(ngModel)]="filterLevel"
+      (ngModelChange)="onLevelChange()"
+      class="h-11 px-4 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
+    >
+      <option *ngFor="let level of levelOptions">{{ level }}</option>
+    </select>
+  </div>
+
+  <!-- CLASSES GRID -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div
+      *ngFor="let cls of filteredClasses"
+      (click)="selectClass(cls)"
+      class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden hover:shadow-md transition-all cursor-pointer"
+    >
+      <div
+        class="h-32 bg-gradient-to-br from-[#2563EB]/10 to-[#0F172A]/10 flex items-center justify-center text-[56px] border-b border-[#E8ECF4]"
+      >
+        {{ cls.image }}
+      </div>
+
+      <div class="p-4">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="font-bold text-[14px] text-[#0F172A] flex-1">
+            {{ cls.name }}
+          </h3>
+          <span
+            [class]="
+              'text-[11px] font-bold px-2 py-1 rounded-full ' +
+              (cls.level === 'Beginner'
+                ? 'bg-[#F0FDF4] text-[#16A34A]'
+                : cls.level === 'Intermediate'
+                  ? 'bg-[#EFF5FF] text-[#2563EB]'
+                  : 'bg-[#FEF2F2] text-[#DC2626]')
+            "
+          >
+            {{ cls.level }}
+          </span>
+        </div>
+
+        <p class="text-[12px] text-[#475569] mb-3">{{ cls.trainer }}</p>
+
+        <div class="space-y-2 mb-3 text-[12px]">
+          <div class="flex justify-between">
+            <span class="text-[#94A3B8]"
+              >📅 {{ cls.date }} at {{ cls.time }}</span
+            >
+            <span class="text-[#94A3B8]">⏱ {{ cls.duration }} min</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-[#94A3B8]">Seats Available:</span>
+            <span [class]="'font-bold ' + getAvailabilityColor(cls)"
+              >{{ getAvailableSeats(cls) }}/{{ cls.capacity }}</span
+            >
+          </div>
+        </div>
+
+        <div class="h-2 bg-[#F8F9FC] rounded-full overflow-hidden mb-3">
+          <div
+            class="h-full bg-[#2563EB] transition-all"
+            [style.width]="(cls.booked / cls.capacity) * 100 + '%'"
+          ></div>
+        </div>
+
+        <button
+          class="w-full h-10 bg-[#2563EB] text-white font-bold rounded-[8px] text-[13px] hover:bg-[#1D4ED8] transition-colors"
+        >
+          Reserve ₹{{ cls.price }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOOKING DRAWER -->
+  <div *ngIf="bookingDrawerOpen && selectedClass" class="fixed inset-0 z-40">
+    <div
+      class="fixed inset-0 bg-[#0F172A]/20 z-40 backdrop-blur-[1px]"
+      (click)="bookingDrawerOpen = false"
+    ></div>
+    <div
+      class="fixed top-0 right-0 bottom-0 w-[480px] bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right"
+    >
+      <div
+        class="p-6 border-b border-[#E8ECF4] flex justify-between items-center"
+      >
+        <h2 class="font-bold text-[18px] text-[#0F172A]">Confirm Booking</h2>
+        <button
+          (click)="bookingDrawerOpen = false"
+          class="text-[#94A3B8] hover:text-[#0F172A]"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="flex-1 p-6 space-y-6">
+        <div
+          class="text-center py-8 bg-gradient-to-br from-[#2563EB]/10 to-[#0F172A]/10 rounded-[12px] text-[64px]"
+        >
+          {{ selectedClass.image }}
+        </div>
+
+        <div class="space-y-4 text-[13px]">
+          <div class="flex justify-between pb-3 border-b border-[#E8ECF4]">
+            <span class="text-[#94A3B8]">Class:</span>
+            <span class="font-bold text-[#0F172A]">{{
+              selectedClass.name
+            }}</span>
+          </div>
+          <div class="flex justify-between pb-3 border-b border-[#E8ECF4]">
+            <span class="text-[#94A3B8]">Trainer:</span>
+            <span class="font-bold text-[#0F172A]">{{
+              selectedClass.trainer
+            }}</span>
+          </div>
+          <div class="flex justify-between pb-3 border-b border-[#E8ECF4]">
+            <span class="text-[#94A3B8]">Date & Time:</span>
+            <span class="font-bold text-[#0F172A]"
+              >{{ selectedClass.date }}, {{ selectedClass.time }}</span
+            >
+          </div>
+          <div class="flex justify-between pb-3 border-b border-[#E8ECF4]">
+            <span class="text-[#94A3B8]">Duration:</span>
+            <span class="font-bold text-[#0F172A]"
+              >{{ selectedClass.duration }} minutes</span
+            >
+          </div>
+          <div
+            class="flex justify-between text-[14px] font-bold bg-[#EFF5FF] border border-[#2563EB] rounded-lg p-3"
+          >
+            <span>Price:</span>
+            <span class="text-[#2563EB]">₹{{ selectedClass.price }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-6 border-t border-[#E8ECF4] flex gap-3">
+        <button
+          (click)="bookingDrawerOpen = false"
+          class="flex-1 bg-white border border-[#E8ECF4] font-bold h-12 rounded-[8px] hover:bg-[#F8F9FC]"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="bookClass()"
+          class="flex-1 bg-[#2563EB] text-white font-bold h-12 rounded-[8px] hover:bg-[#1D4ED8]"
+        >
+          Book Now
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

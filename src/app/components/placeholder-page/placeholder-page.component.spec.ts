@@ -1,0 +1,26 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { PlaceholderPageComponent } from './placeholder-page.component';
+
+describe('PlaceholderPageComponent', () => {
+  let component: PlaceholderPageComponent;
+  let fixture: ComponentFixture<PlaceholderPageComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [PlaceholderPageComponent],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(PlaceholderPageComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+
+  it('should have title and description', () => {
+    expect(component.title).toBeTruthy();
+    expect(component.description).toBeTruthy();
+  });
+});

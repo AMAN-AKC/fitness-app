@@ -19,6 +19,24 @@ import { MemberDashboardComponent } from './components/member-dashboard/member-d
 import { FrontdeskDashboardComponent } from './components/frontdesk-dashboard/frontdesk-dashboard.component';
 import { MemberRegistrationComponent } from './components/member-registration/member-registration.component';
 import { TrainerDashboardComponent } from './components/trainer-dashboard/trainer-dashboard.component';
+import { AdminDashboardComponent } from './components/admin-dashboard/admin-dashboard.component';
+import { AdminUserManagementComponent } from './components/admin-user-management/admin-user-management.component';
+import { AdminBranchManagementComponent } from './components/admin-branch-management/admin-branch-management.component';
+import { AdminPlancatalogComponent } from './components/admin-plancatalog/admin-plancatalog.component';
+import { ManagerDashboardComponent } from './components/manager-dashboard/manager-dashboard.component';
+import { TrainerProfileComponent } from './components/trainer-profile/trainer-profile.component';
+import { HealthFormsComponent } from './components/health-forms/health-forms.component';
+import { NotificationsCenterComponent } from './components/notifications-center/notifications-center.component';
+import { ClassBookingComponent } from './components/class-booking/class-booking.component';
+import { CheckoutComponent } from './components/checkout/checkout.component';
+import { ClassSchedulePageComponent } from './components/class-schedule-page/class-schedule-page.component';
+import { DataImportExportComponent } from './components/data-import-export/data-import-export.component';
+import { AuditLogViewerComponent } from './components/audit-log-viewer/audit-log-viewer.component';
+import { DunningQueuePageComponent } from './components/dunning-queue-page/dunning-queue-page.component';
+import { PlansCatalogComponent } from './components/plans-catalog/plans-catalog.component';
+import { ErrorStatesViewComponent } from './components/error-states-view/error-states-view.component';
+import { GlobalErrorComponent } from './components/global-error/global-error.component';
+import { PlaceholderPageComponent } from './components/placeholder-page/placeholder-page.component';
 
 @NgModule({
   declarations: [
@@ -34,6 +52,24 @@ import { TrainerDashboardComponent } from './components/trainer-dashboard/traine
     FrontdeskDashboardComponent,
     MemberRegistrationComponent,
     TrainerDashboardComponent,
+    AdminDashboardComponent,
+    AdminUserManagementComponent,
+    AdminBranchManagementComponent,
+    AdminPlancatalogComponent,
+    ManagerDashboardComponent,
+    TrainerProfileComponent,
+    HealthFormsComponent,
+    NotificationsCenterComponent,
+    ClassBookingComponent,
+    CheckoutComponent,
+    ClassSchedulePageComponent,
+    DataImportExportComponent,
+    AuditLogViewerComponent,
+    DunningQueuePageComponent,
+    PlansCatalogComponent,
+    ErrorStatesViewComponent,
+    GlobalErrorComponent,
+    PlaceholderPageComponent,
   ],
   imports: [
     BrowserModule,

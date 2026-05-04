@@ -1,0 +1,10 @@
+/* File input hidden */
+input[type="file"] {
+  display: none;
+}
+
+/* Button disabled state */
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

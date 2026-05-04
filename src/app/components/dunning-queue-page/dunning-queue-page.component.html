@@ -1,0 +1,98 @@
+<div class="max-w-[1000px] mx-auto pb-10">
+  <div class="mb-8">
+    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Dunning Queue</h1>
+    <p class="text-[#475569] text-[14px]">Manage failed payment recovery</p>
+  </div>
+
+  <!-- STATS -->
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 shadow-sm">
+      <p class="text-[12px] text-[#94A3B8] font-bold mb-1">
+        Outstanding Amount
+      </p>
+      <p class="font-bold text-[24px] text-[#DC2626]">
+        ₹{{ getTotalOutstanding() | number }}
+      </p>
+    </div>
+    <div class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 shadow-sm">
+      <p class="text-[12px] text-[#94A3B8] font-bold mb-1">Items in Queue</p>
+      <p class="font-bold text-[24px] text-[#0F172A]">
+        {{ dunningItems.length }}
+      </p>
+    </div>
+    <div class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 shadow-sm">
+      <p class="text-[12px] text-[#94A3B8] font-bold mb-1">Failed Attempts</p>
+      <p class="font-bold text-[24px] text-[#D97706]">
+        {{ dunningItems.filter(d => d.status === 'failed').length }}
+      </p>
+    </div>
+  </div>
+
+  <!-- DUNNING LIST -->
+  <div
+    class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm"
+  >
+    <div
+      *ngFor="let item of dunningItems"
+      class="border-b border-[#E8ECF4] last:border-b-0"
+    >
+      <div
+        (click)="toggleExpand(item.id)"
+        class="p-6 cursor-pointer hover:bg-[#F8F9FC] flex items-center justify-between"
+      >
+        <div class="flex-1">
+          <h3 class="font-bold text-[14px] text-[#0F172A] mb-2">
+            {{ item.memberName }}
+          </h3>
+          <div class="flex gap-4 text-[12px] text-[#475569]">
+            <span
+              >Outstanding:
+              <strong class="text-[#DC2626]"
+                >₹{{ item.amount | number }}</strong
+              ></span
+            >
+            <span
+              >Overdue: <strong>{{ item.daysOverdue }} days</strong></span
+            >
+            <span
+              >Attempts: <strong>{{ item.attemptCount }}</strong></span
+            >
+          </div>
+        </div>
+        <span
+          [class]="
+            'px-3 py-1 rounded-full text-[11px] font-bold ' +
+            getStatusBg(item.status) +
+            ' ' +
+            getStatusColor(item.status)
+          "
+        >
+          {{ item.status | titlecase }}
+        </span>
+      </div>
+
+      <div
+        *ngIf="expandedId === item.id"
+        class="px-6 py-4 bg-[#F8F9FC] border-t border-[#E8ECF4] flex gap-3"
+      >
+        <div class="flex-1 text-[12px] text-[#475569]">
+          Last attempt: {{ item.lastAttempt }}
+        </div>
+        <div class="flex gap-2">
+          <button
+            (click)="retryPayment(item)"
+            class="px-4 h-9 bg-[#2563EB] text-white font-bold text-[12px] rounded-[6px] hover:bg-[#1D4ED8]"
+          >
+            Retry Payment
+          </button>
+          <button
+            (click)="suspendMember(item)"
+            class="px-4 h-9 bg-white border border-[#E8ECF4] text-[#DC2626] font-bold text-[12px] rounded-[6px] hover:bg-[#FEF2F2]"
+          >
+            Suspend Member
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

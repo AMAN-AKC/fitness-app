@@ -1,0 +1,9 @@
+/* Hover effects */
+.cursor-pointer:hover {
+  background-color: #f8f9fc;
+}
+
+/* Last child border removal */
+.last\\:border-b-0:last-child {
+  border-bottom: none;
+}

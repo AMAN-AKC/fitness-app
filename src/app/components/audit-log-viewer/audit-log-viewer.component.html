@@ -1,0 +1,89 @@
+<div class="max-w-[1000px] mx-auto pb-10">
+  <div class="mb-8">
+    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Audit Logs</h1>
+    <p class="text-[#475569] text-[14px]">
+      Track all system activities and user actions
+    </p>
+  </div>
+
+  <!-- FILTERS -->
+  <div
+    class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 mb-6 flex gap-4"
+  >
+    <input
+      type="text"
+      [(ngModel)]="searchText"
+      placeholder="Search logs..."
+      class="flex-1 h-11 px-4 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
+    />
+    <select
+      [(ngModel)]="filterType"
+      class="h-11 px-4 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
+    >
+      <option value="all">All Actions</option>
+      <option value="create">Create</option>
+      <option value="update">Update</option>
+      <option value="delete">Delete</option>
+      <option value="login">Login</option>
+      <option value="export">Export</option>
+    </select>
+  </div>
+
+  <!-- LOGS TABLE -->
+  <div
+    class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm"
+  >
+    <table class="w-full">
+      <thead>
+        <tr class="bg-[#F8F9FC] border-b border-[#E8ECF4]">
+          <th
+            class="px-6 py-3 text-left text-[11px] font-bold text-[#94A3B8] uppercase"
+          >
+            Action
+          </th>
+          <th
+            class="px-6 py-3 text-left text-[11px] font-bold text-[#94A3B8] uppercase"
+          >
+            User
+          </th>
+          <th
+            class="px-6 py-3 text-left text-[11px] font-bold text-[#94A3B8] uppercase"
+          >
+            Details
+          </th>
+          <th
+            class="px-6 py-3 text-left text-[11px] font-bold text-[#94A3B8] uppercase"
+          >
+            Timestamp
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let log of filteredLogs"
+          class="border-b border-[#E8ECF4] hover:bg-[#F8F9FC] transition-colors"
+        >
+          <td class="px-6 py-4">
+            <span
+              [class]="
+                'inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold ' +
+                getTypeColor(log.type)
+              "
+            >
+              {{ getTypeIcon(log.type) }} {{ log.action }}
+            </span>
+          </td>
+          <td class="px-6 py-4 text-[13px] font-medium text-[#0F172A]">
+            {{ log.user }}
+          </td>
+          <td class="px-6 py-4 text-[13px] text-[#475569]">
+            {{ log.details }}
+          </td>
+          <td class="px-6 py-4 text-[13px] text-[#94A3B8]">
+            {{ log.timestamp }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

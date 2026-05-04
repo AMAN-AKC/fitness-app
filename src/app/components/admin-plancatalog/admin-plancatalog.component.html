@@ -1,0 +1,648 @@
+<div
+  class="flex flex-col gap-4 font-['DM_Sans'] text-[#0F172A] w-full max-w-[1600px] mx-auto pb-10 relative"
+>
+  <!-- PAGE HEADER -->
+  <div
+    class="bg-white rounded-[12px] p-6 border border-[#E8ECF4] shadow-sm flex items-center justify-between"
+  >
+    <div class="flex items-center gap-4">
+      <h1 class="font-bold text-[22px] leading-none">Plan Catalog</h1>
+      <span
+        class="bg-[#F1F5F9] text-[#475569] text-[12px] font-bold px-2.5 py-1 rounded-full border border-[#E8ECF4]"
+      >
+        {{ plans.length }} plans
+      </span>
+    </div>
+    <div class="flex items-center gap-3">
+      <button
+        class="px-4 h-10 rounded-[8px] text-[13px] font-bold text-[#475569] bg-transparent hover:bg-[#F8F9FC] border border-transparent hover:border-[#E8ECF4] transition-all"
+      >
+        Add Add-On
+      </button>
+      <button
+        (click)="handleCreate()"
+        class="px-4 h-10 rounded-[8px] text-[13px] font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors shadow-sm flex items-center gap-1.5"
+      >
+        Create New Plan ➕
+      </button>
+    </div>
+  </div>
+
+  <!-- FILTER BAR & TABLE CONTAINER -->
+  <div
+    class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm flex flex-col"
+  >
+    <!-- Filter Bar -->
+    <div
+      class="px-6 py-3 border-b border-[#E8ECF4] flex items-center justify-between bg-[#F8F9FC]/50 rounded-t-[12px]"
+    >
+      <div class="flex items-center gap-4">
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+            >🔍</span
+          >
+          <input
+            type="text"
+            placeholder="Search plans..."
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearchChange()"
+            class="w-[240px] h-9 pl-9 pr-3 text-[13px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white"
+          />
+        </div>
+        <select
+          [(ngModel)]="eligibilityFilter"
+          (ngModelChange)="onEligibilityFilterChange()"
+          class="h-9 px-3 pr-8 text-[13px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white font-medium cursor-pointer appearance-none"
+        >
+          <option value="All">All Eligibility</option>
+          <option value="General">General</option>
+          <option value="Student">Student</option>
+          <option value="Senior">Senior</option>
+          <option value="Corporate">Corporate</option>
+        </select>
+        <div class="flex bg-[#E8ECF4] p-0.5 rounded-[8px]">
+          <button
+            *ngFor="let s of ['All', 'Active', 'Inactive']"
+            (click)="setStatusFilter(s)"
+            [class]="
+              'px-3 py-1.5 text-[12px] font-bold rounded-[6px] transition-all ' +
+              (statusFilter === s
+                ? 'bg-white text-[#0F172A] shadow-sm'
+                : 'text-[#475569] hover:text-[#0F172A]')
+            "
+          >
+            {{ s }}
+          </button>
+        </div>
+      </div>
+      <button
+        class="w-9 h-9 flex items-center justify-center rounded-[8px] border border-[#E8ECF4] text-[#475569] hover:bg-[#F8F9FC] transition-colors"
+        title="Export Plans CSV"
+      >
+        📥
+      </button>
+    </div>
+
+    <!-- Plans Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[1000px]">
+        <thead>
+          <tr class="bg-white border-b border-[#E8ECF4]">
+            <th class="w-10 px-2 py-3"></th>
+            <th
+              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Plan Name
+            </th>
+            <th
+              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Duration
+            </th>
+            <th
+              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Price
+            </th>
+            <th
+              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Eligibility
+            </th>
+            <th
+              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Version
+            </th>
+            <th
+              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Effective From
+            </th>
+            <th
+              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Branches
+            </th>
+            <th
+              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
+            >
+              Status
+            </th>
+            <th
+              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider text-right"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let plan of filteredPlans">
+            <tr
+              [class]="
+                'border-b border-[#E8ECF4] group transition-colors h-[52px] ' +
+                (isRowExpanded(plan.id)
+                  ? 'bg-[#F8F9FC]'
+                  : 'hover:bg-[#F8F9FC] bg-white')
+              "
+            >
+              <td class="px-2 py-2 text-center align-middle">
+                <button
+                  (click)="toggleRow(plan.id)"
+                  class="p-1 rounded-md text-[#94A3B8] hover:bg-[#E8ECF4] hover:text-[#0F172A] transition-colors"
+                >
+                  {{ isRowExpanded(plan.id) ? "▼" : "▶" }}
+                </button>
+              </td>
+              <td class="px-4 py-2 font-bold text-[14px] text-[#0F172A]">
+                {{ plan.name }}
+              </td>
+              <td class="px-4 py-2">
+                <span
+                  class="bg-[#F1F5F9] text-[#475569] text-[11px] font-bold px-2 py-1 rounded-md border border-[#E8ECF4]"
+                  >{{ plan.duration }} days</span
+                >
+              </td>
+              <td class="px-4 py-2 font-bold text-[14px] text-[#0F172A]">
+                ₹{{ formatPrice(plan.price) }}
+              </td>
+              <td class="px-4 py-2">
+                <span
+                  [class]="
+                    'text-[11px] font-bold px-2 py-1 rounded-md border ' +
+                    eligibilityColors[plan.eligibility]
+                  "
+                >
+                  {{ plan.eligibility }}
+                </span>
+              </td>
+              <td class="px-4 py-2 font-mono text-[12px] text-[#475569]">
+                {{ plan.version }}
+              </td>
+              <td class="px-4 py-2 text-[13px] text-[#475569] font-light">
+                {{ plan.effectiveFrom }}
+              </td>
+              <td class="px-4 py-2">
+                <span
+                  *ngIf="plan.branches === 'All'"
+                  class="bg-[#EFF5FF] text-[#2563EB] text-[11px] font-bold px-2 py-1 rounded-md border border-[#2563EB]/20"
+                  >All</span
+                >
+                <span
+                  *ngIf="plan.branches !== 'All'"
+                  class="bg-[#F8F9FC] text-[#475569] text-[11px] font-bold px-2 py-1 rounded-md border border-[#E8ECF4]"
+                  >{{ plan.branches }} branches</span
+                >
+              </td>
+              <td class="px-4 py-2">
+                <div class="flex items-center gap-2">
+                  <button
+                    (click)="togglePlanStatus(plan)"
+                    [class]="
+                      'w-9 h-5 rounded-full relative transition-colors ' +
+                      (plan.status ? 'bg-[#16A34A]' : 'bg-[#CBD5E1]')
+                    "
+                  >
+                    <div
+                      [class]="
+                        'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
+                        (plan.status ? 'translate-x-4' : 'translate-x-0')
+                      "
+                    ></div>
+                  </button>
+                  <span
+                    [class]="
+                      'text-[11px] font-bold ' +
+                      (plan.status ? 'text-[#16A34A]' : 'text-[#94A3B8]')
+                    "
+                  >
+                    {{ plan.status ? "Active" : "Inactive" }}
+                  </span>
+                </div>
+              </td>
+              <td class="px-4 py-2">
+                <div
+                  class="flex items-center gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <button
+                    (click)="handleEdit(plan)"
+                    title="Edit Plan"
+                    class="p-1.5 rounded-[6px] bg-white border border-[#E8ECF4] text-[#2563EB] hover:bg-[#EFF5FF] hover:border-[#2563EB]/30 transition-all shadow-sm"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    (click)="handleDeactivate(plan)"
+                    [title]="plan.status ? 'Deactivate Plan' : 'Activate Plan'"
+                    [class]="
+                      'p-1.5 rounded-[6px] bg-white border border-[#E8ECF4] transition-all shadow-sm ' +
+                      (plan.status
+                        ? 'text-[#DC2626] hover:bg-[#FEF2F2] hover:border-[#DC2626]/30'
+                        : 'text-[#16A34A] hover:bg-[#F0FDF4] hover:border-[#16A34A]/30')
+                    "
+                  >
+                    {{ plan.status ? "🚫" : "✓" }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Expanded Row -->
+            <tr *ngIf="isRowExpanded(plan.id)" class="bg-[#F8F9FC]">
+              <td colSpan="10" class="p-0 border-b border-[#E8ECF4]">
+                <div
+                  class="border-l-4 border-[#2563EB] px-8 py-5 flex gap-10 overflow-hidden animate-in slide-in-from-top-2 duration-200"
+                >
+                  <div>
+                    <div
+                      class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider mb-2"
+                    >
+                      Facilities Included
+                    </div>
+                    <div class="flex gap-2 flex-wrap max-w-[300px]">
+                      <span
+                        *ngFor="let fac of plan.facilities"
+                        [class]="
+                          'text-[12px] font-medium px-2 py-1 rounded-md border flex items-center gap-1 ' +
+                          (fac.included
+                            ? 'bg-white border-[#E8ECF4] text-[#0F172A]'
+                            : 'bg-transparent border-transparent text-[#94A3B8] line-through')
+                        "
+                      >
+                        {{ fac.name }} {{ fac.included ? "✓" : "✕" }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div
+                      class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider mb-2"
+                    >
+                      Linked Add-Ons
+                    </div>
+                    <div class="flex gap-2 flex-wrap">
+                      <ng-container
+                        *ngIf="plan.addons.length > 0; else noAddons"
+                      >
+                        <span
+                          *ngFor="let addon of plan.addons"
+                          class="text-[12px] font-bold px-2 py-1 rounded-md bg-[#EFF5FF] text-[#2563EB] border border-[#2563EB]/20"
+                        >
+                          {{ addon }}
+                        </span>
+                      </ng-container>
+                      <ng-template #noAddons>
+                        <span class="text-[12px] text-[#94A3B8] italic"
+                          >None</span
+                        >
+                      </ng-template>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div
+                      class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider mb-2"
+                    >
+                      Billing Details
+                    </div>
+                    <div class="flex gap-3">
+                      <span
+                        class="text-[12px] font-bold px-2 py-1 rounded-md bg-white border border-[#E8ECF4] text-[#475569]"
+                      >
+                        Tax: {{ plan.tax }}% GST
+                      </span>
+                      <span
+                        class="text-[12px] font-bold px-2 py-1 rounded-md bg-white border border-[#E8ECF4] text-[#475569]"
+                      >
+                        Proration: {{ plan.proration }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+
+          <tr *ngIf="filteredPlans.length === 0">
+            <td
+              colSpan="10"
+              class="px-4 py-8 text-center text-[#94A3B8] font-medium text-[14px]"
+            >
+              No plans match your filters.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CREATE / EDIT PLAN DRAWER -->
+  <div *ngIf="isDrawerOpen" class="fixed inset-0 z-40 backdrop-blur-[1px]">
+    <div
+      class="fixed inset-0 bg-[#0F172A]/20 z-40"
+      (click)="closeDrawer()"
+    ></div>
+    <div
+      class="fixed top-0 right-0 bottom-0 w-[480px] bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300"
+    >
+      <div
+        class="p-6 border-b border-[#E8ECF4] flex justify-between items-center bg-[#F8F9FC]/50"
+      >
+        <h2 class="font-bold text-[18px] text-[#0F172A]">
+          {{ editingPlan ? "Edit: " + editingPlan.name : "Create New Plan" }}
+        </h2>
+        <button
+          (click)="closeDrawer()"
+          class="text-[#94A3B8] hover:text-[#0F172A] p-1 bg-white rounded-md shadow-sm border border-[#E8ECF4] transition-colors"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 text-[14px]">
+        <div class="flex flex-col gap-4">
+          <div>
+            <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
+              >Plan Name <span class="text-[#DC2626]">*</span></label
+            >
+            <input
+              type="text"
+              [(ngModel)]="editingPlan!.name"
+              class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
+              placeholder="e.g. Gold Annual"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
+                >Duration
+                <span class="font-normal text-[#94A3B8]">(days)</span></label
+              >
+              <input
+                type="number"
+                [(ngModel)]="editingPlan!.duration"
+                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
+              />
+            </div>
+            <div>
+              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
+                >Price
+                <span class="font-normal text-[#94A3B8]">(₹)</span></label
+              >
+              <input
+                type="number"
+                [(ngModel)]="editingPlan!.price"
+                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
+                >Access Start Time</label
+              >
+              <input
+                type="time"
+                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm cursor-pointer"
+              />
+            </div>
+            <div>
+              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
+                >Access End Time</label
+              >
+              <input
+                type="time"
+                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm cursor-pointer"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
+                >Eligibility</label
+              >
+              <div class="relative">
+                <select
+                  [(ngModel)]="editingPlan!.eligibility"
+                  class="w-full h-11 pl-3 pr-8 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white shadow-sm appearance-none cursor-pointer"
+                >
+                  <option value="General">General</option>
+                  <option value="Student">Student</option>
+                  <option value="Senior">Senior</option>
+                  <option value="Corporate">Corporate</option>
+                </select>
+                <div
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none"
+                >
+                  ▼
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
+                >Effective From</label
+              >
+              <input
+                type="date"
+                [(ngModel)]="editingPlan!.effectiveFrom"
+                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm cursor-pointer"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
+                >Proration Rule</label
+              >
+              <div class="relative">
+                <select
+                  [(ngModel)]="editingPlan!.proration"
+                  class="w-full h-11 pl-3 pr-8 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white shadow-sm appearance-none cursor-pointer"
+                >
+                  <option value="Daily">Daily</option>
+                  <option value="Weekly">Weekly</option>
+                  <option value="None">None</option>
+                </select>
+                <div
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none"
+                >
+                  ▼
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
+                >Tax <span class="font-normal text-[#94A3B8]">(%)</span></label
+              >
+              <input
+                type="number"
+                [(ngModel)]="editingPlan!.tax"
+                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
+              />
+            </div>
+          </div>
+
+          <div class="mt-2">
+            <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
+              >Branch Visibility</label
+            >
+            <div
+              class="bg-[#F8F9FC] p-3 rounded-[8px] border border-[#E8ECF4] space-y-2"
+            >
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  [checked]="editingPlan!.branches === 'All'"
+                  class="w-4 h-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
+                />
+                <span class="text-[13px] font-bold text-[#0F172A]"
+                  >All Branches</span
+                >
+              </label>
+              <div class="pl-6 space-y-2 border-t border-[#E8ECF4] pt-2 mt-2">
+                <label
+                  *ngFor="
+                    let b of [
+                      'Downtown Main',
+                      'Westside Flex',
+                      'Koramangala Elite',
+                      'Pune East',
+                    ]
+                  "
+                  class="flex items-center gap-2 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="editingPlan!.branches === 'All'"
+                    class="w-4 h-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
+                  />
+                  <span class="text-[13px] text-[#475569]">{{ b }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-2">
+            <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
+              >Facilities Included</label
+            >
+            <div class="grid grid-cols-2 gap-2">
+              <label
+                *ngFor="
+                  let fac of [
+                    'Gym Floor',
+                    'Pool',
+                    'Classes',
+                    'Steam Room',
+                    'Sauna',
+                    'Rock Climbing',
+                  ]
+                "
+                [class]="
+                  'flex items-center gap-2 p-2.5 rounded-[8px] border cursor-pointer transition-all ' +
+                  (true
+                    ? 'bg-[#EFF5FF] border-[#2563EB]/20 text-[#2563EB]'
+                    : 'bg-white border-[#E8ECF4] text-[#475569]')
+                "
+              >
+                <input
+                  type="checkbox"
+                  class="w-4 h-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
+                />
+                <span class="text-[13px] font-medium">{{ fac }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div
+            class="mt-4 flex items-center justify-between p-4 border border-[#E8ECF4] rounded-[8px] bg-white shadow-sm"
+          >
+            <div>
+              <div class="font-bold text-[14px] text-[#0F172A]">
+                Plan is active
+              </div>
+              <div class="text-[12px] text-[#94A3B8]">
+                Available for new purchases
+              </div>
+            </div>
+            <button
+              [class]="
+                'w-11 h-6 rounded-full relative transition-colors ' +
+                (editingPlan!.status ? 'bg-[#16A34A]' : 'bg-[#CBD5E1]')
+              "
+            >
+              <div
+                [class]="
+                  'absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
+                  (editingPlan!.status ? 'translate-x-5' : 'translate-x-0')
+                "
+              ></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-6 border-t border-[#E8ECF4] bg-[#F8F9FC]/50 flex gap-3">
+        <button
+          (click)="discardChanges()"
+          class="flex-1 bg-white border border-[#E8ECF4] text-[#475569] font-bold text-[14px] h-12 rounded-[8px] hover:bg-[#F8F9FC] transition-colors shadow-sm"
+        >
+          Discard
+        </button>
+        <button
+          (click)="savePlan()"
+          class="flex-[2] bg-[#2563EB] text-white font-bold text-[14px] h-12 rounded-[8px] hover:bg-[#1D4ED8] transition-colors shadow-sm"
+        >
+          Save Plan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEACTIVATION WARNING MODAL -->
+  <div
+    *ngIf="deactivatingPlan"
+    class="fixed inset-0 z-[60] flex items-center justify-center"
+  >
+    <div
+      class="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-[2px]"
+      (click)="deactivatingPlan = null"
+    ></div>
+    <div
+      class="relative bg-white rounded-[16px] shadow-2xl w-[440px] p-8 animate-in zoom-in-95 fade-in duration-200"
+    >
+      <div
+        class="w-14 h-14 bg-[#FFFBEB] rounded-full flex items-center justify-center text-[#D97706] mb-5 border-[4px] border-[#FFFBEB]"
+      >
+        ⚠️
+      </div>
+      <h3 class="font-bold text-[20px] text-[#0F172A] mb-3">
+        Deactivate {{ deactivatingPlan.name }} Plan?
+      </h3>
+      <p class="text-[14px] text-[#475569] mb-8 leading-relaxed">
+        <strong>{{ deactivatingPlan.activeMembers }} active members</strong> are
+        on this plan. Deactivation will not affect their current membership —
+        they will retain access until expiry. It will no longer be available for
+        new purchases.
+      </p>
+      <div class="flex gap-3 justify-end">
+        <button
+          (click)="deactivatingPlan = null"
+          class="px-5 h-11 rounded-[8px] text-[14px] font-bold text-[#475569] bg-white border border-[#E8ECF4] hover:bg-[#F8F9FC] transition-all"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="confirmDeactivate()"
+          class="px-5 h-11 rounded-[8px] text-[14px] font-bold text-white bg-[#D97706] hover:bg-[#B45309] transition-colors shadow-sm"
+        >
+          Deactivate Plan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
