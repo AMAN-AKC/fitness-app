@@ -1,4 +1,17 @@
 <div class="member-dashboard-container">
+  <!-- HEADER -->
+  <div class="header-section">
+    <div class="header-left">
+      <h1 class="header-title">Member Dashboard</h1>
+      <p class="header-subtitle">Manage your fitness journey.</p>
+    </div>
+    <div class="header-right">
+      <button (click)="logout()" class="action-btn action-btn--logout">
+        Logout
+      </button>
+    </div>
+  </div>
+
   <!-- ALERT BANNER -->
   <div *ngIf="showAlert" class="alert-banner">
     <div class="alert-content">

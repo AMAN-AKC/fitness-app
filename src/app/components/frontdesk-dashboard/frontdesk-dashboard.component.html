@@ -5,8 +5,13 @@
       <h1 class="header-title">Front Desk</h1>
       <p class="header-subtitle">Manage check-ins and today's classes.</p>
     </div>
-    <div class="current-date-time">
-      {{ currentDateTime }}
+    <div class="header-right">
+      <div class="current-date-time">
+        {{ currentDateTime }}
+      </div>
+      <button (click)="logout()" class="action-btn action-btn--logout">
+        Logout
+      </button>
     </div>
   </div>
 
