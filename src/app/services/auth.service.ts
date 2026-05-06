@@ -57,7 +57,9 @@ export class AuthService {
     }
 
     const currentRole = this.normalizeRole(session.role);
-    return requiredRoles.some((role) => this.normalizeRole(role) === currentRole);
+    return requiredRoles.some(
+      (role) => this.normalizeRole(role) === currentRole,
+    );
   }
 
   getDashboardRoute(role: string): string {
