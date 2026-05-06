@@ -16,6 +16,6 @@
 }
 
 /* Utilities */
-.backdrop-blur-\\[1px\\] {
+.backdrop-blur-\[1px\] {
   backdrop-filter: blur(1px);
 }

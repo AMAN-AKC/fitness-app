@@ -75,6 +75,10 @@ export class DunningQueuePageComponent implements OnInit {
     return this.dunningItems.reduce((sum, item) => sum + item.amount, 0);
   }
 
+  get failedCount(): number {
+    return this.dunningItems.filter((d) => d.status === 'failed').length;
+  }
+
   getStatusColor(status: string): string {
     return status === 'failed'
       ? 'text-[#DC2626]'
