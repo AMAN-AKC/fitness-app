@@ -51,6 +51,18 @@
     </button>
   </div>
 
+  <div
+    *ngIf="isLoading || errorMessage"
+    class="rounded-[8px] border px-4 py-3 text-[13px] font-medium"
+    [class]="
+      errorMessage
+        ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]'
+        : 'bg-[#EFF5FF] text-[#2563EB] border-[#BFDBFE]'
+    "
+  >
+    {{ errorMessage || "Loading users from backend..." }}
+  </div>
+
   <!-- USERS TABLE -->
   <div
     class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm overflow-hidden"

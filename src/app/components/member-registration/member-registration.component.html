@@ -6,15 +6,17 @@
         <span>✓</span>
       </div>
       <h1 class="completion-title">Member Account Created!</h1>
-      <div class="completion-badge">MEM-20240422-0847</div>
-      <p class="completion-info">Rahul Kumar · Platinum Pro · Indiranagar</p>
+      <div class="completion-badge">MEM-{{ createdMember?.memberId }}</div>
+      <p class="completion-info">
+        {{ createdMember?.memName }} · {{ formData.plan }} · {{ formData.branch }}
+      </p>
       <div class="completion-actions">
         <button (click)="resetForm()" class="action-btn action-btn--secondary">
           Register Another Member
         </button>
-        <a href="/member-profile" class="action-btn action-btn--primary"
-          >View Member Profile</a
-        >
+        <button (click)="goToFrontdesk()" class="action-btn action-btn--primary">
+          Back to Front Desk
+        </button>
       </div>
     </div>
   </ng-container>
@@ -22,6 +24,14 @@
   <!-- REGISTRATION FORM -->
   <ng-container *ngIf="!complete">
     <h1 class="registration-title">Register New Member</h1>
+
+    <div
+      *ngIf="isLoading || errorMessage"
+      class="registration-status"
+      [class.registration-status--error]="errorMessage"
+    >
+      {{ errorMessage || "Loading registration data..." }}
+    </div>
 
     <!-- STEPPER -->
     <div class="stepper-container">

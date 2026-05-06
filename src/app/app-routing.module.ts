@@ -7,8 +7,13 @@ import { GlobalDashboardComponent } from './components/global-dashboard/global-d
 import { ErrorPageComponent } from './components/shared/error-page/error-page.component';
 import { MemberDashboardComponent } from './components/member-dashboard/member-dashboard.component';
 import { FrontdeskDashboardComponent } from './components/frontdesk-dashboard/frontdesk-dashboard.component';
+import { MemberRegistrationComponent } from './components/member-registration/member-registration.component';
 import { ManagerDashboardComponent } from './components/manager-dashboard/manager-dashboard.component';
 import { TrainerDashboardComponent } from './components/trainer-dashboard/trainer-dashboard.component';
+import { AdminDashboardComponent } from './components/admin-dashboard/admin-dashboard.component';
+import { AdminUserManagementComponent } from './components/admin-user-management/admin-user-management.component';
+import { AdminBranchManagementComponent } from './components/admin-branch-management/admin-branch-management.component';
+import { AdminPlancatalogComponent } from './components/admin-plancatalog/admin-plancatalog.component';
 import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
@@ -23,6 +28,30 @@ const routes: Routes = [
     data: { roles: ['admin'] },
   },
   {
+    path: 'admin-dashboard',
+    component: AdminDashboardComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['admin'] },
+  },
+  {
+    path: 'admin-users',
+    component: AdminUserManagementComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['admin'] },
+  },
+  {
+    path: 'admin-branches',
+    component: AdminBranchManagementComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['admin'] },
+  },
+  {
+    path: 'admin-plans',
+    component: AdminPlancatalogComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['admin'] },
+  },
+  {
     path: 'member-dashboard',
     component: MemberDashboardComponent,
     canActivate: [AuthGuard],
@@ -33,6 +62,12 @@ const routes: Routes = [
     component: FrontdeskDashboardComponent,
     canActivate: [AuthGuard],
     data: { roles: ['frontdesk'] },
+  },
+  {
+    path: 'member-registration',
+    component: MemberRegistrationComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['frontdesk', 'admin'] },
   },
   {
     path: 'manager-dashboard',

@@ -28,6 +28,18 @@
     </div>
   </div>
 
+  <div
+    *ngIf="isLoading || errorMessage"
+    class="rounded-[8px] border px-4 py-3 text-[13px] font-medium"
+    [class]="
+      errorMessage
+        ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]'
+        : 'bg-[#EFF5FF] text-[#2563EB] border-[#BFDBFE]'
+    "
+  >
+    {{ errorMessage || "Loading plans from backend..." }}
+  </div>
+
   <!-- FILTER BAR & TABLE CONTAINER -->
   <div
     class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm flex flex-col"
@@ -405,6 +417,7 @@
               >
               <input
                 type="time"
+                [(ngModel)]="editingPlan!.accessStart"
                 class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm cursor-pointer"
               />
             </div>
@@ -414,6 +427,7 @@
               >
               <input
                 type="time"
+                [(ngModel)]="editingPlan!.accessEnd"
                 class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm cursor-pointer"
               />
             </div>
@@ -570,6 +584,7 @@
               </div>
             </div>
             <button
+              (click)="editingPlan!.status = !editingPlan!.status"
               [class]="
                 'w-11 h-6 rounded-full relative transition-colors ' +
                 (editingPlan!.status ? 'bg-[#16A34A]' : 'bg-[#CBD5E1]')

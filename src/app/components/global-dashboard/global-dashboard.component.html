@@ -21,6 +21,7 @@
               class="nav-button"
               [class.active]="item.isActive"
               [title]="!sidebarExpanded ? item.label : ''"
+              (click)="navigateTo(item)"
             >
               <span *ngIf="item.isActive" class="active-indicator"></span>
               <span class="nav-icon">{{ item.icon.charAt(0) }}</span>
@@ -44,7 +45,7 @@
       </div>
 
       <div class="footer-actions" [class.expanded]="sidebarExpanded">
-        <button *ngIf="sidebarExpanded" class="logout-btn">
+        <button *ngIf="sidebarExpanded" class="logout-btn" (click)="logout()">
           <span>📤</span>
           <span>Log out</span>
         </button>
@@ -59,6 +60,7 @@
           *ngIf="!sidebarExpanded"
           class="logout-btn-icon"
           title="Log out"
+          (click)="logout()"
         >
           📤
         </button>
@@ -80,7 +82,7 @@
       <div class="breadcrumb">
         <span class="breadcrumb-item">Dashboard</span>
         <span class="breadcrumb-separator">›</span>
-        <span class="breadcrumb-item active">Members</span>
+        <span class="breadcrumb-item active">Admin</span>
       </div>
 
       <div class="search-box">
@@ -129,9 +131,9 @@
         <!-- Page Header -->
         <div class="page-header">
           <div class="page-title-section">
-            <h1 class="page-title">Members</h1>
+            <h1 class="page-title">Admin Overview</h1>
             <p class="page-subtitle">
-              Manage your fitness club members and their subscriptions.
+              Live backend summary for admin users, plans, and branches.
             </p>
           </div>
 
@@ -145,6 +147,14 @@
               <span>Add Member</span>
             </button>
           </div>
+        </div>
+
+        <div
+          *ngIf="isLoading || errorMessage"
+          class="status-message"
+          [class.error]="errorMessage"
+        >
+          {{ errorMessage || "Loading admin summary..." }}
         </div>
 
         <!-- Metric Cards Grid -->

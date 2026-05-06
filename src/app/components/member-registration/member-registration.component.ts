@@ -1,6 +1,13 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import {
+  FrontdeskApiService,
+  MemberDto,
+} from '../../services/frontdesk-api.service';
+import { BranchDto, PlanDto } from '../../services/admin-api.service';
 
 interface Plan {
+  id: number;
   name: string;
   duration: string;
   price: string;
@@ -8,6 +15,7 @@ interface Plan {
 }
 
 interface Branch {
+  id: number;
   name: string;
   address: string;
   active: number;
@@ -26,11 +34,13 @@ interface AddOn {
   standalone: false,
 })
 export class MemberRegistrationComponent implements OnInit {
-  step: number = 1;
-  complete: boolean = false;
-  currentDateTime: string = '';
+  step = 1;
+  complete = false;
+  currentDateTime = '';
+  createdMember: MemberDto | null = null;
+  isLoading = false;
+  errorMessage = '';
 
-  // Form data
   formData = {
     fullName: '',
     gender: 'Male',
@@ -43,8 +53,8 @@ export class MemberRegistrationComponent implements OnInit {
     emergencyContactPhone: '',
     referralCode: '',
     corporateCode: '',
-    branch: 'Indiranagar',
-    plan: 'Gold Annual',
+    branch: '',
+    plan: '',
   };
 
   steps = [
@@ -54,62 +64,62 @@ export class MemberRegistrationComponent implements OnInit {
     'Consent & Finish',
   ];
 
-  branches: Branch[] = [
-    { name: 'Indiranagar', address: '12th Main Road, Bangalore', active: 247 },
-    { name: 'Koramangala', address: '12th Main Road, Bangalore', active: 189 },
-    { name: 'HSR Layout', address: '12th Main Road, Bangalore', active: 156 },
-  ];
-
-  plans: Plan[] = [
-    {
-      name: 'Basic Starter',
-      duration: 'Monthly',
-      price: '₹1,499',
-      features: 'Gym Access Only',
-    },
-    {
-      name: 'Gold Annual',
-      duration: 'Annual',
-      price: '₹24,999',
-      features: 'All Access + Pool',
-    },
-    {
-      name: 'Platinum Pro',
-      duration: 'Annual',
-      price: '₹41,988',
-      features: 'All Access + PT',
-    },
-  ];
+  branches: Branch[] = [];
+  plans: Plan[] = [];
 
   addOns: AddOn[] = [
     { label: 'PT Package (10 Sessions)', price: '+₹6,500', selected: false },
     { label: 'Locker Storage (Monthly)', price: '+₹300/mo', selected: false },
   ];
 
-  termsAgreed: boolean = false;
+  termsAgreed = false;
 
-  progressBarWidth: number = 0;
-  stepperLineWidth: number = 0;
+  progressBarWidth = 0;
+  stepperLineWidth = 0;
 
-  constructor() {
+  constructor(
+    private frontdeskApi: FrontdeskApiService,
+    private router: Router,
+  ) {
     this.updateDateTime();
   }
 
   ngOnInit(): void {
     this.updateProgressBar();
+    this.loadCatalogData();
+  }
+
+  loadCatalogData(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.frontdeskApi.getBranches().subscribe({
+      next: (branches) => {
+        this.branches = branches.map((branch) => this.fromBranchDto(branch));
+        this.formData.branch = this.branches[0]?.name || '';
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.errorMessage =
+          error?.error?.message || 'Unable to load branches from backend.';
+        this.isLoading = false;
+      },
+    });
+
+    this.frontdeskApi.getPlans().subscribe({
+      next: (plans) => {
+        this.plans = plans.map((plan) => this.fromPlanDto(plan));
+        this.formData.plan = this.plans[0]?.name || '';
+      },
+      error: (error) => {
+        this.errorMessage =
+          error?.error?.message || 'Unable to load plans from backend.';
+      },
+    });
   }
 
   updateDateTime(): void {
-    const now = new Date();
-    const options: Intl.DateTimeFormatOptions = {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    };
-    this.currentDateTime = now.toISOString();
+    this.currentDateTime = new Date().toISOString();
   }
 
   updateProgressBar(): void {
@@ -135,13 +145,63 @@ export class MemberRegistrationComponent implements OnInit {
 
   handleFinish(event: Event): void {
     event.preventDefault();
-    if (this.termsAgreed) {
-      this.complete = true;
+    if (!this.termsAgreed) {
+      return;
     }
+
+    const member = this.toMemberDto();
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.frontdeskApi.createMember(member).subscribe({
+      next: (createdMember) => {
+        const selectedPlan = this.plans.find(
+          (plan) => plan.name === this.formData.plan,
+        );
+        const selectedBranch = this.branches.find(
+          (branch) => branch.name === this.formData.branch,
+        );
+
+        if (!selectedPlan || !selectedBranch || !createdMember.memberId) {
+          this.createdMember = createdMember;
+          this.complete = true;
+          this.isLoading = false;
+          return;
+        }
+
+        this.frontdeskApi
+          .createMembership({
+            memberId: createdMember.memberId,
+            planId: selectedPlan.id,
+            branchId: selectedBranch.id,
+          })
+          .subscribe({
+            next: () => {
+              this.createdMember = { ...createdMember, status: 'ACTIVE' };
+              this.complete = true;
+              this.isLoading = false;
+            },
+            error: (error) => {
+              this.createdMember = createdMember;
+              this.complete = true;
+              this.errorMessage =
+                error?.error?.message ||
+                'Member created, but membership activation failed.';
+              this.isLoading = false;
+            },
+          });
+      },
+      error: (error) => {
+        this.errorMessage =
+          error?.error?.message || 'Unable to create member account.';
+        this.isLoading = false;
+      },
+    });
   }
 
   resetForm(): void {
     this.complete = false;
+    this.createdMember = null;
     this.step = 1;
     this.formData = {
       fullName: '',
@@ -155,11 +215,15 @@ export class MemberRegistrationComponent implements OnInit {
       emergencyContactPhone: '',
       referralCode: '',
       corporateCode: '',
-      branch: 'Indiranagar',
-      plan: 'Gold Annual',
+      branch: this.branches[0]?.name || '',
+      plan: this.plans[0]?.name || '',
     };
     this.termsAgreed = false;
     this.updateProgressBar();
+  }
+
+  goToFrontdesk(): void {
+    this.router.navigate(['/frontdesk-dashboard']);
   }
 
   getAge(): string {
@@ -191,5 +255,51 @@ export class MemberRegistrationComponent implements OnInit {
 
   toggleAddOn(index: number): void {
     this.addOns[index].selected = !this.addOns[index].selected;
+  }
+
+  private toMemberDto(): MemberDto {
+    const branch = this.branches.find((item) => item.name === this.formData.branch);
+    return {
+      memName: this.formData.fullName,
+      email: this.formData.email,
+      phone: this.normalizePhone(this.formData.phone),
+      dob: this.formData.dateOfBirth,
+      address: this.formData.address,
+      emgContact: this.formData.emergencyContactName,
+      emgPhone: this.normalizePhone(this.formData.emergencyContactPhone),
+      referralCode: this.formData.referralCode || undefined,
+      corporateCode: this.formData.corporateCode || undefined,
+      notes: this.formData.notes || undefined,
+      homeBranchId: branch?.id || this.branches[0]?.id || 0,
+    };
+  }
+
+  private fromBranchDto(branch: BranchDto): Branch {
+    return {
+      id: Number(branch.branchId),
+      name: branch.branchName,
+      address: branch.address,
+      active: 0,
+    };
+  }
+
+  private fromPlanDto(plan: PlanDto): Plan {
+    return {
+      id: Number(plan.planId),
+      name: plan.planName,
+      duration:
+        plan.durationDays >= 365
+          ? 'Annual'
+          : plan.durationDays >= 90
+            ? 'Quarterly'
+            : 'Monthly',
+      price: `₹${Number(plan.price).toLocaleString('en-IN')}`,
+      features: `${plan.accessStart}-${plan.accessEnd} access`,
+    };
+  }
+
+  private normalizePhone(phone: string): string {
+    const digits = phone.replace(/\D/g, '');
+    return digits.length > 10 ? digits.slice(-10) : digits;
   }
 }

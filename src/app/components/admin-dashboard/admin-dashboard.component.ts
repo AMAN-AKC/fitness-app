@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { AdminApiService, BranchDto } from '../../services/admin-api.service';
 
 export interface FeatureFlag {
   id: string;
@@ -35,11 +36,14 @@ export class AdminDashboardComponent implements OnInit {
   flags: FeatureFlag[] = [];
   auditLogs: AuditLog[] = [];
   branches: Branch[] = [];
+  isLoading = false;
+  errorMessage = '';
 
-  constructor() {}
+  constructor(private adminApi: AdminApiService) {}
 
   ngOnInit(): void {
     this.initializeData();
+    this.loadBranches();
   }
 
   initializeData(): void {
@@ -130,40 +134,6 @@ export class AdminDashboardComponent implements OnInit {
       },
     ];
 
-    this.branches = [
-      {
-        id: '1',
-        name: 'Downtown Main',
-        city: 'Mumbai',
-        members: 1250,
-        classes: 24,
-        active: true,
-      },
-      {
-        id: '2',
-        name: 'Westside Flex',
-        city: 'Mumbai',
-        members: 840,
-        classes: 18,
-        active: true,
-      },
-      {
-        id: '3',
-        name: 'Koramangala Elite',
-        city: 'Bangalore',
-        members: 1020,
-        classes: 20,
-        active: true,
-      },
-      {
-        id: '4',
-        name: 'Pune East',
-        city: 'Pune',
-        members: 450,
-        classes: 12,
-        active: false,
-      },
-    ];
   }
 
   toggleFlag(id: string): void {
@@ -180,5 +150,38 @@ export class AdminDashboardComponent implements OnInit {
   onAddBranch(): void {
     console.log('Add Branch clicked');
     // Implement add branch functionality
+  }
+
+  private loadBranches(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.adminApi.getBranches().subscribe({
+      next: (branches) => {
+        this.branches = branches.map((branch) => this.fromBranchDto(branch));
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.errorMessage =
+          error?.error?.message || 'Unable to load branches from the backend.';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  private fromBranchDto(branch: BranchDto): Branch {
+    return {
+      id: String(branch.branchId),
+      name: branch.branchName,
+      city: this.extractCity(branch.address),
+      members: 0,
+      classes: 0,
+      active: branch.isActive !== false,
+    };
+  }
+
+  private extractCity(address: string): string {
+    const parts = address.split(',').map((part) => part.trim());
+    return parts.length > 1 ? parts[parts.length - 2] : '';
   }
 }

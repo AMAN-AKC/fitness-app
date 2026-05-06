@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { AdminApiService, BranchDto } from '../../services/admin-api.service';
 
 export interface Staff {
   id: string;
@@ -65,6 +66,9 @@ export interface BranchDetails {
 export class AdminBranchManagementComponent implements OnInit {
   branches: BranchDetails[] = [];
   filteredBranches: BranchDetails[] = [];
+  fallbackBranch: BranchDetails = this.createEmptyBranch();
+  isLoading = false;
+  errorMessage = '';
   searchQuery = '';
   selectedBranchId = '';
   activeTab: 'Details' | 'Staff' | 'Members' | 'Classes' | 'Settings' =
@@ -75,129 +79,29 @@ export class AdminBranchManagementComponent implements OnInit {
 
   tabs = ['Details', 'Staff', 'Members', 'Classes', 'Settings'] as const;
 
-  constructor() {}
+  constructor(private adminApi: AdminApiService) {}
 
   ngOnInit(): void {
-    this.initializeBranches();
-    this.selectedBranchId = this.branches[0].id;
-    this.filterBranches();
+    this.loadBranches();
   }
 
-  initializeBranches(): void {
-    this.branches = [
-      {
-        id: '1',
-        name: 'Downtown Main',
-        city: 'Mumbai',
-        address: '123 Business Avenue, Colaba, Mumbai, MH 400001',
-        phone: '+91 98765 43210',
-        email: 'downtown@fitclub.com',
-        openTime: '05:00',
-        closeTime: '23:00',
-        timezone: 'Asia/Kolkata',
-        active: true,
-        membersCount: 1250,
-        staff: [
-          {
-            id: 's1',
-            name: 'Rajesh Kumar',
-            role: 'Manager',
-            email: 'rajesh.k@fitclub.com',
-            since: 'Jan 2022',
-            initials: 'RK',
-          },
-          {
-            id: 's2',
-            name: 'Priya Singh',
-            role: 'Trainer',
-            email: 'priya.s@fitclub.com',
-            since: 'Mar 2023',
-            initials: 'PS',
-          },
-        ],
-        members: [
-          { id: 'm1', name: 'Amit Patel', plan: 'Gold Annual', initials: 'AP' },
-          {
-            id: 'm2',
-            name: 'Neha Sharma',
-            plan: 'Student Flex',
-            initials: 'NS',
-          },
-        ],
-        classes: [
-          {
-            id: 'c1',
-            name: 'Morning Yoga',
-            category: 'Yoga',
-            trainer: 'Priya Singh',
-            schedule: 'Mon-Wed-Fri, 06:00 AM',
-            status: true,
-          },
-          {
-            id: 'c2',
-            name: 'HIIT Blast',
-            category: 'Cardio',
-            trainer: 'Rahul Dev',
-            schedule: 'Tue-Thu, 07:00 PM',
-            status: true,
-          },
-        ],
-        rooms: [
-          { id: 'r1', name: 'Main Studio', capacity: 40, active: true },
-          { id: 'r2', name: 'Yoga Room', capacity: 20, active: true },
-        ],
-        plans: [
-          { id: 'p1', name: 'Gold Annual', visible: true },
-          { id: 'p2', name: 'Student Flex', visible: true },
-          { id: 'p3', name: 'Corporate Elite', visible: true },
-        ],
+  loadBranches(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.adminApi.getBranches().subscribe({
+      next: (branches) => {
+        this.branches = branches.map((branch) => this.fromDto(branch));
+        this.selectedBranchId = this.branches[0]?.id || '';
+        this.filterBranches();
+        this.isLoading = false;
       },
-      {
-        id: '2',
-        name: 'Westside Flex',
-        city: 'Mumbai',
-        address: '45 West Link Road, Bandra West, Mumbai, MH 400050',
-        phone: '+91 98765 11111',
-        email: 'westside@fitclub.com',
-        openTime: '06:00',
-        closeTime: '22:00',
-        timezone: 'Asia/Kolkata',
-        active: true,
-        membersCount: 840,
-        staff: [
-          {
-            id: 's3',
-            name: 'Sunil Dutt',
-            role: 'Front Desk',
-            email: 'sunil.d@fitclub.com',
-            since: 'Jul 2024',
-            initials: 'SD',
-          },
-        ],
-        members: [],
-        classes: [],
-        rooms: [],
-        plans: [],
+      error: (error) => {
+        this.errorMessage =
+          error?.error?.message || 'Unable to load branches from the backend.';
+        this.isLoading = false;
       },
-      {
-        id: '3',
-        name: 'Pune East',
-        city: 'Pune',
-        address: '88 Viman Nagar Road, Pune, MH 411014',
-        phone: '+91 98765 22222',
-        email: 'puneeast@fitclub.com',
-        openTime: '06:00',
-        closeTime: '22:00',
-        timezone: 'Asia/Kolkata',
-        active: false,
-        membersCount: 450,
-        staff: [],
-        members: [],
-        classes: [],
-        rooms: [],
-        plans: [],
-      },
-    ];
+    });
   }
 
   filterBranches(): void {
@@ -219,12 +123,48 @@ export class AdminBranchManagementComponent implements OnInit {
   get selectedBranch(): BranchDetails {
     return (
       this.branches.find((b) => b.id === this.selectedBranchId) ||
-      this.branches[0]
+      this.branches[0] ||
+      this.fallbackBranch
     );
   }
 
   onAddBranch(): void {
-    console.log('Add Branch clicked');
+    const branch: BranchDetails = this.createEmptyBranch();
+    branch.name = 'New Branch';
+    branch.address = 'Update address';
+
+    this.adminApi.createBranch(this.toDto(branch)).subscribe({
+      next: (created) => {
+        const createdBranch = this.fromDto(created);
+        this.branches = [createdBranch, ...this.branches];
+        this.selectedBranchId = createdBranch.id;
+        this.filterBranches();
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Unable to add branch.';
+      },
+    });
+  }
+
+  private createEmptyBranch(): BranchDetails {
+    return {
+      id: '',
+      name: '',
+      city: '',
+      address: '',
+      phone: '+91 00000 00000',
+      email: '',
+      openTime: '06:00',
+      closeTime: '22:00',
+      timezone: 'Asia/Kolkata',
+      active: true,
+      membersCount: 0,
+      staff: [],
+      members: [],
+      classes: [],
+      rooms: [],
+      plans: [],
+    };
   }
 
   onAssignStaff(): void {
@@ -248,7 +188,37 @@ export class AdminBranchManagementComponent implements OnInit {
   }
 
   saveChanges(): void {
-    console.log('Branch details saved');
+    const branch = this.selectedBranch;
+    if (!branch?.id) {
+      return;
+    }
+
+    this.adminApi.updateBranch(Number(branch.id), this.toDto(branch)).subscribe({
+      next: (savedBranch) => {
+        const index = this.branches.findIndex((b) => b.id === branch.id);
+        if (index !== -1) {
+          this.branches[index] = {
+            ...this.fromDto(savedBranch),
+            staff: branch.staff,
+            members: branch.members,
+            classes: branch.classes,
+            rooms: branch.rooms,
+            plans: branch.plans,
+          };
+          this.selectedBranchId = this.branches[index].id;
+        }
+        this.filterBranches();
+      },
+      error: (error) => {
+        this.errorMessage =
+          error?.error?.message || 'Unable to save branch changes.';
+      },
+    });
+  }
+
+  toggleSelectedBranchActive(): void {
+    this.selectedBranch.active = !this.selectedBranch.active;
+    this.saveChanges();
   }
 
   unassignStaff(staffId: string): void {
@@ -276,5 +246,49 @@ export class AdminBranchManagementComponent implements OnInit {
 
   setSavePolicy(): void {
     console.log('Policy saved');
+  }
+
+  private fromDto(branch: BranchDto): BranchDetails {
+    const [openTime, closeTime] = this.parseOperatingHours(branch.opHours);
+    return {
+      id: String(branch.branchId),
+      name: branch.branchName,
+      city: this.extractCity(branch.address),
+      address: branch.address,
+      phone: branch.contact,
+      email: '',
+      openTime,
+      closeTime,
+      timezone: branch.timezone,
+      active: branch.isActive !== false,
+      membersCount: 0,
+      staff: [],
+      members: [],
+      classes: [],
+      rooms: [],
+      plans: [],
+    };
+  }
+
+  private toDto(branch: BranchDetails): BranchDto {
+    return {
+      branchId: branch.id ? Number(branch.id) : undefined,
+      branchName: branch.name,
+      address: branch.address,
+      contact: branch.phone,
+      opHours: `${branch.openTime}-${branch.closeTime}`,
+      timezone: branch.timezone,
+      isActive: branch.active,
+    };
+  }
+
+  private parseOperatingHours(opHours: string): [string, string] {
+    const [openTime, closeTime] = opHours.split(/\s*-\s*/);
+    return [openTime || '06:00', closeTime || '22:00'];
+  }
+
+  private extractCity(address: string): string {
+    const parts = address.split(',').map((part) => part.trim());
+    return parts.length > 1 ? parts[parts.length - 2] : '';
   }
 }

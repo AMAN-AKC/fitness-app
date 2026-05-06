@@ -1,12 +1,21 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
+import {
+  AttendanceDto,
+  FrontdeskApiService,
+  MemberDto,
+} from '../../services/frontdesk-api.service';
+import { BranchDto } from '../../services/admin-api.service';
 
 interface MemberData {
   id: string;
+  memberId: number;
   name: string;
   plan: string;
   branch: string;
+  branchId: number;
   avatar: string;
   status: 'ok' | 'blocked';
   alert?: string;
@@ -40,55 +49,45 @@ interface ClassMember {
   standalone: false,
 })
 export class FrontdeskDashboardComponent implements OnInit {
-  searchValue: string = '';
+  searchValue = '';
   memberFound: MemberData | null = null;
   expandedClass: number | null = null;
-  currentDateTime: string = '';
-  currentUserName: string = 'Guest';
+  currentDateTime = '';
+  currentUserName = 'Guest';
+  isLoading = false;
+  errorMessage = '';
+  successMessage = '';
 
-  // KPI Data
-  checkInsToday: number = 247;
-  newMembers: number = 14;
-  pendingConsents: number = 7;
-  expiringPlans: number = 12;
+  selectedBranchId = 0;
+  branches: BranchDto[] = [];
+  members: MemberDto[] = [];
 
-  constructor(
-    private authService: AuthService,
-    private router: Router,
-  ) {}
+  checkInsToday = 0;
+  newMembers = 0;
+  pendingConsents = 0;
+  expiringPlans = 0;
 
-  // Recent Check-ins
-  recentCheckIns: CheckInRecord[] = [
-    { name: 'Arjun Verma', time: '2 min ago', method: 'QR Code', avatar: 'AV' },
-    { name: 'Meera Gupta', time: '5 min ago', method: 'Manual', avatar: 'MG' },
-    {
-      name: 'Siddharth N.',
-      time: '12 min ago',
-      method: 'QR Code',
-      avatar: 'SN',
-    },
-    { name: 'Aditi Rao', time: '15 min ago', method: 'QR Code', avatar: 'AR' },
-    { name: 'Karan Patel', time: '18 min ago', method: 'Manual', avatar: 'KP' },
-  ];
+  recentCheckIns: CheckInRecord[] = [];
 
-  // Today's Classes
   todaysClasses: ClassRoster[] = [
     {
       id: 1,
       name: 'Morning Yoga Flow',
       time: '07:00 AM',
-      enrolled: 18,
+      enrolled: 0,
       cap: 20,
     },
-    { id: 2, name: 'HIIT Intensity', time: '18:00 PM', enrolled: 20, cap: 20 },
-    { id: 3, name: 'Zumba Party', time: '19:00 PM', enrolled: 15, cap: 20 },
+    { id: 2, name: 'HIIT Intensity', time: '18:00 PM', enrolled: 0, cap: 20 },
+    { id: 3, name: 'Zumba Party', time: '19:00 PM', enrolled: 0, cap: 20 },
   ];
 
-  classMembers: ClassMember[] = [
-    { name: 'Aditi Rao', status: 'present' },
-    { name: 'John Doe', status: 'pending' },
-    { name: 'Priya Singh', status: 'absent' },
-  ];
+  classMembers: ClassMember[] = [];
+
+  constructor(
+    private authService: AuthService,
+    private frontdeskApi: FrontdeskApiService,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     const session = this.authService.getCurrentSession();
@@ -97,6 +96,7 @@ export class FrontdeskDashboardComponent implements OnInit {
     }
     this.updateDateTime();
     setInterval(() => this.updateDateTime(), 1000);
+    this.loadFrontdeskData();
   }
 
   logout(): void {
@@ -143,42 +143,124 @@ export class FrontdeskDashboardComponent implements OnInit {
     this.currentDateTime = `${dayName}, ${date} ${month} ${year} · ${time}`;
   }
 
+  loadFrontdeskData(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    forkJoin({
+      branches: this.frontdeskApi.getBranches(),
+      members: this.frontdeskApi.getMembers(),
+    }).subscribe({
+      next: ({ branches, members }) => {
+        this.branches = branches;
+        this.members = members;
+        this.selectedBranchId = branches[0]?.branchId || 0;
+        this.newMembers = members.filter((m) => m.status === 'PROSPECT').length;
+        this.pendingConsents = members.filter(
+          (m) => m.status === 'PROSPECT',
+        ).length;
+        this.expiringPlans = 0;
+        this.classMembers = members.slice(0, 5).map((member) => ({
+          name: member.memName,
+          status: 'pending',
+        }));
+        this.loadTodayAttendance();
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.errorMessage =
+          error?.error?.message || 'Unable to load front-desk data.';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  loadTodayAttendance(): void {
+    if (!this.selectedBranchId) {
+      return;
+    }
+
+    this.frontdeskApi.getTodayAttendance(this.selectedBranchId).subscribe({
+      next: (attendance) => {
+        this.checkInsToday = attendance.length;
+        this.recentCheckIns = attendance
+          .slice(-8)
+          .reverse()
+          .map((item) => this.toCheckInRecord(item));
+      },
+      error: (error) => {
+        this.errorMessage =
+          error?.error?.message || 'Unable to load today attendance.';
+      },
+    });
+  }
+
   handleSearch(event: Event): void {
     event.preventDefault();
-    if (!this.searchValue) return;
+    this.errorMessage = '';
+    this.successMessage = '';
 
-    // Mock response based on search value
-    if (this.searchValue.toLowerCase().includes('exp')) {
-      this.memberFound = {
-        id: 'MEM-20230101',
-        name: 'Rahul Kumar',
-        plan: 'Gold Annual',
-        branch: 'Indiranagar',
-        avatar: 'RK',
-        status: 'blocked',
-        alert: '⚠ Membership Expired — Check-In Denied',
-      };
-    } else {
-      this.memberFound = {
-        id: 'MEM-20240422',
-        name: 'Priya Singh',
-        plan: 'Platinum Pro',
-        branch: 'Indiranagar',
-        avatar: 'PS',
-        status: 'ok',
-        dues: '₹2,400',
-      };
+    const query = this.searchValue.trim().toLowerCase();
+    if (!query) {
+      return;
     }
+
+    const member = this.members.find(
+      (m) =>
+        String(m.memberId) === query ||
+        `mem-${m.memberId}`.toLowerCase() === query ||
+        m.memName.toLowerCase().includes(query) ||
+        m.email.toLowerCase().includes(query) ||
+        m.phone.includes(query),
+    );
+
+    if (!member) {
+      this.memberFound = null;
+      this.errorMessage = 'No member found for that name, ID, email, or phone.';
+      return;
+    }
+
+    this.memberFound = this.toMemberData(member);
   }
 
   clearSearch(): void {
     this.searchValue = '';
     this.memberFound = null;
+    this.errorMessage = '';
+    this.successMessage = '';
   }
 
   confirmCheckIn(): void {
-    this.clearSearch();
-    // Logic for confirming check-in would go here
+    if (!this.memberFound) {
+      return;
+    }
+
+    this.frontdeskApi
+      .checkIn({
+        memberId: this.memberFound.memberId,
+        branchId: this.memberFound.branchId || this.selectedBranchId,
+        scanMethod: 'MANUAL',
+      })
+      .subscribe({
+        next: (attendance) => {
+          this.successMessage = `${this.memberFound?.name} checked in successfully.`;
+          this.recentCheckIns = [
+            this.toCheckInRecord(attendance),
+            ...this.recentCheckIns,
+          ];
+          this.checkInsToday += 1;
+          this.memberFound = null;
+          this.searchValue = '';
+        },
+        error: (error) => {
+          this.errorMessage =
+            error?.error?.message || 'Check-in failed for this member.';
+        },
+      });
+  }
+
+  goToRegistration(): void {
+    this.router.navigate(['/member-registration']);
   }
 
   toggleClassExpanded(classId: number): void {
@@ -196,5 +278,67 @@ export class FrontdeskDashboardComponent implements OnInit {
     this.classMembers.forEach((member) => {
       member.status = 'present';
     });
+  }
+
+  private toMemberData(member: MemberDto): MemberData {
+    const branch = this.branches.find(
+      (item) => item.branchId === member.homeBranchId,
+    );
+    const isBlocked = member.status !== 'ACTIVE';
+
+    return {
+      id: `MEM-${member.memberId}`,
+      memberId: Number(member.memberId),
+      name: member.memName,
+      plan: member.status === 'ACTIVE' ? 'Active Membership' : 'No Active Plan',
+      branch: branch?.branchName || `Branch ${member.homeBranchId}`,
+      branchId: member.homeBranchId,
+      avatar: this.getInitials(member.memName),
+      status: isBlocked ? 'blocked' : 'ok',
+      alert: isBlocked ? 'No active membership. Check-in denied.' : undefined,
+    };
+  }
+
+  private toCheckInRecord(attendance: AttendanceDto): CheckInRecord {
+    const member = this.members.find((m) => m.memberId === attendance.memberId);
+    const name = member?.memName || `Member ${attendance.memberId}`;
+    return {
+      name,
+      time: this.formatRelativeTime(attendance.checkInTime),
+      method: attendance.scanMethod === 'QR' ? 'QR Code' : 'Manual',
+      avatar: this.getInitials(name),
+    };
+  }
+
+  private formatRelativeTime(value?: string): string {
+    if (!value) {
+      return 'Just now';
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return 'Just now';
+    }
+
+    const minutes = Math.max(
+      0,
+      Math.floor((Date.now() - parsed.getTime()) / 60000),
+    );
+    if (minutes < 1) {
+      return 'Just now';
+    }
+    if (minutes < 60) {
+      return `${minutes} min ago`;
+    }
+    return `${Math.floor(minutes / 60)} hr ago`;
+  }
+
+  private getInitials(name: string): string {
+    return name
+      .split(' ')
+      .map((part) => part[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
   }
 }

@@ -1,4 +1,9 @@
 import { Component, OnInit } from '@angular/core';
+import {
+  AdminApiService,
+  BackendRole,
+  SystemUserDto,
+} from '../../services/admin-api.service';
 
 export type RoleType =
   | 'Member'
@@ -38,6 +43,8 @@ export interface PasswordPolicy {
 export class AdminUserManagementComponent implements OnInit {
   users: User[] = [];
   filteredUsers: User[] = [];
+  isLoading = false;
+  errorMessage = '';
   searchQuery = '';
   roleFilter: RoleType | 'All' = 'All';
   statusFilter: StatusType | 'All' = 'All';
@@ -78,77 +85,28 @@ export class AdminUserManagementComponent implements OnInit {
       'Global system access. Can modify plans, system settings, RBAC, and all branches.',
   };
 
-  constructor() {}
+  constructor(private adminApi: AdminApiService) {}
 
   ngOnInit(): void {
-    this.initializeUsers();
-    this.filterUsers();
+    this.loadUsers();
   }
 
-  initializeUsers(): void {
-    this.users = [
-      {
-        id: '1',
-        name: 'Amit Patel',
-        email: 'amit.p@example.com',
-        role: 'Member',
-        branch: 'Downtown Main',
-        lastLogin: '2 hours ago',
-        status: 'Active',
-        memberId: 'MEM-29384',
+  loadUsers(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.adminApi.getUsers().subscribe({
+      next: (users) => {
+        this.users = users.map((user) => this.fromDto(user));
+        this.filterUsers();
+        this.isLoading = false;
       },
-      {
-        id: '2',
-        name: 'Priya Singh',
-        email: 'priya.s@fitclub.com',
-        role: 'Trainer',
-        branch: 'Westside Flex',
-        lastLogin: '1 day ago',
-        status: 'Active',
-        memberId: 'TRN-1029',
+      error: (error) => {
+        this.errorMessage =
+          error?.error?.message || 'Unable to load users from the backend.';
+        this.isLoading = false;
       },
-      {
-        id: '3',
-        name: 'Rajesh Kumar',
-        email: 'rajesh.k@fitclub.com',
-        role: 'Manager',
-        branch: 'All Branches',
-        lastLogin: '15 mins ago',
-        status: 'Active',
-        memberId: 'MGR-0042',
-      },
-      {
-        id: '4',
-        name: 'Neha Sharma',
-        email: 'neha.sharma@example.com',
-        role: 'Member',
-        branch: 'Pune East',
-        lastLogin: '5 days ago',
-        status: 'Locked',
-        lockedDetail: 'Locked until 14:30 — 5 failed attempts',
-        memberId: 'MEM-11928',
-      },
-      {
-        id: '5',
-        name: 'Sunil Dutt',
-        email: 'sunil.d@fitclub.com',
-        role: 'Front-Desk',
-        branch: 'Westside Flex',
-        lastLogin: '1 month ago',
-        status: 'Deactivated',
-        memberId: 'STF-8832',
-      },
-      {
-        id: '6',
-        name: 'Admin Super',
-        email: 'admin@fitclub.com',
-        role: 'Admin',
-        branch: 'System',
-        lastLogin: 'Just now',
-        status: 'Active',
-        memberId: 'ADM-0001',
-      },
-    ];
+    });
   }
 
   filterUsers(): void {
@@ -188,20 +146,48 @@ export class AdminUserManagementComponent implements OnInit {
     action: 'lock' | 'unlock' | 'deactivate' | 'activate',
   ): void {
     const user = this.users.find((u) => u.id === userId);
-    if (user) {
-      if (action === 'lock') {
-        user.status = 'Locked';
-        user.lockedDetail = 'Manually locked by Admin';
-      } else if (action === 'unlock') {
-        user.status = 'Active';
-        user.lockedDetail = undefined;
-      } else if (action === 'deactivate') {
-        user.status = 'Deactivated';
-      } else if (action === 'activate') {
-        user.status = 'Active';
-      }
-      this.filterUsers();
+    if (!user) {
+      return;
     }
+
+    if (action === 'lock') {
+      user.status = 'Locked';
+      user.lockedDetail = 'Manually locked by Admin';
+      this.filterUsers();
+      return;
+    }
+
+    if (action === 'unlock') {
+      user.status = 'Active';
+      user.lockedDetail = undefined;
+      this.filterUsers();
+      return;
+    }
+
+    if (action === 'deactivate') {
+      this.adminApi.deactivateUser(Number(user.id)).subscribe({
+        next: () => {
+          user.status = 'Deactivated';
+          this.filterUsers();
+        },
+        error: (error) => {
+          this.errorMessage =
+            error?.error?.message || 'Unable to deactivate user.';
+        },
+      });
+      return;
+    }
+
+    const updated = { ...user, status: 'Active' as StatusType };
+    this.adminApi.updateUser(Number(user.id), this.toDto(updated)).subscribe({
+      next: (savedUser) => {
+        Object.assign(user, this.fromDto(savedUser));
+        this.filterUsers();
+      },
+      error: (error) => {
+        this.errorMessage = error?.error?.message || 'Unable to activate user.';
+      },
+    });
   }
 
   getInitials(name: string): string {
@@ -219,12 +205,35 @@ export class AdminUserManagementComponent implements OnInit {
   }
 
   saveChanges(): void {
-    if (this.editingUser) {
-      this.editingUser.role = this.drawerRole;
-      this.editingUser.status = this.drawerActive ? 'Active' : 'Deactivated';
-      this.filterUsers();
+    if (!this.editingUser) {
+      this.closeDrawer();
+      return;
     }
-    this.closeDrawer();
+
+    const updatedUser: User = {
+      ...this.editingUser,
+      role: this.drawerRole,
+      status: this.drawerActive ? 'Active' : 'Deactivated',
+    };
+
+    this.adminApi
+      .updateUser(Number(updatedUser.id), this.toDto(updatedUser))
+      .subscribe({
+        next: (savedUser) => {
+          const index = this.users.findIndex(
+            (user) => user.id === updatedUser.id,
+          );
+          if (index !== -1) {
+            this.users[index] = this.fromDto(savedUser);
+          }
+          this.filterUsers();
+          this.closeDrawer();
+        },
+        error: (error) => {
+          this.errorMessage =
+            error?.error?.message || 'Unable to save user changes.';
+        },
+      });
   }
 
   decrementFailedAttempts(): void {
@@ -243,5 +252,51 @@ export class AdminUserManagementComponent implements OnInit {
 
   savePasswordPolicy(): void {
     console.log('Password policy saved:', this.passwordPolicy);
+  }
+
+  private fromDto(user: SystemUserDto): User {
+    const role = this.toUiRole(user.role);
+    return {
+      id: String(user.userId),
+      name: user.username,
+      email: user.email,
+      role,
+      branch: user.role === 'ADMIN' ? 'System' : 'Assigned in branch module',
+      lastLogin: 'Backend controlled',
+      status: user.isActive === false ? 'Deactivated' : 'Active',
+      memberId: `${role.slice(0, 3).toUpperCase()}-${user.userId}`,
+    };
+  }
+
+  private toDto(user: User): SystemUserDto {
+    return {
+      userId: Number(user.id),
+      username: user.name,
+      email: user.email,
+      role: this.toBackendRole(user.role),
+      isActive: user.status === 'Active',
+    };
+  }
+
+  private toUiRole(role: BackendRole): RoleType {
+    const roleMap: Record<BackendRole, RoleType> = {
+      MEMBER: 'Member',
+      FRONT_DESK: 'Front-Desk',
+      TRAINER: 'Trainer',
+      MANAGER: 'Manager',
+      ADMIN: 'Admin',
+    };
+    return roleMap[role];
+  }
+
+  private toBackendRole(role: RoleType): BackendRole {
+    const roleMap: Record<RoleType, BackendRole> = {
+      Member: 'MEMBER',
+      'Front-Desk': 'FRONT_DESK',
+      Trainer: 'TRAINER',
+      Manager: 'MANAGER',
+      Admin: 'ADMIN',
+    };
+    return roleMap[role];
   }
 }

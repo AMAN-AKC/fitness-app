@@ -10,6 +10,15 @@
     </div>
   </div>
 
+  <div
+    *ngIf="isLoading || errorMessage || successMessage"
+    class="frontdesk-status"
+    [class.frontdesk-status--error]="errorMessage"
+    [class.frontdesk-status--success]="successMessage && !errorMessage"
+  >
+    {{ errorMessage || successMessage || "Loading front-desk data..." }}
+  </div>
+
   <!-- KPI CARDS -->
   <div class="kpi-grid">
     <!-- Check-Ins Today -->
@@ -33,7 +42,7 @@
           <span class="kpi-label">New Members</span>
         </div>
         <div class="kpi-value">{{ newMembers }}</div>
-        <p class="kpi-trend">↑ 3 vs last week</p>
+        <p class="kpi-trend">Prospects in backend</p>
       </div>
     </div>
 
@@ -63,6 +72,13 @@
     </div>
 
     <h2 class="quick-checkin-title">Quick Check-In</h2>
+    <button
+      type="button"
+      (click)="goToRegistration()"
+      class="register-member-link"
+    >
+      Register New Member
+    </button>
 
     <ng-container *ngIf="!memberFound">
       <!-- QR Code Area -->

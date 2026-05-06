@@ -866,6 +866,24 @@
   color: #374151;
 }
 
+.status-message {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-message.error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 10px;

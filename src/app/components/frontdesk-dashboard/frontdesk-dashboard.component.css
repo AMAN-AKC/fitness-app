@@ -920,6 +920,43 @@
   color: #ffffff;
 }
 
+.frontdesk-status {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.frontdesk-status--error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.frontdesk-status--success {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.register-member-link {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* RESPONSIVE DESIGN */
 @media (max-width: 768px) {
   .frontdesk-dashboard-container {
