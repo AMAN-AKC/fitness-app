@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 interface UpcomingClass {
   category: string;
@@ -32,6 +34,7 @@ interface KPIData {
 })
 export class MemberDashboardComponent implements OnInit {
   showAlert = true;
+  currentUserName: string = 'Guest';
 
   upcomingClasses: UpcomingClass[] = [
     {
@@ -119,9 +122,22 @@ export class MemberDashboardComponent implements OnInit {
     chartData: [60, 75, 85, 90],
   };
 
-  constructor() {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+  ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    const session = this.authService.getCurrentSession();
+    if (session) {
+      this.currentUserName = session.username;
+    }
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
 
   closeAlert(): void {
     this.showAlert = false;

@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 import { NavigationService } from '../../services/navigation.service';
 
 @Component({
@@ -11,8 +13,7 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   isLoading = false;
   showPassword = false;
-  emailError = '';
-  passwordError = '';
+  errorMessage = '';
 
   features = [
     'Secure role-based access control (RBAC)',
@@ -23,14 +24,21 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private formBuilder: FormBuilder,
+    private authService: AuthService,
+    private router: Router,
     private navigationService: NavigationService,
   ) {}
 
   ngOnInit(): void {
     this.loginForm = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
+      username: ['', Validators.required],
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
+
+    const session = this.authService.getCurrentSession();
+    if (session) {
+      this.router.navigate([this.authService.getDashboardRoute(session.role)]);
+    }
   }
 
   togglePasswordVisibility(): void {
@@ -38,33 +46,29 @@ export class LoginComponent implements OnInit {
   }
 
   onSubmit(): void {
-    this.emailError = '';
-    this.passwordError = '';
+    this.errorMessage = '';
 
-    if (!this.loginForm.get('email')?.value) {
-      this.emailError = 'Email is required';
-    } else if (!this.isValidEmail(this.loginForm.get('email')?.value)) {
-      this.emailError = 'Please enter a valid email';
-    }
-
-    if (!this.loginForm.get('password')?.value) {
-      this.passwordError = 'Password is required';
-    }
-
-    if (this.emailError || this.passwordError) {
+    if (this.loginForm.invalid) {
       return;
     }
 
     this.isLoading = true;
-    setTimeout(() => {
-      this.isLoading = false;
-      console.log('Login successful:', this.loginForm.value);
-    }, 2000);
-  }
+    const payload = {
+      username: this.loginForm.get('username')?.value,
+      password: this.loginForm.get('password')?.value,
+    };
 
-  isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    this.authService.login(payload).subscribe({
+      next: (session) => {
+        this.isLoading = false;
+        const dashboardRoute = this.authService.getDashboardRoute(session.role);
+        this.router.navigate([dashboardRoute]);
+      },
+      error: (error) => {
+        this.isLoading = false;
+        this.errorMessage = this.authService.getErrorMessage(error);
+      },
+    });
   }
 
   goToLanding(): void {

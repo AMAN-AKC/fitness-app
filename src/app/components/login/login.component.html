@@ -60,22 +60,25 @@
         <h2 class="form-title">Welcome back</h2>
         <p class="form-subtitle">Sign in to your account</p>
 
+        <!-- Error Message -->
+        <div *ngIf="errorMessage" class="error-alert">
+          {{ errorMessage }}
+        </div>
+
         <form
           [formGroup]="loginForm"
           (ngSubmit)="onSubmit()"
           class="login-form"
         >
-          <!-- Email Field -->
+          <!-- Username Field -->
           <div class="form-group">
-            <label class="form-label">Email address</label>
+            <label class="form-label">Username</label>
             <input
-              type="email"
-              formControlName="email"
-              placeholder="you@fitclub.com"
+              type="text"
+              formControlName="username"
+              placeholder="your username"
               class="form-input"
-              [class.error]="emailError"
             />
-            <p *ngIf="emailError" class="error-message">{{ emailError }}</p>
           </div>
 
           <!-- Password Field -->
@@ -87,7 +90,6 @@
                 formControlName="password"
                 placeholder="••••••••"
                 class="form-input"
-                [class.error]="passwordError"
               />
               <button
                 type="button"
@@ -125,9 +127,6 @@
                 >Forgot password?</a
               >
             </div>
-            <p *ngIf="passwordError" class="error-message">
-              {{ passwordError }}
-            </p>
           </div>
 
           <!-- Sign In Button -->

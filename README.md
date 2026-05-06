@@ -1,27 +1,82 @@
-# FitnessApp
+# Fitness App
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.21.
+This repository contains the Angular frontend in this folder and the Spring Boot backend in `c:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system`.
 
-## Development server
+## Prerequisites
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+- Node.js and npm
+- Java 21
+- MySQL running locally or on your configured host
 
-## Code scaffolding
+The database is started manually once outside the app. The backend uses JPA to read and write data after the database is available.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## Run the backend
 
-## Build
+Open a terminal in the backend project folder and start Spring Boot:
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+```powershell
+Set-Location "c:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system"
+.\mvnw.cmd spring-boot:run
+```
 
-## Running unit tests
+If you only want to verify the backend build and tests:
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+```powershell
+Set-Location "c:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system"
+.\mvnw.cmd test
+```
 
-## Running end-to-end tests
+## Run the frontend
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+Open a terminal in the Angular project folder and install dependencies if needed:
 
-## Further help
+```powershell
+Set-Location "c:\Users\amanc\Desktop\fitness-project\group17-frontend\fitness-app"
+npm install
+```
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Start the dev server:
+
+```powershell
+npm start
+```
+
+or:
+
+```powershell
+npx ng serve --open
+```
+
+The frontend runs at `http://localhost:4200/` and calls the backend at `http://localhost:8080/api/v1`.
+
+## Test the frontend
+
+```powershell
+Set-Location "c:\Users\amanc\Desktop\fitness-project\group17-frontend\fitness-app"
+npm test
+```
+
+To verify the production build:
+
+```powershell
+npm run build
+```
+
+## Recommended startup order
+
+1. Start MySQL manually.
+2. Start the backend:
+
+```powershell
+Set-Location "c:\Users\amanc\Desktop\fitness-project\group17-backend\fitness-management-system"
+.\mvnw.cmd spring-boot:run
+```
+
+3. Start the frontend:
+
+```powershell
+Set-Location "c:\Users\amanc\Desktop\fitness-project\group17-frontend\fitness-app"
+npm start
+```
+
+4. Log in from the frontend and test the dashboards.

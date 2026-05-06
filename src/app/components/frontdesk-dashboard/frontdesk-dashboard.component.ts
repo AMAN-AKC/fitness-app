@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 interface MemberData {
   id: string;
@@ -42,12 +44,18 @@ export class FrontdeskDashboardComponent implements OnInit {
   memberFound: MemberData | null = null;
   expandedClass: number | null = null;
   currentDateTime: string = '';
+  currentUserName: string = 'Guest';
 
   // KPI Data
   checkInsToday: number = 247;
   newMembers: number = 14;
   pendingConsents: number = 7;
   expiringPlans: number = 12;
+
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+  ) {}
 
   // Recent Check-ins
   recentCheckIns: CheckInRecord[] = [
@@ -82,12 +90,19 @@ export class FrontdeskDashboardComponent implements OnInit {
     { name: 'Priya Singh', status: 'absent' },
   ];
 
-  constructor() {
+  ngOnInit(): void {
+    const session = this.authService.getCurrentSession();
+    if (session) {
+      this.currentUserName = session.username;
+    }
     this.updateDateTime();
     setInterval(() => this.updateDateTime(), 1000);
   }
 
-  ngOnInit(): void {}
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
 
   updateDateTime(): void {
     const now = new Date();

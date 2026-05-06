@@ -127,7 +127,7 @@ h2 {
 }
 
 .justify-between {
-  justify-between: space-between;
+  justify-content: space-between;
 }
 
 .justify-center {
@@ -170,10 +170,6 @@ h2 {
 
 .cursor-pointer {
   cursor: pointer;
-}
-
-.group:hover {
-  /* This is handled by CSS */
 }
 
 /* Hover effects */
