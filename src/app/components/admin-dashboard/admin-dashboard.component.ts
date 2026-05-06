@@ -1,5 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { AdminApiService, BranchDto } from '../../services/admin-api.service';
+import {
+  AdminApiService,
+  BranchDto,
+  AuditLogDto,
+} from '../../services/admin-api.service';
+import {
+  FrontdeskApiService,
+  MemberDto,
+} from '../../services/frontdesk-api.service';
 
 export interface FeatureFlag {
   id: string;
@@ -36,14 +44,27 @@ export class AdminDashboardComponent implements OnInit {
   flags: FeatureFlag[] = [];
   auditLogs: AuditLog[] = [];
   branches: Branch[] = [];
+  staffCount = 0;
+  lockedStaffCount = 0;
+  activePlansCount = 0;
+  totalPlansCount = 0;
+  totalMembers = 0;
+  Math = Math;
   isLoading = false;
   errorMessage = '';
 
-  constructor(private adminApi: AdminApiService) {}
+  constructor(
+    private adminApi: AdminApiService,
+    private frontdeskApi: FrontdeskApiService,
+  ) {}
 
   ngOnInit(): void {
     this.initializeData();
     this.loadBranches();
+    this.loadAuditLogs();
+    this.loadUsers();
+    this.loadPlans();
+    this.loadMembers();
   }
 
   initializeData(): void {
@@ -133,7 +154,74 @@ export class AdminDashboardComponent implements OnInit {
         color: '#D97706',
       },
     ];
+  }
 
+  private loadUsers(): void {
+    this.adminApi.getUsers().subscribe({
+      next: (users) => {
+        this.staffCount = users.length;
+        this.lockedStaffCount = users.filter(
+          (u) => u.isActive === false,
+        ).length;
+      },
+      error: () => {
+        // keep defaults on error
+      },
+    });
+  }
+
+  private loadPlans(): void {
+    this.adminApi.getPlans().subscribe({
+      next: (plans) => {
+        this.totalPlansCount = plans.length;
+        this.activePlansCount = plans.filter(
+          (p) => p.isActive !== false,
+        ).length;
+      },
+      error: () => {
+        // keep defaults on error
+      },
+    });
+  }
+
+  private loadMembers(): void {
+    this.frontdeskApi.getMembers().subscribe({
+      next: (list: MemberDto[]) => {
+        this.totalMembers = Array.isArray(list) ? list.length : 0;
+        const byBranch = new Map<number, number>();
+        (list || []).forEach((m) => {
+          const bid = Number(
+            (m as any).homeBranchId || (m as any).branchId || 0,
+          );
+          byBranch.set(bid, (byBranch.get(bid) || 0) + 1);
+        });
+        this.branches = this.branches.map((b) => ({
+          ...b,
+          members: byBranch.get(Number(b.id)) || b.members || 0,
+        }));
+      },
+      error: () => {
+        // keep defaults on error
+      },
+    });
+  }
+
+  private loadAuditLogs(): void {
+    this.adminApi.getAuditLogs().subscribe({
+      next: (logs) => {
+        this.auditLogs = logs.map((l) => ({
+          id: String(l.id || ''),
+          user: l.username || 'System',
+          entity: l.entity || 'Unknown',
+          action: l.action || 'UNKNOWN',
+          time: l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A',
+          color: '#6B7280',
+        }));
+      },
+      error: () => {
+        // keep existing mocked audit logs when backend call fails
+      },
+    });
   }
 
   toggleFlag(id: string): void {

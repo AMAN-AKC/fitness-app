@@ -10,11 +10,7 @@ export type BackendRole =
   | 'MANAGER'
   | 'ADMIN';
 
-export type BackendEligibility =
-  | 'GENERAL'
-  | 'STUDENT'
-  | 'SENIOR'
-  | 'CORPORATE';
+export type BackendEligibility = 'GENERAL' | 'STUDENT' | 'SENIOR' | 'CORPORATE';
 
 export interface SystemUserDto {
   userId?: number;
@@ -48,6 +44,14 @@ export interface PlanDto {
   effectiveFrom: string;
   branchVisibility?: string;
   isActive?: boolean;
+}
+
+export interface AuditLogDto {
+  id?: number;
+  username?: string;
+  entity?: string;
+  action?: string;
+  timestamp?: string;
 }
 
 @Injectable({
@@ -107,5 +111,9 @@ export class AdminApiService {
 
   deactivatePlan(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/plans/${id}`);
+  }
+
+  getAuditLogs(): Observable<AuditLogDto[]> {
+    return this.http.get<AuditLogDto[]>(`${this.baseUrl}/audit-logs`);
   }
 }
