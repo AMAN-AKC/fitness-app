@@ -141,16 +141,23 @@
                 <span class="member-email">{{ member.email }}</span>
               </div>
             </td>
-            <td class="amount-cell">₹{{ member.outstandingAmount | number }}</td>
+            <td class="amount-cell">
+              ₹{{ member.outstandingAmount | number }}
+            </td>
             <td>{{ member.daysOverdue }} days</td>
             <td>{{ member.retryDate }}</td>
             <td>
-              <span class="status-badge" [ngClass]="getStatusClass(member.status)">
+              <span
+                class="status-badge"
+                [ngClass]="getStatusClass(member.status)"
+              >
                 {{ member.status | titlecase }}
               </span>
             </td>
             <td class="align-right">
-              <button class="link-btn" (click)="retryPayment(member)">Retry</button>
+              <button class="link-btn" (click)="retryPayment(member)">
+                Retry
+              </button>
             </td>
           </tr>
         </tbody>
