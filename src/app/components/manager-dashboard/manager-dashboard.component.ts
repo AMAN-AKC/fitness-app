@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 export interface ClassUtilization {
   id: number;
@@ -29,6 +31,7 @@ export interface RevenueData {
 })
 export class ManagerDashboardComponent implements OnInit {
   chartMetric = 'Revenue';
+  chartMetrics = ['Revenue', 'New Joins', 'Churn'];
 
   revenueData: RevenueData[] = [
     { name: 'Nov', value: 310000 },
@@ -86,7 +89,10 @@ export class ManagerDashboardComponent implements OnInit {
     },
   ];
 
-  constructor() {}
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {}
 
@@ -116,5 +122,23 @@ export class ManagerDashboardComponent implements OnInit {
 
   formatRevenue(value: number): string {
     return '₹' + (value / 1000).toFixed(0) + 'k';
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
+  }
+
+  getStatusClass(status: string): string {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-light text-orange border-orange';
+      case 'attempted':
+        return 'bg-blue-light text-blue border-blue';
+      case 'failed':
+        return 'bg-red-light text-red border-red';
+      default:
+        return '';
+    }
   }
 }

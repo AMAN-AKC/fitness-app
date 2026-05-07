@@ -1,186 +1,105 @@
-<div class="font-['DM_Sans'] animate-in fade-in duration-300">
-  <div class="flex justify-between items-center mb-6">
+<div class="dashboard-shell">
+  <div class="dashboard-header">
     <div>
-      <h1 class="font-bold text-[24px] text-[#0F172A]">Manager Dashboard</h1>
-      <p class="font-light text-[#475569] text-[14px]">
-        Overview of club performance and operations.
-      </p>
+      <h1>Manager Dashboard</h1>
+      <p>Overview of club performance and operations.</p>
     </div>
-    <div class="flex gap-3">
-      <button
-        (click)="exportReport()"
-        class="bg-white border border-[#E8ECF4] text-[#0F172A] px-4 h-10 rounded-[8px] font-medium text-sm flex items-center justify-center hover:bg-gray-50 transition-colors gap-2"
-      >
+    <div class="dashboard-actions">
+      <button class="btn btn-secondary" (click)="exportReport()">
         📥 Export Report
       </button>
+      <button class="btn btn-danger" (click)="logout()">Logout</button>
     </div>
   </div>
 
-  <!-- KPI TILES -->
-  <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-    <div
-      class="bg-white border border-[#E8ECF4] rounded-[14px] p-5 shadow-sm hover:-translate-y-[2px] transition-all flex flex-col justify-between"
-    >
-      <span class="text-[#475569] text-[13px] font-medium mb-2"
-        >Active Members</span
-      >
-      <span class="font-bold text-[32px] text-[#0F172A] leading-none mb-3"
-        >1,248</span
-      >
-      <div
-        class="flex items-center gap-1 text-[#16A34A] text-[12px] font-medium bg-[#F0FDF4] px-2 py-1 rounded w-fit"
-      >
-        ↑ +47 this week
-      </div>
-    </div>
+  <div class="stats-grid">
+    <section class="card stat-card stat-card--green">
+      <span class="stat-label">Active Members</span>
+      <span class="stat-value">1,248</span>
+      <span class="stat-chip stat-chip--green">↑ +47 this week</span>
+    </section>
 
-    <div
-      class="bg-white border border-[#E8ECF4] rounded-[14px] p-5 shadow-sm hover:-translate-y-[2px] transition-all flex flex-col justify-between"
-    >
-      <span class="text-[#475569] text-[13px] font-medium mb-2"
-        >New Joins This Month</span
-      >
-      <span class="font-bold text-[32px] text-[#2563EB] leading-none mb-3"
-        >63</span
-      >
-      <div
-        class="flex items-center gap-1 text-[#2563EB] text-[12px] font-medium bg-[#EFF5FF] px-2 py-1 rounded w-fit"
-      >
-        📈 +12% vs last mo
-      </div>
-    </div>
+    <section class="card stat-card stat-card--blue">
+      <span class="stat-label">New Joins This Month</span>
+      <span class="stat-value stat-value--blue">63</span>
+      <span class="stat-chip stat-chip--blue">📈 +12% vs last mo</span>
+    </section>
 
-    <div
-      class="bg-white border border-[#E8ECF4] rounded-[14px] p-5 shadow-sm hover:-translate-y-[2px] transition-all flex flex-col justify-between"
-    >
-      <span class="text-[#475569] text-[13px] font-medium mb-2"
-        >Churn / Cancellations</span
-      >
-      <span class="font-bold text-[32px] text-[#DC2626] leading-none mb-3"
-        >18</span
-      >
-      <div
-        class="flex items-center gap-1 text-[#DC2626] text-[12px] font-medium bg-[#FEF2F2] px-2 py-1 rounded w-fit"
-      >
-        ↑ 4 vs last month
-      </div>
-    </div>
+    <section class="card stat-card stat-card--red">
+      <span class="stat-label">Churn / Cancellations</span>
+      <span class="stat-value stat-value--red">18</span>
+      <span class="stat-chip stat-chip--red">↑ 4 vs last month</span>
+    </section>
 
-    <div
-      class="bg-white border border-[#E8ECF4] rounded-[14px] p-5 shadow-sm hover:-translate-y-[2px] transition-all flex flex-col justify-between"
-    >
-      <span class="text-[#475569] text-[13px] font-medium mb-2"
-        >Monthly Revenue</span
-      >
-      <span class="font-bold text-[32px] text-[#0F172A] leading-none mb-3"
-        >₹4.28L</span
-      >
-      <div
-        class="w-full h-8 mt-auto bg-gradient-to-r from-[#DCFCE7] to-[#F0FDF4] rounded-full"
-      ></div>
-    </div>
+    <section class="card stat-card stat-card--revenue">
+      <span class="stat-label">Monthly Revenue</span>
+      <span class="stat-value">₹4.28L</span>
+      <div class="revenue-bar"></div>
+    </section>
 
-    <div
-      class="bg-white border border-[#E8ECF4] rounded-[14px] p-5 shadow-sm hover:-translate-y-[2px] transition-all flex flex-col justify-between"
-    >
-      <span class="text-[#475569] text-[13px] font-medium mb-2"
-        >Classes This Week</span
-      >
-      <span class="font-bold text-[32px] text-[#0F172A] leading-none mb-3"
-        >42</span
-      >
-      <div
-        class="text-[#475569] text-[12px] font-medium bg-[#F8F9FC] border border-[#E8ECF4] px-2 py-1 rounded w-fit"
-      >
-        87% avg occupancy
-      </div>
-    </div>
+    <section class="card stat-card">
+      <span class="stat-label">Classes This Week</span>
+      <span class="stat-value">42</span>
+      <span class="stat-chip stat-chip--muted">87% avg occupancy</span>
+    </section>
   </div>
 
-  <!-- CHART ROW -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
-    <!-- REVENUE TREND -->
-    <div
-      class="bg-white border border-[#E8ECF4] rounded-[14px] p-6 shadow-sm flex flex-col h-full min-h-[350px]"
-    >
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="font-bold text-[18px] text-[#0F172A]">Revenue Overview</h2>
-        <div class="flex bg-[#F8F9FC] border border-[#E8ECF4] rounded-lg p-1">
+  <div class="content-grid">
+    <section class="card panel">
+      <div class="panel-header">
+        <h2>Revenue Overview</h2>
+        <div class="metric-tabs">
           <button
-            *ngFor="let metric of ['Revenue', 'New Joins', 'Churn']"
+            *ngFor="let metric of chartMetrics"
             (click)="setChartMetric(metric)"
-            [class]="
-              'px-3 py-1 rounded-[6px] text-[12px] font-medium transition-colors ' +
-              (chartMetric === metric
-                ? 'bg-white text-[#0F172A] shadow-sm'
-                : 'text-[#475569] hover:text-[#0F172A]')
-            "
+            class="metric-tab"
+            [class.metric-tab--active]="chartMetric === metric"
           >
             {{ metric }}
           </button>
         </div>
       </div>
 
-      <div class="flex-1 flex flex-col gap-4">
-        <div
-          class="flex-1 bg-[#F8F9FC] rounded-lg p-4 flex items-end justify-between gap-2"
-        >
-          <div
-            *ngFor="let data of revenueData"
-            class="flex-1 flex flex-col items-center gap-2"
-          >
+      <div class="chart-panel">
+        <div class="chart-bars">
+          <div *ngFor="let data of revenueData" class="chart-bar-wrap">
             <div
+              class="chart-bar"
               [style.height]="(data.value / 428500) * 200 + 'px'"
-              class="w-full bg-[#2563EB] rounded-t-lg transition-all"
             ></div>
-            <span class="text-[11px] text-[#475569] font-medium">{{
-              data.name
-            }}</span>
+            <span class="chart-label">{{ data.name }}</span>
           </div>
         </div>
 
-        <div
-          class="pt-4 border-t border-[#E8ECF4] flex justify-between items-center"
-        >
-          <span class="text-[13px] text-[#475569]"
-            >Total:
-            <strong class="text-[#0F172A] font-bold">{{
-              formatCurrency(2263500)
-            }}</strong>
-            (6 months)</span
-          >
-          <span class="text-[13px] text-[#16A34A] font-medium"
-            >📈 +18.5% vs previous</span
-          >
+        <div class="panel-footer">
+          <span>
+            Total:
+            <strong>{{ formatCurrency(2263500) }}</strong>
+            (6 months)
+          </span>
+          <span class="positive-text">📈 +18.5% vs previous</span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- CLASS UTILIZATION -->
-    <div
-      class="bg-white border border-[#E8ECF4] rounded-[14px] p-6 shadow-sm flex flex-col h-full min-h-[350px]"
-    >
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="font-bold text-[18px] text-[#0F172A]">
-          Top Classes by Occupancy
-        </h2>
-        <select
-          class="h-[32px] bg-[#F8F9FC] border border-[#E8ECF4] rounded-lg px-2 text-[12px] font-medium text-[#0F172A] outline-none focus:border-[#2563EB]"
-        >
+    <section class="card panel">
+      <div class="panel-header">
+        <h2>Top Classes by Occupancy</h2>
+        <select class="filter-select">
           <option>This Week</option>
           <option>This Month</option>
         </select>
       </div>
 
-      <div class="flex-1 flex flex-col justify-center gap-4">
-        <div *ngFor="let cls of classData" class="flex flex-col gap-1.5">
-          <div class="flex justify-between text-[13px] font-medium">
-            <span class="text-[#0F172A]">{{ cls.name }}</span>
-            <span class="text-[#475569]">{{ cls.occupancy }}%</span>
+      <div class="class-list">
+        <div *ngFor="let cls of classData" class="class-item">
+          <div class="class-item__top">
+            <span class="class-name">{{ cls.name }}</span>
+            <span class="class-occupancy">{{ cls.occupancy }}%</span>
           </div>
-          <div class="h-[8px] w-full bg-[#F8F9FC] rounded-full overflow-hidden">
+          <div class="progress-track">
             <div
-              class="h-full rounded-full transition-all duration-500"
+              class="progress-fill"
               [style.width]="cls.occupancy + '%'"
               [style.backgroundColor]="cls.fill"
             ></div>
@@ -188,117 +107,54 @@
         </div>
       </div>
 
-      <div class="mt-4 pt-4 border-t border-[#E8ECF4]">
-        <button
-          (click)="viewFullReport()"
-          class="text-[#2563EB] text-[13px] font-medium hover:underline flex items-center gap-1 w-full justify-center"
-        >
+      <div class="panel-footer panel-footer--center">
+        <button class="link-btn" (click)="viewFullReport()">
           View Full Report →
         </button>
       </div>
-    </div>
+    </section>
   </div>
 
-  <!-- PENDING DUNNING -->
-  <div
-    class="bg-white border border-[#E8ECF4] rounded-[14px] overflow-hidden shadow-sm flex flex-col h-full"
-  >
-    <div
-      class="p-5 border-b border-[#E8ECF4] flex justify-between items-center bg-white"
-    >
-      <h3 class="font-bold text-[16px] text-[#0F172A]">Pending Dunning</h3>
-      <div
-        class="bg-[#FEF2F2] border border-[#DC2626]/20 px-2 py-1 rounded-[6px] text-[#DC2626] font-bold text-[11px] uppercase tracking-wider"
-      >
-        Total Outstanding: ₹38,200
-      </div>
+  <section class="card dunning-card">
+    <div class="panel-header dunning-header">
+      <h3>Pending Dunning</h3>
+      <div class="outstanding-badge">Total Outstanding: ₹38,200</div>
     </div>
 
-    <div class="overflow-y-auto">
-      <table class="w-full text-left">
+    <div class="table-wrap">
+      <table class="dunning-table">
         <thead>
-          <tr class="bg-[#F8F9FC] border-b border-[#E8ECF4]">
-            <th
-              class="py-2.5 px-5 text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
-            >
-              Member
-            </th>
-            <th
-              class="py-2.5 px-5 text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
-            >
-              Outstanding
-            </th>
-            <th
-              class="py-2.5 px-5 text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
-            >
-              Days Overdue
-            </th>
-            <th
-              class="py-2.5 px-5 text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
-            >
-              Next Retry
-            </th>
-            <th
-              class="py-2.5 px-5 text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
-            >
-              Status
-            </th>
-            <th
-              class="py-2.5 px-5 text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider text-right"
-            >
-              Action
-            </th>
+          <tr>
+            <th>Member</th>
+            <th>Outstanding</th>
+            <th>Days Overdue</th>
+            <th>Next Retry</th>
+            <th>Status</th>
+            <th class="align-right">Action</th>
           </tr>
         </thead>
         <tbody>
-          <tr
-            *ngFor="let member of dunningMembers"
-            class="border-b border-[#E8ECF4] h-[56px] hover:bg-[#F8F9FC] transition-colors"
-          >
-            <td class="px-5 py-2">
-              <div class="flex flex-col gap-0.5">
-                <span class="font-medium text-[13px] text-[#0F172A]">{{
-                  member.name
-                }}</span>
-                <span class="text-[11px] text-[#94A3B8]">{{
-                  member.email
-                }}</span>
+          <tr *ngFor="let member of dunningMembers">
+            <td>
+              <div class="member-meta">
+                <span class="member-name">{{ member.name }}</span>
+                <span class="member-email">{{ member.email }}</span>
               </div>
             </td>
-            <td class="px-5 py-2 font-bold text-[#DC2626] text-[13px]">
-              ₹{{ member.outstandingAmount | number }}
-            </td>
-            <td class="px-5 py-2 text-[13px] text-[#475569]">
-              {{ member.daysOverdue }} days
-            </td>
-            <td class="px-5 py-2 text-[13px] text-[#475569]">
-              {{ member.retryDate }}
-            </td>
-            <td class="px-5 py-2">
-              <span
-                [class]="
-                  'text-[11px] font-bold px-2 py-1 rounded-md border ' +
-                  (member.status === 'pending'
-                    ? 'bg-[#FFFBEB] text-[#D97706] border-[#D97706]/20'
-                    : member.status === 'attempted'
-                      ? 'bg-[#EFF5FF] text-[#2563EB] border-[#2563EB]/20'
-                      : 'bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20')
-                "
-              >
+            <td class="amount-cell">₹{{ member.outstandingAmount | number }}</td>
+            <td>{{ member.daysOverdue }} days</td>
+            <td>{{ member.retryDate }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="getStatusClass(member.status)">
                 {{ member.status | titlecase }}
               </span>
             </td>
-            <td class="px-5 py-2 text-right">
-              <button
-                (click)="retryPayment(member)"
-                class="text-[#2563EB] text-[13px] font-medium hover:underline"
-              >
-                Retry
-              </button>
+            <td class="align-right">
+              <button class="link-btn" (click)="retryPayment(member)">Retry</button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
 </div>
