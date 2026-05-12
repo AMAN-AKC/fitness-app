@@ -1,4 +1,10 @@
 import { Component, OnInit } from '@angular/core';
+import {
+  FrontdeskApiService,
+  PaymentDto,
+  InvoiceDto,
+} from '../../services/frontdesk-api.service';
+import { AuthService } from '../../services/auth.service';
 
 export interface CheckoutItem {
   id: string;
@@ -9,7 +15,7 @@ export interface CheckoutItem {
 
 export interface PaymentMethod {
   id: string;
-  type: 'card' | 'upi' | 'netbanking';
+  type: 'CARD' | 'UPI' | 'CASH';
   label: string;
 }
 
@@ -20,19 +26,30 @@ export interface PaymentMethod {
 })
 export class CheckoutComponent implements OnInit {
   items: CheckoutItem[] = [];
-  selectedPaymentMethod = 'card';
+  selectedPaymentMethod: 'CARD' | 'UPI' | 'CASH' = 'CARD';
   orderPlaced = false;
+  isProcessing = false;
+  errorMessage = '';
+  successMessage = '';
+  currentMemberId = 0;
 
   paymentMethods: PaymentMethod[] = [
-    { id: 'card', type: 'card', label: '💳 Credit/Debit Card' },
-    { id: 'upi', type: 'upi', label: '📱 UPI' },
-    { id: 'netbanking', type: 'netbanking', label: '🏦 Net Banking' },
+    { id: 'card', type: 'CARD', label: '💳 Credit/Debit Card' },
+    { id: 'upi', type: 'UPI', label: '📱 UPI' },
+    { id: 'cash', type: 'CASH', label: '💰 Cash' },
   ];
 
-  constructor() {}
+  constructor(
+    private frontdeskApi: FrontdeskApiService,
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
     this.initializeItems();
+    const session = this.authService.getCurrentSession();
+    if (session) {
+      this.currentMemberId = Number(session.userId);
+    }
   }
 
   initializeItems(): void {
@@ -79,14 +96,56 @@ export class CheckoutComponent implements OnInit {
   }
 
   placeOrder(): void {
-    this.orderPlaced = true;
-    console.log(
-      'Order placed with payment method:',
-      this.selectedPaymentMethod,
-    );
-    setTimeout(() => {
-      this.orderPlaced = false;
-      this.items = [];
-    }, 3000);
+    if (!this.currentMemberId) {
+      this.errorMessage = 'Please log in to place an order';
+      return;
+    }
+
+    this.isProcessing = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    // Step 1: Create Invoice
+    const invoice: InvoiceDto = {
+      memberId: this.currentMemberId,
+      finalAmount: this.getTotal(),
+      status: 'ISSUED',
+    };
+
+    this.frontdeskApi.createInvoice(invoice).subscribe({
+      next: (createdInvoice) => {
+        if (createdInvoice.invoiceId) {
+          // Step 2: Process Payment
+          const payment: PaymentDto = {
+            invoiceId: createdInvoice.invoiceId,
+            memberId: this.currentMemberId,
+            amount: this.getTotal(),
+            paymentMethod: this.selectedPaymentMethod,
+          };
+
+          this.frontdeskApi.processPayment(payment).subscribe({
+            next: (result) => {
+              this.orderPlaced = true;
+              this.successMessage = `Payment successful! Receipt: ${result.transactionId || result.gatewayReference}`;
+              this.isProcessing = false;
+
+              setTimeout(() => {
+                this.orderPlaced = false;
+                this.items = [];
+                this.successMessage = '';
+              }, 3000);
+            },
+            error: (err) => {
+              this.isProcessing = false;
+              this.errorMessage = `Payment failed: ${err.error?.message || 'Unknown error'}`;
+            },
+          });
+        }
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.errorMessage = `Invoice creation failed: ${err.error?.message || 'Unknown error'}`;
+      },
+    });
   }
 }

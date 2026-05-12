@@ -160,7 +160,9 @@
   <div class="card invoices-card">
     <div class="invoices-header">
       <h3 class="card-title">Recent Invoices</h3>
-      <button class="download-all-btn">📥 Download All</button>
+      <button class="download-all-btn" (click)="downloadAllInvoices()">
+        📥 Download All
+      </button>
     </div>
 
     <table class="invoices-table">
@@ -193,7 +195,12 @@
             </span>
           </td>
           <td>
-            <a href="#" class="download-link">Download PDF</a>
+            <a
+              href="#"
+              (click)="$event.preventDefault(); downloadInvoicePdf(invoice)"
+              class="download-link"
+              >Download PDF</a
+            >
           </td>
         </tr>
       </tbody>

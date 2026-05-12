@@ -6,6 +6,9 @@ import { BranchDto, PlanDto } from './admin-api.service';
 
 export type MemberStatus = 'PROSPECT' | 'ACTIVE' | 'SUSPENDED' | 'DEACTIVATED';
 export type ScanMethod = 'QR' | 'CARD' | 'MANUAL';
+export type PaymentMethod = 'CASH' | 'UPI' | 'CARD';
+export type PaymentStatus = 'SUCCESS' | 'FAILED' | 'PENDING' | 'REFUNDED';
+export type InvoiceStatus = 'DRAFT' | 'ISSUED' | 'PAID' | 'OVERDUE' | 'VOID';
 
 export interface MemberDto {
   memberId?: number;
@@ -60,7 +63,14 @@ export interface InvoiceDto {
   finalAmount?: number;
   paidAmount?: number;
   outstanding?: number;
-  status?: 'PAID' | 'PENDING' | 'FAILED' | 'OVERDUE';
+  status?:
+    | 'DRAFT'
+    | 'ISSUED'
+    | 'PAID'
+    | 'PENDING'
+    | 'FAILED'
+    | 'OVERDUE'
+    | 'VOID';
   createdAt?: string;
 }
 
@@ -113,6 +123,40 @@ export interface PtSessionDto {
   durationMins: number;
   status?: 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
   trainerNotes?: string;
+}
+
+export interface PaymentDto {
+  paymentId?: number;
+  invoiceId: number;
+  memberId: number;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  status?: PaymentStatus;
+  gatewayReference?: string;
+  failureReason?: string;
+  createdAt?: string;
+  transactionId?: string;
+}
+
+export interface ReceiptDto {
+  receiptId?: number;
+  paymentId: number;
+  invoiceId: number;
+  memberId: number;
+  amount: number;
+  receiptNumber?: string;
+  createdAt?: string;
+}
+
+export interface DunningItemDto {
+  invoiceId: number;
+  memberId: number;
+  memberName: string;
+  amount: number;
+  daysOverdue: number;
+  attemptCount: number;
+  lastAttempt?: string;
+  status: 'PENDING' | 'OVERDUE' | 'DUNNING';
 }
 
 @Injectable({
@@ -199,5 +243,70 @@ export class FrontdeskApiService {
     return this.http.get<AttendanceDto[]>(
       `${this.baseUrl}/attendance/branch/${branchId}/today`,
     );
+  }
+
+  // Payment and Billing APIs
+  processPayment(payment: PaymentDto): Observable<PaymentDto> {
+    return this.http.post<PaymentDto>(`${this.baseUrl}/payments`, payment);
+  }
+
+  getPaymentsByMember(memberId: number): Observable<PaymentDto[]> {
+    return this.http.get<PaymentDto[]>(
+      `${this.baseUrl}/payments/member/${memberId}`,
+    );
+  }
+
+  getFailedPayments(): Observable<PaymentDto[]> {
+    return this.http.get<PaymentDto[]>(`${this.baseUrl}/payments/failed`);
+  }
+
+  refundPayment(
+    paymentId: number,
+    refundBy: number,
+    reason: string,
+  ): Observable<PaymentDto> {
+    return this.http.patch<PaymentDto>(
+      `${this.baseUrl}/payments/${paymentId}/refund`,
+      {},
+      { params: { refundBy, reason } },
+    );
+  }
+
+  // Invoice APIs
+  createInvoice(invoice: InvoiceDto): Observable<InvoiceDto> {
+    return this.http.post<InvoiceDto>(`${this.baseUrl}/invoices`, invoice);
+  }
+
+  getInvoiceById(invoiceId: number): Observable<InvoiceDto> {
+    return this.http.get<InvoiceDto>(`${this.baseUrl}/invoices/${invoiceId}`);
+  }
+
+  downloadInvoicePdf(invoiceId: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/invoices/${invoiceId}/pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  downloadInvoiceCsv(invoiceId: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/invoices/${invoiceId}/csv`, {
+      responseType: 'blob',
+    });
+  }
+
+  voidInvoice(invoiceId: number): Observable<InvoiceDto> {
+    return this.http.patch<InvoiceDto>(
+      `${this.baseUrl}/invoices/${invoiceId}/void`,
+      {},
+    );
+  }
+
+  // Receipt APIs
+  getReceipt(receiptId: number): Observable<ReceiptDto> {
+    return this.http.get<ReceiptDto>(`${this.baseUrl}/receipts/${receiptId}`);
+  }
+
+  // Dunning APIs
+  getFailedInvoices(): Observable<InvoiceDto[]> {
+    return this.http.get<InvoiceDto[]>(`${this.baseUrl}/dunning-queue`);
   }
 }

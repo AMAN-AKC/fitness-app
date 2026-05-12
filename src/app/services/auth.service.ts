@@ -1,8 +1,9 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable, throwError, Subject, timer } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
+import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
 import {
   LoginRequest,
@@ -15,17 +16,26 @@ import {
 })
 export class AuthService {
   private readonly SESSION_KEY = 'fitness_auth_session';
+  private sessionTimeoutSubject = new Subject<void>();
+  public sessionTimeout$ = this.sessionTimeoutSubject.asObservable();
+  private timeoutHandle: any;
 
   constructor(
     private http: HttpClient,
+    private router: Router,
     @Inject(PLATFORM_ID) private platformId: object,
-  ) {}
+  ) {
+    this.initializeSessionTimeout();
+  }
 
   login(payload: LoginRequest): Observable<AuthSession> {
     return this.http
       .post<AuthSession>(`${environment.apiBaseUrl}/auth/login`, payload)
       .pipe(
-        tap((session) => this.storeSession(session)),
+        tap((session) => {
+          this.storeSession(session);
+          this.setupSessionTimeout(session);
+        }),
         catchError((error) => {
           console.error('Login error:', error);
           return throwError(() => error);
@@ -34,6 +44,7 @@ export class AuthService {
   }
 
   logout(): void {
+    this.clearSessionTimeout();
     this.clearSession();
   }
 
@@ -87,6 +98,90 @@ export class AuthService {
       return error.message;
     }
     return 'An error occurred. Please try again.';
+  }
+
+  /**
+   * Get session expiration time in milliseconds from now
+   * AC04: Session timeout tracking
+   */
+  getSessionExpirationTime(): number | null {
+    const session = this.readSession();
+    if (!session) {
+      return null;
+    }
+
+    try {
+      // Decode JWT to get expiration time
+      const base64Url = session.token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          })
+          .join(''),
+      );
+
+      const payload = JSON.parse(jsonPayload);
+      const expirationTime = payload.exp * 1000; // Convert to milliseconds
+      return expirationTime - Date.now();
+    } catch (error) {
+      console.error('Error decoding JWT:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Initialize session timeout monitoring on app startup
+   * AC04: Automatic session validation
+   */
+  private initializeSessionTimeout(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    const session = this.readSession();
+    if (session) {
+      this.setupSessionTimeout(session);
+    }
+  }
+
+  /**
+   * Setup automatic session timeout check
+   * AC04: Auto-logout on token expiration
+   */
+  private setupSessionTimeout(session: AuthSession): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    this.clearSessionTimeout();
+
+    const expirationTime = this.getSessionExpirationTime();
+    if (expirationTime && expirationTime > 0) {
+      // Add 5-second buffer before token actually expires
+      const timeoutMs = expirationTime - 5000;
+
+      if (timeoutMs > 0) {
+        this.timeoutHandle = setTimeout(() => {
+          console.warn('Session expired due to timeout');
+          this.logout();
+          this.sessionTimeoutSubject.next();
+          this.router.navigate(['/login']);
+        }, timeoutMs);
+      }
+    }
+  }
+
+  /**
+   * Clear the session timeout
+   */
+  private clearSessionTimeout(): void {
+    if (this.timeoutHandle) {
+      clearTimeout(this.timeoutHandle);
+      this.timeoutHandle = null;
+    }
   }
 
   private storeSession(session: AuthSession): void {

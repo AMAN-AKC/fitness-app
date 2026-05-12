@@ -37,7 +37,7 @@
       class="border-b border-[#E8ECF4] last:border-b-0"
     >
       <div
-        (click)="toggleExpand(item.id)"
+        (click)="toggleExpand(item.invoiceId)"
         class="p-6 cursor-pointer hover:bg-[#F8F9FC] flex items-center justify-between"
       >
         <div class="flex-1">
@@ -72,7 +72,7 @@
       </div>
 
       <div
-        *ngIf="expandedId === item.id"
+        *ngIf="expandedId === item.invoiceId"
         class="px-6 py-4 bg-[#F8F9FC] border-t border-[#E8ECF4] flex gap-3"
       >
         <div class="flex-1 text-[12px] text-[#475569]">

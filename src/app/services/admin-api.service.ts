@@ -46,6 +46,28 @@ export interface PlanDto {
   isActive?: boolean;
 }
 
+export interface AddOnDto {
+  addonId?: number;
+  addonName: string;
+  price: number;
+  capacity?: number;
+  addonType: 'LOCKER' | 'PT_SESSIONS' | 'GUEST_PASS' | 'TOWEL' | 'OTHER';
+  taxPercent?: number;
+  isActive?: boolean;
+}
+
+export interface PromoCodeDto {
+  promoId?: number;
+  code: string;
+  discountType: 'PERCENT' | 'FIXED';
+  discountValue: number;
+  expiryDate: string;
+  usageLimit: number;
+  perMemberLimit?: number;
+  eligibility?: 'ALL' | 'NEW' | 'RETURNING';
+  isActive?: boolean;
+}
+
 export interface AuditLogDto {
   id?: number;
   username?: string;
@@ -115,5 +137,39 @@ export class AdminApiService {
 
   getAuditLogs(): Observable<AuditLogDto[]> {
     return this.http.get<AuditLogDto[]>(`${this.baseUrl}/audit-logs`);
+  }
+
+  // Add-On APIs
+  getAddOns(): Observable<AddOnDto[]> {
+    return this.http.get<AddOnDto[]>(`${this.baseUrl}/addons`);
+  }
+
+  createAddOn(addon: AddOnDto): Observable<AddOnDto> {
+    return this.http.post<AddOnDto>(`${this.baseUrl}/addons`, addon);
+  }
+
+  updateAddOn(id: number, addon: AddOnDto): Observable<AddOnDto> {
+    return this.http.put<AddOnDto>(`${this.baseUrl}/addons/${id}`, addon);
+  }
+
+  deactivateAddOn(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/addons/${id}`);
+  }
+
+  // Promo Code APIs
+  getPromoCodes(): Observable<PromoCodeDto[]> {
+    return this.http.get<PromoCodeDto[]>(`${this.baseUrl}/promo-codes`);
+  }
+
+  createPromoCode(promo: PromoCodeDto): Observable<PromoCodeDto> {
+    return this.http.post<PromoCodeDto>(`${this.baseUrl}/promo-codes`, promo);
+  }
+
+  validatePromoCode(code: string): Observable<PromoCodeDto> {
+    return this.http.get<PromoCodeDto>(`${this.baseUrl}/promo-codes/validate/${code}`);
+  }
+
+  deactivatePromoCode(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/promo-codes/${id}`);
   }
 }

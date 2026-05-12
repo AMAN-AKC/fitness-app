@@ -27,6 +27,7 @@ interface UpcomingClass {
 
 interface Invoice {
   id: string;
+  invoiceId?: number;
   plan: string;
   date: string;
   amount: string;
@@ -358,6 +359,7 @@ export class MemberDashboardComponent implements OnInit {
       })
       .slice(0, 4)
       .map((invoice) => ({
+        invoiceId: invoice.invoiceId,
         id: invoice.invoiceNumber || `INV-${invoice.invoiceId || ''}`,
         plan: invoice.membershipId
           ? `Membership #${invoice.membershipId}`
@@ -520,6 +522,60 @@ export class MemberDashboardComponent implements OnInit {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
+    });
+  }
+
+  downloadInvoicePdf(invoice: Invoice): void {
+    if (!invoice.invoiceId) {
+      this.errorMessage = 'Invoice ID not available';
+      return;
+    }
+
+    this.frontdeskApi.downloadInvoicePdf(invoice.invoiceId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${invoice.id}.pdf`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.errorMessage = `Download failed: ${err.error?.message || 'Unknown error'}`;
+      },
+    });
+  }
+
+  downloadInvoiceCsv(invoice: Invoice): void {
+    if (!invoice.invoiceId) {
+      this.errorMessage = 'Invoice ID not available';
+      return;
+    }
+
+    this.frontdeskApi.downloadInvoiceCsv(invoice.invoiceId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${invoice.id}.csv`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.errorMessage = `Download failed: ${err.error?.message || 'Unknown error'}`;
+      },
+    });
+  }
+
+  downloadAllInvoices(): void {
+    if (this.invoices.length === 0) {
+      this.errorMessage = 'No invoices to download';
+      return;
+    }
+
+    // Download all as PDFs sequentially
+    this.invoices.forEach((invoice, index) => {
+      setTimeout(() => this.downloadInvoicePdf(invoice), index * 500);
     });
   }
 }

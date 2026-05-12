@@ -16,13 +16,13 @@
       >
         <div class="text-[48px] mb-3">📁</div>
         <p class="text-[14px] font-medium text-[#0F172A] mb-2">
-          Choose CSV or Excel file
+          Choose CSV file for bulk member import
         </p>
-        <p class="text-[12px] text-[#94A3B8] mb-4">Max file size: 10MB</p>
+        <p class="text-[12px] text-[#94A3B8] mb-4">Max file size: 5MB</p>
         <input
           type="file"
           (change)="onFileSelected($event)"
-          accept=".csv,.xlsx,.xls"
+          accept=".csv"
           class="hidden"
           #fileInput
         />
@@ -30,7 +30,7 @@
           (click)="fileInput.click()"
           class="px-6 h-11 bg-[#2563EB] text-white font-bold rounded-[8px] hover:bg-[#1D4ED8]"
         >
-          Select File
+          Select CSV File
         </button>
       </div>
 
@@ -39,7 +39,7 @@
         class="p-3 bg-[#EFF5FF] border border-[#2563EB] rounded-[8px] mb-4"
       >
         <p class="text-[13px] font-medium text-[#0F172A]">
-          {{ selectedFile.name }}
+          📄 {{ selectedFile.name }}
         </p>
       </div>
 
@@ -47,9 +47,11 @@
         *ngIf="importStatus"
         [class]="
           'p-3 rounded-[8px] mb-4 text-[13px] font-medium ' +
-          (importStatus.includes('Success')
+          (importStatus.includes('✅')
             ? 'bg-[#F0FDF4] text-[#15803D]'
-            : 'bg-[#EFF5FF] text-[#0F172A]')
+            : importStatus.includes('❌')
+              ? 'bg-[#FEE2E2] text-[#DC2626]'
+              : 'bg-[#FEF3C7] text-[#D97706]')
         "
       >
         {{ importStatus }}
@@ -57,10 +59,10 @@
 
       <button
         (click)="importData()"
-        [disabled]="!selectedFile"
+        [disabled]="!selectedFile || isImporting"
         class="w-full h-12 bg-[#2563EB] text-white font-bold rounded-[8px] hover:bg-[#1D4ED8] disabled:bg-[#94A3B8]"
       >
-        Import Data
+        {{ isImporting ? "⏳ Importing..." : "Import Members" }}
       </button>
 
       <button
@@ -68,6 +70,13 @@
         class="w-full h-11 bg-white border border-[#E8ECF4] text-[#2563EB] font-bold rounded-[8px] hover:bg-[#F8F9FC] mt-3"
       >
         📋 Download Template
+      </button>
+
+      <button
+        (click)="viewImportRules()"
+        class="w-full h-11 bg-white border border-[#E8ECF4] text-[#0F172A] font-medium rounded-[8px] hover:bg-[#F8F9FC] mt-2 text-[12px]"
+      >
+        📖 View Validation Rules
       </button>
     </div>
 
@@ -114,6 +123,112 @@
       <p class="text-[12px] text-[#94A3B8]">
         💡 Exported files will be downloaded to your computer automatically
       </p>
+    </div>
+  </div>
+
+  <!-- IMPORT REPORT -->
+  <div
+    *ngIf="importReport"
+    class="mt-8 bg-white border border-[#E8ECF4] rounded-[14px] p-8 shadow-sm"
+  >
+    <h2 class="font-bold text-[20px] text-[#0F172A] mb-6">📊 Import Report</h2>
+
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+      <div class="bg-[#F0FDF4] rounded-[8px] p-4 text-center">
+        <p class="text-[12px] text-[#6B7280] font-medium">Total Rows</p>
+        <p class="text-[24px] font-bold text-[#15803D]">
+          {{ importReport.totalRows }}
+        </p>
+      </div>
+      <div class="bg-[#F0FDF4] rounded-[8px] p-4 text-center">
+        <p class="text-[12px] text-[#6B7280] font-medium">✅ Success</p>
+        <p class="text-[24px] font-bold text-[#15803D]">
+          {{ importReport.successCount }}
+        </p>
+      </div>
+      <div
+        *ngIf="importReport.duplicateCount > 0"
+        class="bg-[#FEF3C7] rounded-[8px] p-4 text-center"
+      >
+        <p class="text-[12px] text-[#6B7280] font-medium">⚠️ Duplicates</p>
+        <p class="text-[24px] font-bold text-[#D97706]">
+          {{ importReport.duplicateCount }}
+        </p>
+      </div>
+      <div
+        *ngIf="importReport.validationErrorCount > 0"
+        class="bg-[#FEE2E2] rounded-[8px] p-4 text-center"
+      >
+        <p class="text-[12px] text-[#6B7280] font-medium">❌ Validation</p>
+        <p class="text-[24px] font-bold text-[#DC2626]">
+          {{ importReport.validationErrorCount }}
+        </p>
+      </div>
+      <div
+        *ngIf="importReport.systemErrorCount > 0"
+        class="bg-[#FEE2E2] rounded-[8px] p-4 text-center"
+      >
+        <p class="text-[12px] text-[#6B7280] font-medium">⚠️ System</p>
+        <p class="text-[24px] font-bold text-[#DC2626]">
+          {{ importReport.systemErrorCount }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Error Details -->
+    <div *ngIf="errorRows.length > 0" class="mt-6">
+      <button
+        (click)="toggleErrorDetails()"
+        class="w-full h-10 bg-white border border-[#E8ECF4] text-[#0F172A] font-bold rounded-[8px] hover:bg-[#F8F9FC] flex items-center justify-between px-4"
+      >
+        <span
+          >{{ showErrorDetails ? "▼" : "▶" }} Show
+          {{ errorRows.length }} Errors</span
+        >
+      </button>
+
+      <div *ngIf="showErrorDetails" class="mt-4 space-y-2">
+        <div
+          *ngFor="let row of errorRows"
+          class="border border-[#E8ECF4] rounded-[8px] p-4"
+          [class]="
+            row.status === 'DUPLICATE'
+              ? 'bg-[#FFFBEB]'
+              : row.status === 'VALIDATION_ERROR'
+                ? 'bg-[#FEF2F2]'
+                : 'bg-[#F0F9FF]'
+          "
+        >
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <p class="font-medium text-[#0F172A]">
+                {{ getStatusIcon(row.status) }} Row {{ row.rowNumber }}
+              </p>
+              <p class="text-[12px] text-[#6B7280]">
+                {{ row.memberName }} ({{ row.email }})
+              </p>
+            </div>
+            <span
+              [class]="
+                'text-[11px] px-2 py-1 rounded font-medium ' +
+                (row.status === 'DUPLICATE'
+                  ? 'bg-[#FCD34D] text-[#92400E]'
+                  : row.status === 'VALIDATION_ERROR'
+                    ? 'bg-[#FCA5A5] text-[#7F1D1D]'
+                    : 'bg-[#A5F3FC] text-[#164E63]')
+              "
+            >
+              {{ row.status }}
+            </span>
+          </div>
+          <p class="text-[13px] text-[#DC2626] font-medium">
+            {{ row.errorMessage }}
+          </p>
+          <p *ngIf="row.fieldErrors" class="text-[12px] text-[#6B7280] mt-2">
+            Fields: {{ row.fieldErrors }}
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
