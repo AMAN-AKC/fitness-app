@@ -48,6 +48,14 @@ export class AuthService {
     this.clearSession();
   }
 
+  requestPasswordReset(email: string): Observable<any> {
+    return this.http.post(`${environment.apiBaseUrl}/auth/forgot-password?email=${encodeURIComponent(email)}`, {});
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post(`${environment.apiBaseUrl}/auth/reset-password?token=${encodeURIComponent(token)}&newPassword=${encodeURIComponent(newPassword)}`, {});
+  }
+
   getCurrentSession(): AuthSession | null {
     return this.readSession();
   }

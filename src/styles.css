@@ -1,1 +1,151 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Offline Design System (No Google Fonts) */
+:root {
+  --font-heading: "Segoe UI Variable", "Trebuchet MS", sans-serif;
+  --font-body: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Consolas", "Courier New", monospace;
+
+  --color-page-bg: #F8F9FC;
+  --color-card-surface: #FFFFFF;
+  --color-card-border: #E8ECF4;
+
+  --color-primary: #2563EB;
+  --color-primary-hover: #1D4ED8;
+  --color-primary-light: #EFF5FF;
+
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+
+  --color-success: #16A34A;
+  --color-success-light: #F0FDF4;
+  --color-success-text: #14532D;
+
+  --color-warning: #D97706;
+  --color-warning-light: #FFFBEB;
+  --color-warning-text: #78350F;
+
+  --color-error: #DC2626;
+  --color-error-light: #FEF2F2;
+  --color-error-text: #7F1D1D;
+
+  --color-info: #2563EB;
+  --color-info-light: #EFF5FF;
+  --color-info-text: #1E3A8A;
+
+  --color-purple: #7C3AED;
+  --color-purple-light: #F5F3FF;
+}
+
+body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  background-color: var(--color-page-bg);
+  color: var(--color-text-primary);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+/* Base Card Styles */
+.card {
+  background-color: var(--color-card-surface);
+  border: 1px solid var(--color-card-border);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* Base Button Styles */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  border: none;
+  cursor: pointer;
+  transition: transform 80ms ease, background-color 150ms ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background-color: #FFFFFF;
+  color: var(--color-text-primary);
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  border: 1px solid var(--color-card-border);
+  cursor: pointer;
+  transition: transform 80ms ease, background-color 150ms ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-page-bg);
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+
+/* Inputs */
+.input-field {
+  background-color: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  transition: all 150ms ease;
+}
+
+.input-field:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+/* Badges */
+.badge {
+  padding: 5px 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 6px;
+  font-weight: 600;
+  font-family: var(--font-body);
+}
+
+/* Page Transition */
+.page-transition {
+  animation: pageEnter 220ms ease-out forwards;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

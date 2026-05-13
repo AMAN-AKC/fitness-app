@@ -431,6 +431,8 @@ export class FrontdeskApiService {
     );
   }
 
+
+
   // Payment and Billing APIs
   processPayment(payment: PaymentDto): Observable<PaymentDto> {
     return this.http.post<PaymentDto>(`${this.baseUrl}/payments`, payment);

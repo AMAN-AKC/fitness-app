@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { NavigationService } from '../../services/navigation.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-resetpassword',
@@ -21,6 +23,11 @@ export class ResetpasswordComponent implements OnInit {
   resetEmail = '';
   newPassword = '';
   confirmPassword = '';
+  
+  hasToken = false;
+  token = '';
+  errorMessage = '';
+  isSubmitting = false;
 
   passwordStrength = { level: 0, label: '', color: '' };
   passwordChecks = [
@@ -33,9 +40,18 @@ export class ResetpasswordComponent implements OnInit {
   constructor(
     private formBuilder: FormBuilder,
     private navigationService: NavigationService,
+    private route: ActivatedRoute,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['token']) {
+        this.hasToken = true;
+        this.token = params['token'];
+      }
+    });
+
     this.resetForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
     });
@@ -74,15 +90,37 @@ export class ResetpasswordComponent implements OnInit {
 
   onSendResetLink(): void {
     if (this.resetEmail) {
-      this.resetSent = true;
-      console.log('Reset link sent to:', this.resetEmail);
+      this.isSubmitting = true;
+      this.errorMessage = '';
+      this.authService.requestPasswordReset(this.resetEmail).subscribe({
+        next: () => {
+          this.resetSent = true;
+          this.isSubmitting = false;
+        },
+        error: (err) => {
+          this.errorMessage = this.authService.getErrorMessage(err);
+          this.isSubmitting = false;
+        }
+      });
     }
   }
 
   onUpdatePassword(): void {
     if (this.passwordForm.valid && this.newPassword === this.confirmPassword) {
-      this.passwordSuccess = true;
-      console.log('Password updated successfully');
+      this.isSubmitting = true;
+      this.errorMessage = '';
+      this.authService.resetPassword(this.token, this.newPassword).subscribe({
+        next: () => {
+          this.passwordSuccess = true;
+          this.isSubmitting = false;
+        },
+        error: (err) => {
+          this.errorMessage = this.authService.getErrorMessage(err);
+          this.isSubmitting = false;
+        }
+      });
+    } else {
+      this.errorMessage = "Please ensure passwords match and meet requirements.";
     }
   }
 
