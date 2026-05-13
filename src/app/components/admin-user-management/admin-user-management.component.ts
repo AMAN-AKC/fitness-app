@@ -4,6 +4,7 @@ import {
   BackendRole,
   SystemUserDto,
 } from '../../services/admin-api.service';
+import { FrontdeskApiService } from '../../services/frontdesk-api.service';
 
 export type RoleType =
   | 'Member'
@@ -54,6 +55,11 @@ export class AdminUserManagementComponent implements OnInit {
   drawerRole: RoleType = 'Member';
   drawerActive = true;
 
+  // CSV Bulk Upload
+  isBulkUploading = false;
+  bulkUploadReport: any[] = [];
+  showBulkUploadReport = false;
+
   passwordPolicy: PasswordPolicy = {
     minPasswordLength: 12,
     requireUppercase: true,
@@ -85,7 +91,10 @@ export class AdminUserManagementComponent implements OnInit {
       'Global system access. Can modify plans, system settings, RBAC, and all branches.',
   };
 
-  constructor(private adminApi: AdminApiService) {}
+  constructor(
+    private adminApi: AdminApiService,
+    private frontdeskApi: FrontdeskApiService,
+  ) {}
 
   ngOnInit(): void {
     this.loadUsers();
@@ -252,6 +261,45 @@ export class AdminUserManagementComponent implements OnInit {
 
   savePasswordPolicy(): void {
     console.log('Password policy saved:', this.passwordPolicy);
+  }
+
+  triggerCsvUpload(): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = (event: Event) => this.onCsvFileSelected(event);
+    input.click();
+  }
+
+  onCsvFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    this.isBulkUploading = true;
+    this.bulkUploadReport = [];
+    this.showBulkUploadReport = false;
+    this.errorMessage = '';
+
+    this.frontdeskApi.bulkUploadMembers(file).subscribe({
+      next: (report) => {
+        this.bulkUploadReport = report;
+        this.showBulkUploadReport = true;
+        this.isBulkUploading = false;
+        // Reload users to reflect newly created members
+        this.loadUsers();
+      },
+      error: (err) => {
+        this.errorMessage =
+          err?.error?.message || 'Bulk upload failed. Check your CSV format.';
+        this.isBulkUploading = false;
+      },
+    });
+  }
+
+  closeBulkReport(): void {
+    this.showBulkUploadReport = false;
+    this.bulkUploadReport = [];
   }
 
   private fromDto(user: SystemUserDto): User {

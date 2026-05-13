@@ -2,63 +2,135 @@
   <div class="mb-8">
     <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Class Schedule</h1>
     <p class="text-[#475569] text-[14px]">
-      View and book classes throughout the week
+      View and manage classes — daily, weekly, or monthly
     </p>
   </div>
 
-  <!-- DATE SELECTOR -->
+  <!-- ERROR -->
   <div
-    class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 mb-6 flex items-center justify-between"
+    *ngIf="errorMessage"
+    class="mb-4 p-4 bg-[#FEF2F2] border border-[#FECACA] rounded-[8px] text-[13px] text-[#DC2626] font-medium"
   >
-    <button
-      (click)="previousDate()"
-      class="px-4 h-10 border border-[#E8ECF4] rounded-[8px] font-medium text-[13px] hover:bg-[#F8F9FC]"
-    >
-      ← Previous
-    </button>
-    <input
-      type="date"
-      [(ngModel)]="selectedDate"
-      class="h-10 px-4 border border-[#E8ECF4] rounded-[8px] font-medium"
-    />
-    <button
-      (click)="nextDate()"
-      class="px-4 h-10 border border-[#E8ECF4] rounded-[8px] font-medium text-[13px] hover:bg-[#F8F9FC]"
-    >
-      Next →
-    </button>
+    {{ errorMessage }}
   </div>
 
-  <!-- SCHEDULE GRID -->
+  <!-- FILTERS BAR (AC08) -->
   <div
+    class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 mb-6 flex flex-wrap items-center gap-4"
+  >
+    <!-- View Mode Toggle -->
+    <div class="flex border border-[#E8ECF4] rounded-[8px] overflow-hidden">
+      <button
+        (click)="setViewMode('daily')"
+        class="px-4 h-9 text-[12px] font-bold transition-colors"
+        [class]="viewMode === 'daily' ? 'bg-[#2563EB] text-white' : 'bg-white text-[#475569] hover:bg-[#F8F9FC]'"
+      >
+        Daily
+      </button>
+      <button
+        (click)="setViewMode('weekly')"
+        class="px-4 h-9 text-[12px] font-bold transition-colors border-x border-[#E8ECF4]"
+        [class]="viewMode === 'weekly' ? 'bg-[#2563EB] text-white' : 'bg-white text-[#475569] hover:bg-[#F8F9FC]'"
+      >
+        Weekly
+      </button>
+      <button
+        (click)="setViewMode('monthly')"
+        class="px-4 h-9 text-[12px] font-bold transition-colors"
+        [class]="viewMode === 'monthly' ? 'bg-[#2563EB] text-white' : 'bg-white text-[#475569] hover:bg-[#F8F9FC]'"
+      >
+        Monthly
+      </button>
+    </div>
+
+    <!-- Date Navigation -->
+    <div class="flex items-center gap-2">
+      <button
+        (click)="previousDate()"
+        class="px-3 h-9 border border-[#E8ECF4] rounded-[8px] font-medium text-[12px] hover:bg-[#F8F9FC]"
+      >
+        ←
+      </button>
+      <input
+        type="date"
+        [(ngModel)]="selectedDate"
+        (change)="updateCalendarData()"
+        class="h-9 px-3 border border-[#E8ECF4] rounded-[8px] text-[12px] font-medium"
+      />
+      <button
+        (click)="nextDate()"
+        class="px-3 h-9 border border-[#E8ECF4] rounded-[8px] font-medium text-[12px] hover:bg-[#F8F9FC]"
+      >
+        →
+      </button>
+    </div>
+
+    <!-- Branch Filter -->
+    <select
+      [(ngModel)]="selectedBranchId"
+      (change)="onFilterChange()"
+      class="h-9 px-3 border border-[#E8ECF4] rounded-[8px] text-[12px]"
+    >
+      <option [ngValue]="null">All Branches</option>
+      <option *ngFor="let b of branches" [ngValue]="b.branchId">
+        {{ b.branchName }}
+      </option>
+    </select>
+
+    <!-- Trainer Filter -->
+    <select
+      [(ngModel)]="selectedTrainerId"
+      (change)="onFilterChange()"
+      class="h-9 px-3 border border-[#E8ECF4] rounded-[8px] text-[12px]"
+    >
+      <option [ngValue]="null">All Trainers</option>
+      <option *ngFor="let tid of uniqueTrainerIds" [ngValue]="tid">
+        {{ getTrainerName(tid) }}
+      </option>
+    </select>
+
+    <!-- Status Filter -->
+    <select
+      [(ngModel)]="statusFilter"
+      (change)="onFilterChange()"
+      class="h-9 px-3 border border-[#E8ECF4] rounded-[8px] text-[12px]"
+    >
+      <option value="ALL">All Status</option>
+      <option value="ACTIVE">Active</option>
+      <option value="CANCELLED">Cancelled</option>
+    </select>
+  </div>
+
+  <!-- LOADING -->
+  <div *ngIf="isLoading" class="text-center py-12 text-[#94A3B8]">
+    Loading schedule...
+  </div>
+
+  <!-- ==================== DAILY VIEW ==================== -->
+  <div
+    *ngIf="!isLoading && viewMode === 'daily'"
     class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm"
   >
-    <!-- TIME COLUMN HEADER -->
     <div class="grid grid-cols-[80px_1fr] border-b border-[#E8ECF4]">
       <div class="p-4 font-bold text-[12px] text-[#94A3B8] uppercase">Time</div>
       <div class="p-4 font-bold text-[12px] text-[#94A3B8] uppercase">
         Classes
       </div>
     </div>
-
-    <!-- HOURLY ROWS -->
     <div
       *ngFor="let hour of hours"
       class="grid grid-cols-[80px_1fr] border-b border-[#E8ECF4] min-h-[80px]"
     >
-      <!-- TIME LABEL -->
       <div
         class="p-4 font-bold text-[12px] text-[#475569] border-r border-[#E8ECF4] bg-[#F8F9FC]"
       >
         {{ hour }}:00
       </div>
-
-      <!-- CLASSES CONTAINER -->
       <div class="p-3 relative">
         <div
           *ngFor="let cls of getClassesForTime(hour)"
           [class]="
-            'absolute left-3 right-3 rounded-[8px] p-3 cursor-pointer hover:shadow-md transition-all text-white text-[12px] font-bold ' +
+            'absolute left-3 right-3 rounded-[8px] p-3 text-white text-[12px] font-bold ' +
             cls.color
           "
           [style.height.px]="getClassHeight(cls.duration)"
@@ -68,15 +140,89 @@
             {{ cls.time }} • {{ cls.duration }}min
           </div>
           <div class="text-[11px] opacity-90 mt-1">
-            {{ cls.trainer }} • {{ getAvailableSeats(cls) }} seats
+            {{ cls.trainer }} • {{ getAvailableSeats(cls) }} seats left
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-          <button
-            (click)="bookClass(cls)"
-            class="mt-2 px-2 py-0.5 bg-white/20 hover:bg-white/30 rounded text-[10px] font-bold"
-          >
-            Book
-          </button>
+  <!-- ==================== WEEKLY VIEW ==================== -->
+  <div
+    *ngIf="!isLoading && viewMode === 'weekly'"
+    class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm"
+  >
+    <div class="grid grid-cols-7 border-b border-[#E8ECF4]">
+      <div
+        *ngFor="let day of weekDays"
+        class="p-3 text-center border-r border-[#E8ECF4] last:border-r-0"
+      >
+        <div class="font-bold text-[12px] text-[#94A3B8] uppercase">
+          {{ formatDayLabel(day) }}
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-7 min-h-[400px]">
+      <div
+        *ngFor="let day of weekDays"
+        class="p-2 border-r border-[#E8ECF4] last:border-r-0 space-y-2"
+      >
+        <div
+          *ngFor="let cls of getClassesForDay(day)"
+          [class]="
+            'rounded-[6px] p-2 text-white text-[11px] font-bold ' + cls.color
+          "
+        >
+          <div class="truncate">{{ cls.name }}</div>
+          <div class="text-[10px] opacity-90">{{ cls.time }}</div>
+          <div class="text-[10px] opacity-90">{{ cls.trainer }}</div>
+        </div>
+        <div
+          *ngIf="getClassesForDay(day).length === 0"
+          class="text-[11px] text-[#CBD5E1] text-center mt-4"
+        >
+          No classes
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MONTHLY VIEW ==================== -->
+  <div
+    *ngIf="!isLoading && viewMode === 'monthly'"
+    class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm"
+  >
+    <div class="p-4 border-b border-[#E8ECF4] text-center">
+      <h3 class="font-bold text-[16px] text-[#0F172A]">{{ getMonthLabel() }}</h3>
+    </div>
+    <div class="grid grid-cols-7 border-b border-[#E8ECF4]">
+      <div
+        *ngFor="let d of ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']"
+        class="p-2 text-center font-bold text-[11px] text-[#94A3B8] uppercase"
+      >
+        {{ d }}
+      </div>
+    </div>
+    <div class="grid grid-cols-7">
+      <div
+        *ngFor="let day of monthDays"
+        class="min-h-[80px] p-2 border-r border-b border-[#E8ECF4] hover:bg-[#F8F9FC] transition-colors cursor-pointer"
+        [class.bg-[#EFF5FF]]="day.isToday"
+      >
+        <div
+          class="text-[12px] font-bold mb-1"
+          [class.text-[#2563EB]]="day.isToday"
+          [class.text-[#475569]]="!day.isToday"
+        >
+          {{ day.dayNum }}
+        </div>
+        <div
+          *ngIf="getClassCountForDay(day.date) > 0"
+          class="text-[10px] bg-[#2563EB] text-white rounded px-1.5 py-0.5 inline-block font-bold"
+        >
+          {{ getClassCountForDay(day.date) }} class{{
+            getClassCountForDay(day.date) > 1 ? "es" : ""
+          }}
         </div>
       </div>
     </div>

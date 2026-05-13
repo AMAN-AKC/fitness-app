@@ -6,7 +6,15 @@
     </p>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+  <div *ngIf="isLoading" class="text-center text-[#2563EB] mb-8">
+    <p>Loading plans...</p>
+  </div>
+  
+  <div *ngIf="errorMessage" class="bg-red-50 text-red-600 p-4 rounded mb-8 text-center border border-red-200">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="!isLoading && !errorMessage" class="grid grid-cols-1 md:grid-cols-3 gap-8">
     <div
       *ngFor="let plan of plans"
       [class]="

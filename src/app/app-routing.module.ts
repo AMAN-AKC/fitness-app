@@ -14,6 +14,7 @@ import { AdminDashboardComponent } from './components/admin-dashboard/admin-dash
 import { AdminUserManagementComponent } from './components/admin-user-management/admin-user-management.component';
 import { AdminBranchManagementComponent } from './components/admin-branch-management/admin-branch-management.component';
 import { AdminPlancatalogComponent } from './components/admin-plancatalog/admin-plancatalog.component';
+import { HealthFormsComponent } from './components/health-forms/health-forms.component';
 import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
@@ -54,6 +55,12 @@ const routes: Routes = [
   {
     path: 'member-dashboard',
     component: MemberDashboardComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['member'] },
+  },
+  {
+    path: 'health-forms',
+    component: HealthFormsComponent,
     canActivate: [AuthGuard],
     data: { roles: ['member'] },
   },

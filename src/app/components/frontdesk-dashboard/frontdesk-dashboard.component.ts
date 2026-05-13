@@ -20,6 +20,11 @@ interface MemberData {
   status: 'ok' | 'blocked';
   alert?: string;
   dues?: string;
+  hasUnpaidDues?: boolean;
+  hasHealthNotes?: boolean;
+  healthNotes?: string;
+  consentRequired?: boolean;
+  consentMessage?: string;
 }
 
 interface CheckInRecord {
@@ -150,8 +155,9 @@ export class FrontdeskDashboardComponent implements OnInit {
     forkJoin({
       branches: this.frontdeskApi.getBranches(),
       members: this.frontdeskApi.getMembers(),
+      classes: this.frontdeskApi.getClasses()
     }).subscribe({
-      next: ({ branches, members }) => {
+      next: ({ branches, members, classes }) => {
         this.branches = branches;
         this.members = members;
         this.selectedBranchId = branches[0]?.branchId || 0;
@@ -160,10 +166,18 @@ export class FrontdeskDashboardComponent implements OnInit {
           (m) => m.status === 'PROSPECT',
         ).length;
         this.expiringPlans = 0;
-        this.classMembers = members.slice(0, 5).map((member) => ({
-          name: member.memName,
-          status: 'pending',
-        }));
+        
+        // Load classes from API
+        this.todaysClasses = classes
+          .filter(c => c.status === 'ACTIVE')
+          .map(c => ({
+            id: c.classId || 0,
+            name: c.classesName,
+            time: c.classTime,
+            enrolled: 0, // We will update this if we expand the class
+            cap: c.capacity
+          }));
+
         this.loadTodayAttendance();
         this.isLoading = false;
       },
@@ -264,7 +278,35 @@ export class FrontdeskDashboardComponent implements OnInit {
   }
 
   toggleClassExpanded(classId: number): void {
-    this.expandedClass = this.expandedClass === classId ? null : classId;
+    if (this.expandedClass === classId) {
+      this.expandedClass = null;
+      return;
+    }
+    this.expandedClass = classId;
+    this.classMembers = [];
+    
+    // Fetch bookings for this class
+    this.frontdeskApi.getBookingsByClass(classId).subscribe({
+      next: (bookings) => {
+        // Update the enrolled count
+        const cls = this.todaysClasses.find(c => c.id === classId);
+        if (cls) {
+          cls.enrolled = bookings.length;
+        }
+
+        // Load members for these bookings
+        this.classMembers = bookings.map(b => {
+          const member = this.members.find(m => m.memberId === b.memberId);
+          return {
+            name: member?.memName || `Member #${b.memberId}`,
+            status: b.bookingStatus === 'CONFIRMED' ? 'pending' : 'absent'
+          };
+        });
+      },
+      error: (err) => {
+        console.error('Failed to load bookings for class', err);
+      }
+    });
   }
 
   markMemberStatus(
@@ -280,13 +322,31 @@ export class FrontdeskDashboardComponent implements OnInit {
     });
   }
 
+  // AC07: Export daily attendance CSV
+  exportAttendanceCsv(): void {
+    if (!this.selectedBranchId) return;
+    this.frontdeskApi.exportDailyAttendanceCsv(this.selectedBranchId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `attendance_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.errorMessage = 'Failed to export attendance CSV.';
+      },
+    });
+  }
+
   private toMemberData(member: MemberDto): MemberData {
     const branch = this.branches.find(
       (item) => item.branchId === member.homeBranchId,
     );
     const isBlocked = member.status !== 'ACTIVE';
 
-    return {
+    const data: MemberData = {
       id: `MEM-${member.memberId}`,
       memberId: Number(member.memberId),
       name: member.memName,
@@ -297,6 +357,30 @@ export class FrontdeskDashboardComponent implements OnInit {
       status: isBlocked ? 'blocked' : 'ok',
       alert: isBlocked ? 'No active membership. Check-in denied.' : undefined,
     };
+
+    // AC05: Load real flags from backend
+    if (member.memberId) {
+      this.frontdeskApi.getMemberCheckInFlags(member.memberId).subscribe({
+        next: (flags) => {
+          if (flags.hasUnpaidDues) {
+            data.hasUnpaidDues = true;
+            data.dues = `₹${flags.unpaidDues}`;
+          }
+          if (flags.hasHealthNotes) {
+            data.hasHealthNotes = true;
+            data.healthNotes = flags.notes;
+          }
+          if (flags.consentRequired) {
+            data.consentRequired = true;
+            data.consentMessage = flags.requiresReconfirmation
+              ? `Consent needs policy ${flags.consentCurrentVersion} reconfirmation.`
+              : 'Consent missing or expired.';
+          }
+        },
+      });
+    }
+
+    return data;
   }
 
   private toCheckInRecord(attendance: AttendanceDto): CheckInRecord {

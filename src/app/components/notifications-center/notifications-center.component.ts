@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { FrontdeskApiService } from '../../services/frontdesk-api.service';
+import { AuthService } from '../../services/auth.service';
 
 export type NotificationType =
   | 'info'
@@ -21,74 +23,57 @@ export interface Notification {
   selector: 'app-notifications-center',
   templateUrl: './notifications-center.component.html',
   styleUrls: ['./notifications-center.component.css'],
+  standalone: false
 })
 export class NotificationsCenterComponent implements OnInit {
   notifications: Notification[] = [];
   filterType: 'all' | 'unread' = 'all';
+  currentUserId = 0;
+  isLoading = false;
+  errorMessage = '';
 
-  constructor() {}
+  constructor(
+    private frontdeskApi: FrontdeskApiService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
-    this.initializeNotifications();
+    const session = this.authService.getCurrentSession();
+    if (session) {
+      this.currentUserId = Number(session.userId);
+      this.initializeNotifications();
+    } else {
+      this.errorMessage = "Please log in to view notifications.";
+    }
   }
 
   initializeNotifications(): void {
-    this.notifications = [
-      {
-        id: '1',
-        type: 'reminder',
-        title: 'Your Session is Tomorrow',
-        message:
-          "You have a training session with Priya Sharma tomorrow at 6:00 PM. Don't forget to prepare!",
-        timestamp: 'Today at 2:30 PM',
-        read: false,
+    this.isLoading = true;
+    this.frontdeskApi.getNotifications(this.currentUserId).subscribe({
+      next: (notifs) => {
+        this.notifications = notifs.map(n => {
+          let ntype: NotificationType = 'info';
+          if (n.type === 'BILLING_SUCCESS') ntype = 'success';
+          else if (n.type === 'BILLING_FAILED') ntype = 'error';
+          else if (n.type === 'CLASS_REMINDER') ntype = 'reminder';
+          else if (n.type === 'PLAN_EXPIRY_WARNING') ntype = 'warning';
+
+          return {
+            id: n.notifId.toString(),
+            type: ntype,
+            title: n.title,
+            message: n.body,
+            timestamp: new Date(n.createdAt).toLocaleString(),
+            read: n.isRead,
+          };
+        });
+        this.isLoading = false;
       },
-      {
-        id: '2',
-        type: 'success',
-        title: 'Payment Successful',
-        message:
-          "Your membership renewal has been processed successfully. You're all set for another month!",
-        timestamp: 'Yesterday at 5:15 PM',
-        read: false,
-      },
-      {
-        id: '3',
-        type: 'info',
-        title: 'New Class Added',
-        message:
-          'Check out our new "Advanced Yoga" class starting next Monday at 7:00 AM.',
-        timestamp: '2 days ago',
-        read: true,
-      },
-      {
-        id: '4',
-        type: 'warning',
-        title: 'Membership Expiring Soon',
-        message:
-          'Your membership will expire in 5 days. Renew now to avoid interruption.',
-        timestamp: '3 days ago',
-        read: true,
-      },
-      {
-        id: '5',
-        type: 'error',
-        title: 'Payment Failed',
-        message:
-          'Your last membership payment failed. Please update your payment method.',
-        timestamp: '1 week ago',
-        read: true,
-      },
-      {
-        id: '6',
-        type: 'info',
-        title: 'Workout Achievement Unlocked',
-        message:
-          "You've completed 10 consecutive workouts! 🎉 Keep up the great work.",
-        timestamp: '1 week ago',
-        read: true,
-      },
-    ];
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Failed to load notifications';
+        this.isLoading = false;
+      }
+    });
   }
 
   get filteredNotifications(): Notification[] {
@@ -103,14 +88,22 @@ export class NotificationsCenterComponent implements OnInit {
   }
 
   markAsRead(notification: Notification): void {
-    notification.read = true;
+    if(!notification.read) {
+       this.frontdeskApi.markNotificationAsRead(Number(notification.id)).subscribe({
+         next: () => {
+           notification.read = true;
+         }
+       });
+    }
   }
 
   markAllAsRead(): void {
-    this.notifications.forEach((n) => (n.read = true));
+    const unread = this.notifications.filter(n => !n.read);
+    unread.forEach(notification => this.markAsRead(notification));
   }
 
   deleteNotification(id: string): void {
+    // API doesn't support deletion yet, so just hide locally
     this.notifications = this.notifications.filter((n) => n.id !== id);
   }
 

@@ -142,8 +142,14 @@
             <span class="member-id">{{ memberFound.id }}</span>
             <span class="member-plan">{{ memberFound.plan }}</span>
           </div>
-          <div *ngIf="memberFound.dues" class="member-dues">
+          <div *ngIf="memberFound.hasUnpaidDues" class="member-dues">
             <span>⚠ Unpaid Dues — {{ memberFound.dues }}</span>
+          </div>
+          <div *ngIf="memberFound.hasHealthNotes" class="member-dues" style="color:#D97706">
+            <span>📋 Health Note: {{ memberFound.healthNotes }}</span>
+          </div>
+          <div *ngIf="memberFound.consentRequired" class="member-dues" style="color:#DC2626">
+            <span>Consent Alert: {{ memberFound.consentMessage }}</span>
           </div>
         </div>
 
@@ -222,8 +228,9 @@
         </div>
       </div>
 
-      <div class="content-footer">
+      <div class="content-footer" style="display:flex;justify-content:space-between;align-items:center">
         <button class="view-full-btn">View Full Log →</button>
+        <button (click)="exportAttendanceCsv()" class="view-full-btn" style="color:#16A34A">⬇ Export CSV</button>
       </div>
     </div>
 

@@ -41,6 +41,31 @@ export interface AttendanceDto {
   overrideReason?: string;
 }
 
+export interface HealthConsentDto {
+  consentId?: number;
+  memberId: number;
+  formVersion: string;
+  parqResponses?: string;
+  medicalAcknowledged?: boolean;
+  liabilityAcknowledged?: boolean;
+  privacyAcknowledged?: boolean;
+  acknowledgedAt?: string;
+  expiresAt?: string;
+  ipAddress?: string;
+  status?: 'ACTIVE' | 'EXPIRED' | 'PENDING';
+  staffNotes?: string;
+  requiresReconfirmation?: boolean;
+  consentRequired?: boolean;
+}
+
+export interface ConsentStatusDto {
+  memberId: number;
+  currentVersion: string;
+  consentRequired: boolean;
+  requiresReconfirmation: boolean;
+  latestConsent?: HealthConsentDto | null;
+}
+
 export interface MembershipDto {
   memId?: number;
   memberId: number;
@@ -159,6 +184,25 @@ export interface DunningItemDto {
   status: 'PENDING' | 'OVERDUE' | 'DUNNING';
 }
 
+export interface PriceBreakdownDto {
+  planId: number;
+  planName: string;
+  durationDays: number;
+  basePrice: number;
+  discount: number;
+  priceAfterDiscount: number;
+  taxPercent: number;
+  taxAmount: number;
+  finalAmount: number;
+  proration?: {
+    currentPlanName: string;
+    remainingDays: number;
+    remainingValue: number;
+    creditApplied: number;
+  };
+  type: 'NEW_PLAN' | 'UPGRADE';
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -177,8 +221,30 @@ export class FrontdeskApiService {
     );
   }
 
+  getCurrentMember(): Observable<MemberDto> {
+    return this.http.get<MemberDto>(`${this.baseUrl}/consents/me/member`);
+  }
+
   createMember(member: MemberDto): Observable<MemberDto> {
     return this.http.post<MemberDto>(`${this.baseUrl}/members`, member);
+  }
+
+  uploadMemberPhoto(memberId: number, file: File): Observable<MemberDto> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<MemberDto>(
+      `${this.baseUrl}/members/${memberId}/photo`,
+      formData,
+    );
+  }
+
+  bulkUploadMembers(file: File): Observable<any[]> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<any[]>(
+      `${this.baseUrl}/members/bulk-upload`,
+      formData,
+    );
   }
 
   createMembership(membership: MembershipDto): Observable<MembershipDto> {
@@ -214,6 +280,26 @@ export class FrontdeskApiService {
     );
   }
 
+  getBookingsByClass(classId: number): Observable<ClassBookingDto[]> {
+    return this.http.get<ClassBookingDto[]>(
+      `${this.baseUrl}/bookings/class/${classId}`,
+    );
+  }
+
+  bookClass(booking: ClassBookingDto): Observable<ClassBookingDto> {
+    return this.http.post<ClassBookingDto>(
+      `${this.baseUrl}/bookings`,
+      booking,
+    );
+  }
+
+  cancelBooking(bookingId: number): Observable<void> {
+    return this.http.patch<void>(
+      `${this.baseUrl}/bookings/${bookingId}/cancel`,
+      {},
+    );
+  }
+
   getClasses(): Observable<ClassesDto[]> {
     return this.http.get<ClassesDto[]>(`${this.baseUrl}/classes`);
   }
@@ -232,6 +318,15 @@ export class FrontdeskApiService {
     );
   }
 
+  // Notifications
+  getNotifications(userId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/notifications/user/${userId}`);
+  }
+
+  markNotificationAsRead(id: number): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/notifications/${id}/read`, {});
+  }
+
   checkIn(attendance: AttendanceDto): Observable<AttendanceDto> {
     return this.http.post<AttendanceDto>(
       `${this.baseUrl}/attendance/checkin`,
@@ -242,6 +337,97 @@ export class FrontdeskApiService {
   getTodayAttendance(branchId: number): Observable<AttendanceDto[]> {
     return this.http.get<AttendanceDto[]>(
       `${this.baseUrl}/attendance/branch/${branchId}/today`,
+    );
+  }
+
+  // AC09: Override check-in
+  overrideCheckIn(
+    attendance: AttendanceDto,
+    overrideByUserId: number,
+    reason: string,
+  ): Observable<AttendanceDto> {
+    return this.http.post<AttendanceDto>(
+      `${this.baseUrl}/attendance/checkin/override`,
+      attendance,
+      { params: { overrideByUserId, reason } },
+    );
+  }
+
+  // AC08: Trainer marks attendance from class roster
+  markClassAttendance(
+    classId: number,
+    memberId: number,
+    branchId: number,
+  ): Observable<AttendanceDto> {
+    return this.http.post<AttendanceDto>(
+      `${this.baseUrl}/attendance/class/${classId}/mark`,
+      {},
+      { params: { memberId, branchId } },
+    );
+  }
+
+  // AC05: Member check-in flags (dues, health notes)
+  getMemberCheckInFlags(memberId: number): Observable<any> {
+    return this.http.get(
+      `${this.baseUrl}/attendance/member/${memberId}/flags`,
+    );
+  }
+
+  getConsentPolicy(): Observable<{
+    currentVersion: string;
+    validityDays: number;
+    retentionDays: number;
+  }> {
+    return this.http.get<{
+      currentVersion: string;
+      validityDays: number;
+      retentionDays: number;
+    }>(`${this.baseUrl}/consents/policy`);
+  }
+
+  submitConsent(consent: HealthConsentDto): Observable<HealthConsentDto> {
+    return this.http.post<HealthConsentDto>(`${this.baseUrl}/consents`, consent);
+  }
+
+  getConsentHistory(memberId: number): Observable<HealthConsentDto[]> {
+    return this.http.get<HealthConsentDto[]>(
+      `${this.baseUrl}/consents/member/${memberId}`,
+    );
+  }
+
+  getConsentStatus(memberId: number): Observable<ConsentStatusDto> {
+    return this.http.get<ConsentStatusDto>(
+      `${this.baseUrl}/consents/member/${memberId}/status`,
+    );
+  }
+
+  downloadConsentHistory(memberId: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/consents/member/${memberId}/download`, {
+      responseType: 'blob',
+    });
+  }
+
+  // AC07: Export daily attendance CSV
+  exportDailyAttendanceCsv(branchId: number): Observable<Blob> {
+    return this.http.get(
+      `${this.baseUrl}/attendance/branch/${branchId}/today/csv`,
+      { responseType: 'blob' },
+    );
+  }
+
+  // AC06: Offline check-in queue
+  offlineCheckIn(attendance: AttendanceDto): Observable<AttendanceDto> {
+    return this.http.post<AttendanceDto>(
+      `${this.baseUrl}/attendance/checkin/offline`,
+      attendance,
+    );
+  }
+
+  // AC06: Sync pending check-ins
+  syncPendingCheckIns(): Observable<AttendanceDto[]> {
+    return this.http.post<AttendanceDto[]>(
+      `${this.baseUrl}/attendance/sync`,
+      {},
     );
   }
 
@@ -308,5 +494,29 @@ export class FrontdeskApiService {
   // Dunning APIs
   getFailedInvoices(): Observable<InvoiceDto[]> {
     return this.http.get<InvoiceDto[]>(`${this.baseUrl}/dunning-queue`);
+  }
+
+  // Pricing APIs (AC01, AC06)
+  getPlanBreakdown(
+    planId: number,
+    discountAmount?: number,
+  ): Observable<PriceBreakdownDto> {
+    let url = `${this.baseUrl}/pricing/plan/${planId}/breakdown`;
+    if (discountAmount) {
+      url += `?discountAmount=${discountAmount}`;
+    }
+    return this.http.get<PriceBreakdownDto>(url);
+  }
+
+  getUpgradeBreakdown(
+    memberId: number,
+    planId: number,
+    discountAmount?: number,
+  ): Observable<PriceBreakdownDto> {
+    let url = `${this.baseUrl}/pricing/member/${memberId}/upgrade/${planId}`;
+    if (discountAmount) {
+      url += `?discountAmount=${discountAmount}`;
+    }
+    return this.http.get<PriceBreakdownDto>(url);
   }
 }

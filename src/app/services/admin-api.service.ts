@@ -51,7 +51,7 @@ export interface AddOnDto {
   addonName: string;
   price: number;
   capacity?: number;
-  addonType: 'LOCKER' | 'PT_SESSIONS' | 'GUEST_PASS' | 'TOWEL' | 'OTHER';
+  addonType: 'SERVICE' | 'FACILITY' | 'OTHER';
   taxPercent?: number;
   isActive?: boolean;
 }
@@ -59,12 +59,12 @@ export interface AddOnDto {
 export interface PromoCodeDto {
   promoId?: number;
   code: string;
-  discountType: 'PERCENT' | 'FIXED';
+  discountType: 'PERCENT' | 'FLAT';
   discountValue: number;
   expiryDate: string;
   usageLimit: number;
   perMemberLimit?: number;
-  eligibility?: 'ALL' | 'NEW' | 'RETURNING';
+  eligibility?: 'ALL' | 'NEW' | 'RETURNING' | 'CORPORATE' | 'STUDENT';
   isActive?: boolean;
 }
 

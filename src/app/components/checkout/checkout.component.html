@@ -1,9 +1,10 @@
 <div class="max-w-[1000px] mx-auto pb-10">
   <div class="mb-8">
     <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Checkout</h1>
-    <p class="text-[#475569] text-[14px]">Complete your purchase</p>
+    <p class="text-[#475569] text-[14px]">Select a plan and complete your purchase</p>
   </div>
 
+  <!-- SUCCESS BANNER -->
   <div
     *ngIf="orderPlaced"
     class="mb-6 p-6 bg-[#F0FDF4] border border-[#16A34A] rounded-[12px] text-center"
@@ -13,82 +14,106 @@
       Order Placed Successfully!
     </p>
     <p class="text-[13px] text-[#15803D]">
-      Your membership and services have been activated.
+      {{ successMessage }}
     </p>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- ITEMS -->
-    <div class="lg:col-span-2">
-      <div
-        class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm"
-      >
-        <div class="p-6 border-b border-[#E8ECF4]">
-          <h2 class="font-bold text-[18px] text-[#0F172A]">Order Summary</h2>
-        </div>
+  <!-- ERROR / INFO -->
+  <div
+    *ngIf="errorMessage"
+    class="mb-4 p-4 bg-[#FEF2F2] border border-[#FECACA] rounded-[8px] text-[13px] text-[#DC2626] font-medium"
+  >
+    {{ errorMessage }}
+  </div>
 
-        <div class="divide-y divide-[#E8ECF4]">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- LEFT COLUMN: Plan Selection + Payment Method -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- PLAN SELECTION -->
+      <div class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm">
+        <div class="p-6 border-b border-[#E8ECF4]">
+          <h2 class="font-bold text-[18px] text-[#0F172A]">Select a Plan</h2>
+        </div>
+        <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div
-            *ngFor="let item of items"
-            class="p-6 flex justify-between items-center"
+            *ngFor="let plan of plans"
+            (click)="selectPlan(plan.planId!)"
+            class="p-5 border-2 rounded-[10px] cursor-pointer transition-all hover:shadow-md"
+            [class]="
+              selectedPlanId === plan.planId
+                ? 'border-[#2563EB] bg-[#EFF5FF]'
+                : 'border-[#E8ECF4] bg-white'
+            "
           >
-            <div class="flex-1">
-              <h3 class="font-bold text-[14px] text-[#0F172A] mb-1">
-                {{ item.name }}
-              </h3>
-              <p class="text-[12px] text-[#475569]">
-                ₹{{ item.price | number }} × {{ item.quantity }}
-              </p>
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="font-bold text-[14px] text-[#0F172A]">{{ plan.planName }}</h3>
+              <span
+                *ngIf="selectedPlanId === plan.planId"
+                class="text-[10px] px-2 py-0.5 bg-[#2563EB] text-white rounded font-bold"
+              >SELECTED</span>
             </div>
-            <div class="flex items-center gap-4">
-              <div class="flex items-center gap-2">
-                <button
-                  (click)="updateQuantity(item.id, item.quantity - 1)"
-                  class="w-8 h-8 rounded border border-[#E8ECF4] text-[#475569] hover:bg-[#F8F9FC]"
-                >
-                  −
-                </button>
-                <span class="w-8 text-center font-bold">{{
-                  item.quantity
-                }}</span>
-                <button
-                  (click)="updateQuantity(item.id, item.quantity + 1)"
-                  class="w-8 h-8 rounded border border-[#E8ECF4] text-[#475569] hover:bg-[#F8F9FC]"
-                >
-                  +
-                </button>
-              </div>
-              <span class="font-bold text-[14px] text-[#0F172A] w-20 text-right"
-                >₹{{ item.price * item.quantity | number }}</span
-              >
-              <button
-                (click)="removeItem(item.id)"
-                class="text-[#DC2626] text-[13px] font-medium hover:underline"
-              >
-                Remove
-              </button>
-            </div>
+            <p class="text-[12px] text-[#475569] mb-2">
+              {{ plan.durationDays }} days ·
+              {{ plan.accessStart }} – {{ plan.accessEnd }}
+            </p>
+            <p class="font-bold text-[18px] text-[#2563EB]">
+              ₹{{ plan.price | number }}
+            </p>
+            <p class="text-[11px] text-[#94A3B8]">
+              + {{ plan.taxPercent || 0 }}% tax
+            </p>
           </div>
         </div>
       </div>
 
-      <!-- PAYMENT METHOD -->
-      <div
-        class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm mt-6"
-      >
+      <!-- PROMO CODE -->
+      <div class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm">
+        <div class="p-6 border-b border-[#E8ECF4]">
+          <h2 class="font-bold text-[18px] text-[#0F172A]">Promo Code</h2>
+        </div>
+        <div class="p-6">
+          <div class="flex gap-3">
+            <input
+              [(ngModel)]="promoCode"
+              type="text"
+              placeholder="Enter promo code (e.g. NEW10)"
+              class="flex-1 h-10 px-4 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
+            />
+            <button
+              (click)="applyPromoCode()"
+              [disabled]="!promoCode.trim()"
+              class="h-10 px-6 bg-[#2563EB] text-white text-[13px] font-bold rounded-[8px] hover:bg-[#1D4ED8] disabled:bg-[#94A3B8] transition-colors"
+            >
+              Apply
+            </button>
+          </div>
+          <p
+            *ngIf="appliedDiscount > 0"
+            class="mt-3 text-[12px] text-[#16A34A] font-medium"
+          >
+            ✓ {{ successMessage }}
+          </p>
+        </div>
+      </div>
+
+      <!-- PAYMENT METHOD (AC02) -->
+      <div class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm">
         <div class="p-6 border-b border-[#E8ECF4]">
           <h2 class="font-bold text-[18px] text-[#0F172A]">Payment Method</h2>
+          <p class="text-[12px] text-[#94A3B8] mt-1">Gateway stub — no real charge</p>
         </div>
-
         <div class="p-6 space-y-3">
           <label
             *ngFor="let method of paymentMethods"
             class="flex items-center gap-3 p-4 border border-[#E8ECF4] rounded-[10px] cursor-pointer hover:bg-[#F8F9FC] transition-colors"
+            [class.border-[#2563EB]]="selectedPaymentMethod === method.type"
+            [class.bg-[#EFF5FF]]="selectedPaymentMethod === method.type"
           >
             <input
               type="radio"
               [(ngModel)]="selectedPaymentMethod"
-              [value]="method.id"
+              [value]="method.type"
               class="w-5 h-5 accent-[#2563EB]"
             />
             <span class="font-medium text-[14px] text-[#0F172A]">{{
@@ -99,43 +124,92 @@
       </div>
     </div>
 
-    <!-- PRICE SUMMARY -->
+    <!-- RIGHT COLUMN: Price Breakdown (AC01) -->
     <div
-      class="bg-white border border-[#E8ECF4] rounded-[12px] p-6 shadow-sm h-fit"
+      class="bg-white border border-[#E8ECF4] rounded-[12px] p-6 shadow-sm h-fit sticky top-6"
     >
-      <h3 class="font-bold text-[16px] text-[#0F172A] mb-4">Price Details</h3>
+      <h3 class="font-bold text-[16px] text-[#0F172A] mb-4">Price Breakdown</h3>
 
-      <div class="space-y-3 mb-4 pb-4 border-b border-[#E8ECF4]">
-        <div class="flex justify-between text-[13px]">
-          <span class="text-[#475569]">Subtotal</span>
-          <span class="font-bold text-[#0F172A]"
-            >₹{{ getSubtotal() | number }}</span
+      <div *ngIf="!breakdown && !isLoadingBreakdown" class="text-center py-8">
+        <p class="text-[#94A3B8] text-[13px]">Select a plan to see the price breakdown</p>
+      </div>
+
+      <div *ngIf="isLoadingBreakdown" class="text-center py-8">
+        <p class="text-[#2563EB] text-[13px]">Calculating...</p>
+      </div>
+
+      <div *ngIf="breakdown && !isLoadingBreakdown">
+        <div class="space-y-3 mb-4 pb-4 border-b border-[#E8ECF4]">
+          <div class="flex justify-between text-[13px]">
+            <span class="text-[#475569]">Plan</span>
+            <span class="font-bold text-[#0F172A]">{{ breakdown.planName }}</span>
+          </div>
+          <div class="flex justify-between text-[13px]">
+            <span class="text-[#475569]">Duration</span>
+            <span class="font-bold text-[#0F172A]">{{ breakdown.durationDays }} days</span>
+          </div>
+          <div class="flex justify-between text-[13px]">
+            <span class="text-[#475569]">Base Price</span>
+            <span class="font-bold text-[#0F172A]">₹{{ breakdown.basePrice | number }}</span>
+          </div>
+          <div
+            *ngIf="breakdown.discount > 0"
+            class="flex justify-between text-[13px]"
+          >
+            <span class="text-[#16A34A]">Discount</span>
+            <span class="font-bold text-[#16A34A]">−₹{{ breakdown.discount | number }}</span>
+          </div>
+          <div class="flex justify-between text-[13px]">
+            <span class="text-[#475569]">Subtotal</span>
+            <span class="font-bold text-[#0F172A]">₹{{ breakdown.priceAfterDiscount | number }}</span>
+          </div>
+          <div class="flex justify-between text-[13px]">
+            <span class="text-[#475569]">Tax ({{ breakdown.taxPercent }}%)</span>
+            <span class="font-bold text-[#0F172A]">₹{{ breakdown.taxAmount | number }}</span>
+          </div>
+        </div>
+
+        <!-- PRORATION (AC06) -->
+        <div
+          *ngIf="breakdown.proration"
+          class="mb-4 pb-4 border-b border-[#E8ECF4]"
+        >
+          <p class="text-[11px] uppercase text-[#94A3B8] font-bold mb-2">Proration Details</p>
+          <div class="space-y-2 text-[12px]">
+            <div class="flex justify-between">
+              <span class="text-[#475569]">Current Plan</span>
+              <span class="font-medium text-[#0F172A]">{{ breakdown.proration.currentPlanName }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[#475569]">Remaining Days</span>
+              <span class="font-medium text-[#0F172A]">{{ breakdown.proration.remainingDays }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[#16A34A]">Credit Applied</span>
+              <span class="font-bold text-[#16A34A]">−₹{{ breakdown.proration.creditApplied | number }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-between mb-6">
+          <span class="font-bold text-[14px] text-[#0F172A]">Total Amount</span>
+          <span class="font-bold text-[20px] text-[#2563EB]"
+            >₹{{ breakdown.finalAmount | number }}</span
           >
         </div>
-        <div class="flex justify-between text-[13px]">
-          <span class="text-[#475569]">GST (18%)</span>
-          <span class="font-bold text-[#0F172A]">₹{{ getTax() | number }}</span>
-        </div>
-      </div>
 
-      <div class="flex justify-between mb-6 pb-6 border-b border-[#E8ECF4]">
-        <span class="font-bold text-[14px] text-[#0F172A]">Total Amount</span>
-        <span class="font-bold text-[18px] text-[#2563EB]"
-          >₹{{ getTotal() | number }}</span
+        <button
+          (click)="placeOrder()"
+          [disabled]="!breakdown || orderPlaced || isProcessing"
+          class="w-full h-12 bg-[#2563EB] text-white font-bold rounded-[8px] hover:bg-[#1D4ED8] disabled:bg-[#94A3B8] transition-colors"
         >
+          {{ isProcessing ? 'Processing...' : orderPlaced ? 'Order Placed ✓' : 'Place Order' }}
+        </button>
+
+        <p class="text-[11px] text-[#94A3B8] text-center mt-4">
+          By placing order, you agree to our Terms &amp; Conditions
+        </p>
       </div>
-
-      <button
-        (click)="placeOrder()"
-        [disabled]="items.length === 0 || orderPlaced"
-        class="w-full h-12 bg-[#2563EB] text-white font-bold rounded-[8px] hover:bg-[#1D4ED8] disabled:bg-[#94A3B8] transition-colors"
-      >
-        {{ orderPlaced ? "Processing..." : "Place Order" }}
-      </button>
-
-      <p class="text-[11px] text-[#94A3B8] text-center mt-4">
-        By placing order, you agree to our Terms & Conditions
-      </p>
     </div>
   </div>
 </div>

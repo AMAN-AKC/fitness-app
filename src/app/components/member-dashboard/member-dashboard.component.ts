@@ -47,94 +47,35 @@ interface KPIData {
 })
 export class MemberDashboardComponent implements OnInit {
   showAlert = true;
+  consentAlertText = 'Your health consent form needs renewal.';
   currentUserName: string = 'Guest';
   isLoading = false;
   errorMessage = '';
 
-  upcomingClasses: UpcomingClass[] = [
-    {
-      category: 'Yoga',
-      categoryColor: '#0D9488',
-      name: 'Hatha Yoga Basics',
-      trainer: 'Priya Sharma',
-      room: 'Room A',
-      date: 'Thu, 24 Apr',
-      time: '07:00 AM',
-      canCancel: true,
-    },
-    {
-      category: 'Strength',
-      categoryColor: '#EA580C',
-      name: 'Power Lifting 101',
-      trainer: 'Rahul Kumar',
-      room: 'Gym Floor',
-      date: 'Fri, 25 Apr',
-      time: '06:00 PM',
-      canCancel: true,
-    },
-    {
-      category: 'Cardio',
-      categoryColor: '#DC2626',
-      name: 'HIIT Challenge',
-      trainer: 'Anita Desai',
-      room: 'Room B',
-      date: 'Sat, 26 Apr',
-      time: '08:00 AM',
-      canCancel: false,
-    },
-  ];
+  upcomingClasses: UpcomingClass[] = [];
 
-  invoices: Invoice[] = [
-    {
-      id: 'INV-2025-001',
-      plan: 'Gold Annual',
-      date: '01 Jan 2025',
-      amount: '₹12,999',
-      status: 'PAID',
-    },
-    {
-      id: 'INV-2024-142',
-      plan: 'Gold Annual',
-      date: '01 Jan 2024',
-      amount: '₹11,999',
-      status: 'PAID',
-    },
-    {
-      id: 'INV-2023-098',
-      plan: 'Silver Quarterly',
-      date: '15 Oct 2023',
-      amount: '₹3,999',
-      status: 'PAID',
-    },
-    {
-      id: 'INV-2023-067',
-      plan: 'Silver Quarterly',
-      date: '15 Jul 2023',
-      amount: '₹3,999',
-      status: 'PENDING',
-    },
-  ];
+  invoices: Invoice[] = [];
 
-  membershipStatus = 'ACTIVE';
-  currentPlan = 'Gold Annual';
-  planDescription = 'Peak Hours + All Facilities';
-  renewalDate = '01 Jan 2025';
-  daysRemaining = 47;
-  daysRemainingProgress = 87;
-  expirationDate = '10 Mar 2025';
-  classesBooked = 6;
-  upcomingCount = 2;
-  trainerName = 'Rahul Kumar';
-  trainerInitials = 'RK';
-  trainerColor = '#7C3AED';
-  trainerSpecialties = ['Strength', 'CrossFit'];
-  trainerRating = 4.2;
-  trainerCertifications = ['ACSM Certified', 'CrossFit L2'];
-  sessionsRemaining = 3;
+  membershipStatus = 'PENDING';
+  currentPlan = 'Loading';
+  planDescription = 'Loading membership details';
+  renewalDate = '';
+  daysRemaining = 0;
+  daysRemainingProgress = 0;
+  expirationDate = '';
+  classesBooked = 0;
+  upcomingCount = 0;
+  trainerName = 'No trainer assigned';
+  trainerInitials = 'NA';
+  trainerColor = '#64748B';
+  trainerSpecialties: string[] = [];
+  trainerRating = 0;
+  trainerCertifications: string[] = [];
+  sessionsRemaining = 0;
 
   chartData: KPIData = {
-    classesCount: 6,
-    chartData: [60, 75, 85, 90],
+    classesCount: 0,
+    chartData: [0, 0, 0, 0],
   };
 
   private currentMember: MemberDto | null = null;
@@ -150,7 +91,7 @@ export class MemberDashboardComponent implements OnInit {
     if (session) {
       this.currentUserName = session.username;
     }
-    this.loadMemberSummary(session?.userId, session?.username);
+    this.loadMemberSummary();
   }
 
   logout(): void {
@@ -160,6 +101,10 @@ export class MemberDashboardComponent implements OnInit {
 
   closeAlert(): void {
     this.showAlert = false;
+  }
+
+  openHealthForms(): void {
+    this.router.navigate(['/health-forms']);
   }
 
   getStatusColor(status: string): string {
@@ -196,20 +141,23 @@ export class MemberDashboardComponent implements OnInit {
     return index % 2 === 0 ? '#FFFFFF' : '#F8F9FC';
   }
 
-  private loadMemberSummary(userId?: string, username?: string): void {
+  private loadMemberSummary(): void {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.frontdeskApi.getMembers().subscribe({
-      next: (members) => {
-        this.currentMember = this.findCurrentMember(members, userId, username);
-        if (this.currentMember) {
-          const memberId = Number(this.currentMember.memberId);
-          this.loadMemberDetails(this.currentMember, memberId);
-        } else {
-          this.errorMessage = 'No member record matched the logged-in account.';
-          this.isLoading = false;
-        }
+    this.frontdeskApi.getCurrentMember().subscribe({
+      next: (member) => {
+        this.currentMember = member;
+        const memberId = Number(member.memberId);
+        this.frontdeskApi.getConsentStatus(memberId).subscribe({
+          next: (status) => {
+            this.showAlert = status.consentRequired;
+            this.consentAlertText = status.requiresReconfirmation
+              ? `Health consent must be re-confirmed for policy ${status.currentVersion}.`
+              : 'Health consent is missing or expired. Please complete it before check-in.';
+          },
+        });
+        this.loadMemberDetails(member, memberId);
       },
       error: (error) => {
         this.errorMessage =
@@ -217,26 +165,6 @@ export class MemberDashboardComponent implements OnInit {
         this.isLoading = false;
       },
     });
-  }
-
-  private findCurrentMember(
-    members: MemberDto[],
-    userId?: string,
-    username?: string,
-  ): MemberDto | null {
-    const normalizedUser = (username || '').trim().toLowerCase();
-    const numericUserId = Number(userId);
-
-    return (
-      members.find((member) => Number(member.memberId) === numericUserId) ||
-      members.find(
-        (member) => member.email?.toLowerCase() === normalizedUser,
-      ) ||
-      members.find(
-        (member) => member.memName?.toLowerCase() === normalizedUser,
-      ) ||
-      null
-    );
   }
 
   private applyMemberSummary(member: MemberDto): void {

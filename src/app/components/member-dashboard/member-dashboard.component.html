@@ -17,9 +17,9 @@
     <div class="alert-content">
       <span class="alert-icon">⚠</span>
       <span class="alert-text">
-        Your health consent form needs renewal. It expired on 14 Jan 2025.
+        {{ consentAlertText }}
       </span>
-      <a href="#" class="alert-link">Update Now →</a>
+      <button type="button" class="alert-link" (click)="openHealthForms()">Update Now</button>
     </div>
     <button class="alert-close" (click)="closeAlert()">×</button>
   </div>

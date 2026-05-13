@@ -1,4 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { FrontdeskApiService, ClassesDto, TrainerDto } from '../../services/frontdesk-api.service';
+import { AuthService } from '../../services/auth.service';
+import { forkJoin } from 'rxjs';
 
 export interface ClassItem {
   id: string;
@@ -9,7 +12,7 @@ export interface ClassItem {
   duration: number;
   capacity: number;
   booked: number;
-  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  level: 'Beginner' | 'Intermediate' | 'Advanced' | string;
   price: number;
   image: string;
 }
@@ -18,6 +21,7 @@ export interface ClassItem {
   selector: 'app-class-booking',
   templateUrl: './class-booking.component.html',
   styleUrls: ['./class-booking.component.css'],
+  standalone: false
 })
 export class ClassBookingComponent implements OnInit {
   classes: ClassItem[] = [];
@@ -26,84 +30,66 @@ export class ClassBookingComponent implements OnInit {
   filterLevel = 'All';
   searchText = '';
   bookingDrawerOpen = false;
+  
+  isLoading = false;
+  errorMessage = '';
+  successMessage = '';
 
   levelOptions = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
-  constructor() {}
+  constructor(
+    private frontdeskApi: FrontdeskApiService,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.initializeClasses();
   }
 
   initializeClasses(): void {
-    this.classes = [
-      {
-        id: '1',
-        name: 'Morning Yoga Flow',
-        trainer: 'Priya Sharma',
-        date: '2025-05-20',
-        time: '06:00 AM',
-        duration: 60,
-        capacity: 20,
-        booked: 18,
-        level: 'Beginner',
-        price: 400,
-        image: '🧘',
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    forkJoin({
+      classes: this.frontdeskApi.getClasses(),
+      trainers: this.frontdeskApi.getTrainers()
+    }).subscribe({
+      next: ({ classes, trainers }) => {
+        // Map trainers for quick lookup
+        const trainerMap = new Map<number, string>();
+        trainers.forEach(t => trainerMap.set(t.trainerId || 0, t.trainerName));
+
+        this.classes = classes.filter(c => c.status === 'ACTIVE').map(c => {
+          // Determine a random emoji based on class name heuristic
+          const nameLower = c.classesName.toLowerCase();
+          let emoji = '💪';
+          if (nameLower.includes('yoga') || nameLower.includes('pilates')) emoji = '🧘';
+          else if (nameLower.includes('zumba') || nameLower.includes('dance')) emoji = '🎵';
+          else if (nameLower.includes('hiit') || nameLower.includes('cardio')) emoji = '🏃';
+
+          return {
+            id: c.classId?.toString() || '',
+            name: c.classesName,
+            trainer: trainerMap.get(c.trainerId) || `Trainer #${c.trainerId}`,
+            date: c.startDate, // Ideally format this based on current week
+            time: c.classTime,
+            duration: c.durationMins,
+            capacity: c.capacity,
+            booked: Math.floor(Math.random() * (c.capacity / 2)), // Mock booked count for now until backend gives current bookings count
+            level: c.prerequisites ? 'Intermediate' : 'Beginner', // Heuristic
+            price: 0,
+            image: emoji,
+          };
+        });
+        
+        this.filteredClasses = [...this.classes];
+        this.isLoading = false;
       },
-      {
-        id: '2',
-        name: 'HIIT Intensity',
-        trainer: 'Amit Singh',
-        date: '2025-05-20',
-        time: '07:00 AM',
-        duration: 45,
-        capacity: 15,
-        booked: 15,
-        level: 'Advanced',
-        price: 500,
-        image: '🏃',
-      },
-      {
-        id: '3',
-        name: 'Core Strength',
-        trainer: 'Rajesh Kumar',
-        date: '2025-05-20',
-        time: '05:00 PM',
-        duration: 60,
-        capacity: 25,
-        booked: 12,
-        level: 'Intermediate',
-        price: 450,
-        image: '💪',
-      },
-      {
-        id: '4',
-        name: 'Zumba Party',
-        trainer: 'Neha Singh',
-        date: '2025-05-21',
-        time: '06:30 PM',
-        duration: 60,
-        capacity: 30,
-        booked: 28,
-        level: 'Beginner',
-        price: 350,
-        image: '🎵',
-      },
-      {
-        id: '5',
-        name: 'Pilates Basics',
-        trainer: 'Sophia Lee',
-        date: '2025-05-21',
-        time: '09:00 AM',
-        duration: 50,
-        capacity: 18,
-        booked: 8,
-        level: 'Beginner',
-        price: 420,
-        image: '🤸',
-      },
-    ];
-    this.filteredClasses = [...this.classes];
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Failed to load classes.';
+        this.isLoading = false;
+      }
+    });
   }
 
   filterClasses(): void {
@@ -128,17 +114,40 @@ export class ClassBookingComponent implements OnInit {
   selectClass(cls: ClassItem): void {
     this.selectedClass = cls;
     this.bookingDrawerOpen = true;
+    this.successMessage = '';
+    this.errorMessage = '';
   }
 
   bookClass(): void {
-    if (
-      this.selectedClass &&
-      this.selectedClass.booked < this.selectedClass.capacity
-    ) {
-      this.selectedClass.booked += 1;
-      console.log(`Booked ${this.selectedClass.name}`);
-      this.bookingDrawerOpen = false;
+    if (!this.selectedClass) return;
+    
+    const session = this.authService.getCurrentSession();
+    if (!session || !session.userId) {
+      this.errorMessage = "Please log in as a member to book classes.";
+      return;
     }
+
+    this.isLoading = true;
+    this.frontdeskApi.bookClass({
+      memberId: Number(session.userId),
+      classId: Number(this.selectedClass.id)
+    }).subscribe({
+      next: () => {
+        if(this.selectedClass) {
+           this.selectedClass.booked += 1;
+           this.successMessage = `Successfully booked ${this.selectedClass.name}`;
+        }
+        setTimeout(() => {
+          this.bookingDrawerOpen = false;
+          this.successMessage = '';
+        }, 2000);
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Booking failed.';
+        this.isLoading = false;
+      }
+    });
   }
 
   getAvailableSeats(cls: ClassItem): number {

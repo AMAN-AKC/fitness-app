@@ -40,6 +40,8 @@ export class MemberRegistrationComponent implements OnInit {
   createdMember: MemberDto | null = null;
   isLoading = false;
   errorMessage = '';
+  selectedPhotoFile: File | null = null;
+  photoError = '';
 
   formData = {
     fullName: '',
@@ -143,6 +145,28 @@ export class MemberRegistrationComponent implements OnInit {
     }
   }
 
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.photoError = '';
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      const maxSize = 5 * 1024 * 1024; // 5MB
+
+      if (!allowedTypes.includes(file.type)) {
+        this.photoError = 'Only JPG and PNG files are allowed.';
+        this.selectedPhotoFile = null;
+        return;
+      }
+      if (file.size > maxSize) {
+        this.photoError = 'File size must be under 5MB.';
+        this.selectedPhotoFile = null;
+        return;
+      }
+      this.selectedPhotoFile = file;
+    }
+  }
+
   handleFinish(event: Event): void {
     event.preventDefault();
     if (!this.termsAgreed) {
@@ -155,6 +179,19 @@ export class MemberRegistrationComponent implements OnInit {
 
     this.frontdeskApi.createMember(member).subscribe({
       next: (createdMember) => {
+        // Upload photo if selected (AC06)
+        if (this.selectedPhotoFile && createdMember.memberId) {
+          this.frontdeskApi
+            .uploadMemberPhoto(createdMember.memberId, this.selectedPhotoFile)
+            .subscribe({
+              next: () => {},
+              error: () => {
+                // Photo upload failure is non-blocking
+                console.warn('Photo upload failed, but member was created.');
+              },
+            });
+        }
+
         const selectedPlan = this.plans.find(
           (plan) => plan.name === this.formData.plan,
         );

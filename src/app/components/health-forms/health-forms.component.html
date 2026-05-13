@@ -1,206 +1,77 @@
-<div class="max-w-[800px] mx-auto pb-10">
-  <div class="mb-8">
-    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">
-      Health Assessment Form
-    </h1>
-    <p class="text-[#475569] text-[14px]">
-      Help us understand your health profile to create personalized fitness
-      plans
-    </p>
-  </div>
-
-  <div class="bg-white border border-[#E8ECF4] rounded-[14px] p-8 shadow-sm">
-    <!-- BASIC INFO -->
-    <div class="mb-8 pb-8 border-b border-[#E8ECF4]">
-      <h2 class="font-bold text-[18px] text-[#0F172A] mb-6">
-        Basic Information
-      </h2>
-
-      <div class="grid grid-cols-3 gap-4 mb-6">
-        <div>
-          <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
-            >Age</label
-          >
-          <input
-            type="number"
-            [(ngModel)]="formData.age"
-            (ngModelChange)="calculateBMI()"
-            class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB]"
-          />
-        </div>
-        <div>
-          <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
-            >Height (cm)</label
-          >
-          <input
-            type="number"
-            [(ngModel)]="formData.height"
-            (ngModelChange)="calculateBMI()"
-            class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB]"
-          />
-        </div>
-        <div>
-          <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
-            >Weight (kg)</label
-          >
-          <input
-            type="number"
-            [(ngModel)]="formData.weight"
-            (ngModelChange)="calculateBMI()"
-            class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB]"
-          />
-        </div>
-      </div>
-
-      <!-- BMI DISPLAY -->
-      <div
-        class="bg-[#F8F9FC] border border-[#E8ECF4] rounded-[10px] p-4 flex items-center gap-6"
-      >
-        <div>
-          <span class="text-[11px] text-[#94A3B8] uppercase font-bold"
-            >Your BMI</span
-          >
-          <p class="font-bold text-[32px]" [style.color]="getBMIColor()">
-            {{ bmi }}
-          </p>
-        </div>
-        <div class="flex-1">
-          <p
-            class="font-bold text-[16px] text-[#0F172A]"
-            [style.color]="getBMIColor()"
-          >
-            {{ getBMICategory() }}
-          </p>
-          <p class="text-[13px] text-[#475569] mt-1">
-            BMI (Body Mass Index) is a measure of body fat based on height and
-            weight.
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- HEALTH CONDITIONS -->
-    <div class="mb-8 pb-8 border-b border-[#E8ECF4]">
-      <h2 class="font-bold text-[18px] text-[#0F172A] mb-4">
-        Health Conditions
-      </h2>
-      <p class="text-[13px] text-[#475569] mb-4">
-        Select any that apply to you
+<div class="consent-page">
+  <div class="consent-header">
+    <div>
+      <h1>Health & Waiver Consent</h1>
+      <p *ngIf="currentMember">
+        {{ currentMember.memName }} · Policy {{ currentVersion }}
       </p>
-
-      <div class="grid grid-cols-2 gap-3">
-        <label
-          *ngFor="let condition of healthConditionOptions"
-          class="flex items-center gap-2 cursor-pointer p-3 border border-[#E8ECF4] rounded-[8px] hover:bg-[#F8F9FC]"
-        >
-          <input
-            type="checkbox"
-            [checked]="formData.healthConditions.includes(condition)"
-            (change)="toggleHealthCondition(condition)"
-            class="w-4 h-4 accent-[#2563EB]"
-          />
-          <span class="text-[13px] font-medium text-[#0F172A]">{{
-            condition
-          }}</span>
-        </label>
-      </div>
-
-      <div class="mt-4">
-        <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
-          >Medications (if any)</label
-        >
-        <textarea
-          [(ngModel)]="formData.medications"
-          class="w-full h-24 px-3 py-2 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
-          placeholder="List any current medications..."
-        ></textarea>
-      </div>
-
-      <div class="mt-4">
-        <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
-          >Previous Injuries</label
-        >
-        <textarea
-          [(ngModel)]="formData.injuries"
-          class="w-full h-24 px-3 py-2 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
-          placeholder="Any past injuries we should know about?"
-        ></textarea>
-      </div>
     </div>
+    <button type="button" class="secondary-btn" (click)="downloadHistory()" [disabled]="!history.length">
+      Download History
+    </button>
+  </div>
 
-    <!-- FITNESS GOALS & HABITS -->
-    <div class="mb-8 pb-8 border-b border-[#E8ECF4]">
-      <h2 class="font-bold text-[18px] text-[#0F172A] mb-4">
-        Fitness Goals & Habits
-      </h2>
+  <div *ngIf="isLoading || errorMessage || successMessage" class="status-banner" [class.error]="errorMessage">
+    {{ errorMessage || successMessage || "Loading consent records..." }}
+  </div>
 
-      <div class="mb-6">
-        <p class="text-[13px] font-bold text-[#0F172A] mb-3">Your Goals</p>
-        <div class="grid grid-cols-2 gap-3">
-          <label
-            *ngFor="let goal of goalOptions"
-            class="flex items-center gap-2 cursor-pointer p-3 border border-[#E8ECF4] rounded-[8px] hover:bg-[#F8F9FC]"
-          >
-            <input
-              type="checkbox"
-              [checked]="formData.goals.includes(goal)"
-              (change)="toggleGoal(goal)"
-              class="w-4 h-4 accent-[#2563EB]"
-            />
-            <span class="text-[13px] font-medium text-[#0F172A]">{{
-              goal
-            }}</span>
-          </label>
+  <div *ngIf="consentRequired" class="alert-card">
+    <strong>Consent required</strong>
+    <span *ngIf="requiresReconfirmation">Policy version changed. Please re-confirm before facility access.</span>
+    <span *ngIf="!requiresReconfirmation">Complete the current PAR-Q and waiver before check-in.</span>
+  </div>
+
+  <form class="consent-panel" (ngSubmit)="submitForm()">
+    <section>
+      <h2>PAR-Q Questionnaire</h2>
+      <div class="question-list">
+        <div class="question-row" *ngFor="let question of questions">
+          <span>{{ question.text }}</span>
+          <div class="answer-group">
+            <button type="button" [class.selected]="question.value === false" (click)="setAnswer(question, false)">
+              No
+            </button>
+            <button type="button" [class.selected]="question.value === true" (click)="setAnswer(question, true)">
+              Yes
+            </button>
+          </div>
         </div>
       </div>
+    </section>
 
-      <div class="mb-6">
-        <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
-          >Current Exercise Frequency</label
-        >
-        <select
-          [(ngModel)]="formData.exerciseFrequency"
-          class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
-        >
-          <option *ngFor="let freq of frequencyOptions">{{ freq }}</option>
-        </select>
-      </div>
+    <section>
+      <h2>Required Acknowledgements</h2>
+      <label class="ack-row">
+        <input type="checkbox" [(ngModel)]="acknowledgements.medicalAcknowledged" name="medicalAcknowledged" />
+        I confirm the PAR-Q answers are accurate and I will seek medical advice when appropriate.
+      </label>
+      <label class="ack-row">
+        <input type="checkbox" [(ngModel)]="acknowledgements.liabilityAcknowledged" name="liabilityAcknowledged" />
+        I accept the facility waiver and understand normal exercise risks.
+      </label>
+      <label class="ack-row">
+        <input type="checkbox" [(ngModel)]="acknowledgements.privacyAcknowledged" name="privacyAcknowledged" />
+        I consent to storage of health consent details under the active retention policy.
+      </label>
+    </section>
 
+    <button class="primary-btn" type="submit" [disabled]="!canSubmit() || isSubmitting">
+      {{ isSubmitting ? "Recording..." : "Record E-Consent" }}
+    </button>
+  </form>
+
+  <section class="history-panel">
+    <div class="history-header">
+      <h2>Consent History</h2>
+      <span>{{ history.length }} records</span>
+    </div>
+    <div class="history-row" *ngFor="let item of history">
       <div>
-        <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
-          >Dietary Restrictions</label
-        >
-        <input
-          type="text"
-          [(ngModel)]="formData.dietaryRestrictions"
-          class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
-          placeholder="e.g., Vegetarian, Vegan, Gluten-free..."
-        />
+        <strong>{{ item.formVersion }}</strong>
+        <p>{{ item.acknowledgedAt | date: "medium" }} · expires {{ item.expiresAt | date: "mediumDate" }}</p>
+        <small>IP {{ maskIp(item.ipAddress) }}</small>
       </div>
+      <span class="status-pill" [class.expired]="item.status !== 'ACTIVE'">{{ item.status }}</span>
     </div>
-
-    <!-- SUBMISSION MESSAGE -->
-    <div
-      *ngIf="submitted"
-      class="mb-6 p-4 bg-[#F0FDF4] border border-[#16A34A] rounded-[8px] text-[13px] text-[#15803D]"
-    >
-      ✓ Form submitted successfully! Your health profile has been saved.
-    </div>
-
-    <!-- BUTTONS -->
-    <div class="flex gap-3">
-      <button
-        (click)="resetForm()"
-        class="flex-1 bg-white border border-[#E8ECF4] text-[#475569] font-bold h-12 rounded-[8px] hover:bg-[#F8F9FC] transition-colors"
-      >
-        Reset
-      </button>
-      <button
-        (click)="submitForm()"
-        class="flex-1 bg-[#2563EB] text-white font-bold h-12 rounded-[8px] hover:bg-[#1D4ED8] transition-colors"
-      >
-        Save Health Profile
-      </button>
-    </div>
-  </div>
+  </section>
 </div>
