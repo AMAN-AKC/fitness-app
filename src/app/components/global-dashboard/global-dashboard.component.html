@@ -19,12 +19,12 @@
           <li *ngFor="let item of group.items">
             <button
               class="nav-button"
-              [class.active]="item.isActive"
+              [class.active]="isRouteActive(item.route)"
               [title]="!sidebarExpanded ? item.label : ''"
               (click)="navigateTo(item)"
             >
               <span *ngIf="item.isActive" class="active-indicator"></span>
-              <span class="nav-icon">{{ item.icon.charAt(0) }}</span>
+              <span class="nav-icon">{{ item.icon }}</span>
               <span *ngIf="sidebarExpanded" class="nav-label">{{
                 item.label
               }}</span>
@@ -37,10 +37,10 @@
     <!-- Bottom Section -->
     <div class="sidebar-footer">
       <div class="user-card" [class.expanded]="sidebarExpanded">
-        <div class="user-avatar">JS</div>
+        <div class="user-avatar">{{ userName.charAt(0) }}</div>
         <div *ngIf="sidebarExpanded" class="user-info">
-          <div class="user-name">Jane Smith</div>
-          <div class="user-role"><span>Admin</span></div>
+          <div class="user-name">{{ userName }}</div>
+          <div class="user-role"><span>{{ userRole }}</span></div>
         </div>
       </div>
 
@@ -80,9 +80,9 @@
     <!-- Top Bar -->
     <header class="topbar">
       <div class="breadcrumb">
-        <span class="breadcrumb-item">Dashboard</span>
+        <span class="breadcrumb-item">FitClub</span>
         <span class="breadcrumb-separator">›</span>
-        <span class="breadcrumb-item active">Admin</span>
+        <span class="breadcrumb-item active">{{ getCurrentPageTitle() }}</span>
       </div>
 
       <div class="search-box">
@@ -96,14 +96,14 @@
       </div>
 
       <div class="topbar-actions">
-        <button class="notification-btn">
+        <button class="notification-btn" (click)="onNotificationsClick()">
           <span class="notification-icon">🔔</span>
           <span class="notification-badge">3</span>
         </button>
         <div class="topbar-divider"></div>
-        <button class="user-dropdown">
-          <div class="user-avatar-small">JS</div>
-          <span>Jane Smith</span>
+        <button class="user-dropdown" (click)="onProfileClick()">
+          <div class="user-avatar-small">{{ userName.charAt(0) }}</div>
+          <span>{{ userName }}</span>
           <span class="dropdown-icon">▼</span>
         </button>
       </div>
@@ -111,66 +111,7 @@
 
     <!-- Page Content -->
     <main class="page-content">
-      <style>
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .content-wrapper {
-          animation: fadeInUp 220ms ease-out forwards;
-        }
-      </style>
-
-      <div class="content-wrapper">
-        <!-- Page Header -->
-        <div class="page-header">
-          <div class="page-title-section">
-            <h1 class="page-title">Admin Overview</h1>
-            <p class="page-subtitle">
-              Live backend summary for admin users, plans, and branches.
-            </p>
-          </div>
-
-          <div class="page-actions">
-            <button class="btn btn-secondary">
-              <span class="btn-icon">📥</span>
-              <span>Export</span>
-            </button>
-            <button class="btn btn-primary">
-              <span class="btn-icon">+</span>
-              <span>Add Member</span>
-            </button>
-          </div>
-        </div>
-
-        <div
-          *ngIf="isLoading || errorMessage"
-          class="status-message"
-          [class.error]="errorMessage"
-        >
-          {{ errorMessage || "Loading admin summary..." }}
-        </div>
-
-        <!-- Metric Cards Grid -->
-        <div class="cards-grid">
-          <div *ngFor="let card of metricCards" class="metric-card">
-            <div class="card-label">{{ card.title }}</div>
-            <div class="card-value">{{ card.value }}</div>
-            <div class="card-footer">
-              <span class="card-badge" [ngClass]="card.badgeClass">
-                {{ card.change }}
-              </span>
-              <span class="card-text">{{ card.prevText }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <router-outlet></router-outlet>
     </main>
   </div>
 </div>

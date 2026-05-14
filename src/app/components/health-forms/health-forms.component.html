@@ -1,77 +1,149 @@
-<div class="consent-page">
-  <div class="consent-header">
-    <div>
-      <h1>Health & Waiver Consent</h1>
-      <p *ngIf="currentMember">
-        {{ currentMember.memName }} · Policy {{ currentVersion }}
-      </p>
-    </div>
-    <button type="button" class="secondary-btn" (click)="downloadHistory()" [disabled]="!history.length">
-      Download History
-    </button>
-  </div>
-
-  <div *ngIf="isLoading || errorMessage || successMessage" class="status-banner" [class.error]="errorMessage">
-    {{ errorMessage || successMessage || "Loading consent records..." }}
-  </div>
-
-  <div *ngIf="consentRequired" class="alert-card">
-    <strong>Consent required</strong>
-    <span *ngIf="requiresReconfirmation">Policy version changed. Please re-confirm before facility access.</span>
-    <span *ngIf="!requiresReconfirmation">Complete the current PAR-Q and waiver before check-in.</span>
-  </div>
-
-  <form class="consent-panel" (ngSubmit)="submitForm()">
-    <section>
-      <h2>PAR-Q Questionnaire</h2>
-      <div class="question-list">
-        <div class="question-row" *ngFor="let question of questions">
-          <span>{{ question.text }}</span>
-          <div class="answer-group">
-            <button type="button" [class.selected]="question.value === false" (click)="setAnswer(question, false)">
-              No
-            </button>
-            <button type="button" [class.selected]="question.value === true" (click)="setAnswer(question, true)">
-              Yes
-            </button>
-          </div>
+<div class="health-forms-page">
+  <div class="max-width-1100 centered px-4 py-5">
+    
+    <!-- PAGE HEADER CARD -->
+    <div class="card header-card p-4 mb-4 d-flex justify-content-between align-items-center">
+      <div class="header-content">
+        <h1 class="h2 mb-1">HEALTH & CONSENT</h1>
+        <p class="text-muted text-uppercase small fw-bold tracking-wider mb-0">
+          KEEP YOUR HEALTH PROFILE CURRENT TO ACCESS ALL FACILITIES.
+        </p>
+      </div>
+      <div class="header-status">
+        <div *ngIf="!consentRequired && history.length > 0" class="status-badge status-active">
+          CONSENT ACTIVE — EXPIRES {{ history[0].expiresAt | date: 'MMM yyyy' | uppercase }}
+        </div>
+        <div *ngIf="consentRequired" class="status-badge status-required pulse-outline">
+          ACTION REQUIRED
         </div>
       </div>
-    </section>
-
-    <section>
-      <h2>Required Acknowledgements</h2>
-      <label class="ack-row">
-        <input type="checkbox" [(ngModel)]="acknowledgements.medicalAcknowledged" name="medicalAcknowledged" />
-        I confirm the PAR-Q answers are accurate and I will seek medical advice when appropriate.
-      </label>
-      <label class="ack-row">
-        <input type="checkbox" [(ngModel)]="acknowledgements.liabilityAcknowledged" name="liabilityAcknowledged" />
-        I accept the facility waiver and understand normal exercise risks.
-      </label>
-      <label class="ack-row">
-        <input type="checkbox" [(ngModel)]="acknowledgements.privacyAcknowledged" name="privacyAcknowledged" />
-        I consent to storage of health consent details under the active retention policy.
-      </label>
-    </section>
-
-    <button class="primary-btn" type="submit" [disabled]="!canSubmit() || isSubmitting">
-      {{ isSubmitting ? "Recording..." : "Record E-Consent" }}
-    </button>
-  </form>
-
-  <section class="history-panel">
-    <div class="history-header">
-      <h2>Consent History</h2>
-      <span>{{ history.length }} records</span>
     </div>
-    <div class="history-row" *ngFor="let item of history">
-      <div>
-        <strong>{{ item.formVersion }}</strong>
-        <p>{{ item.acknowledgedAt | date: "medium" }} · expires {{ item.expiresAt | date: "mediumDate" }}</p>
-        <small>IP {{ maskIp(item.ipAddress) }}</small>
+
+    <!-- CONSENT REQUIRED ALERT -->
+    <div *ngIf="consentRequired" class="alert-banner mb-4">
+      <div class="alert-content d-flex justify-content-between align-items-center">
+        <span class="alert-text">
+          ✗ YOUR HEALTH CONSENT FORM {{ requiresReconfirmation ? 'HAS BEEN UPDATED' : 'HAS EXPIRED' }}. PLEASE RE-SIGN TO CONTINUE BOOKING CLASSES AND USING THE GYM.
+        </span>
+        <button class="btn btn-secondary btn-sm" (click)="scrollToForm()">RE-SIGN NOW →</button>
       </div>
-      <span class="status-pill" [class.expired]="item.status !== 'ACTIVE'">{{ item.status }}</span>
     </div>
-  </section>
+
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <!-- PAR-Q FORM CARD -->
+        <form class="card parq-card p-5 mb-4" (ngSubmit)="submitForm()" id="consentForm">
+          <div class="parq-header d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h4 mb-0">PHYSICAL ACTIVITY READINESS QUESTIONNAIRE</h2>
+            <span class="text-muted small fw-bold">VERSION {{ currentVersion }} · UPDATED JAN 2025</span>
+          </div>
+          
+          <div class="brutal-divider mb-4"></div>
+
+          <div class="intro-note mb-4 p-3">
+            ANSWER THESE 7 QUESTIONS HONESTLY. IF YOU ANSWER YES TO ANY, CONSULT A DOCTOR BEFORE INCREASING PHYSICAL ACTIVITY.
+          </div>
+
+          <div class="question-list">
+            <div class="question-row d-flex justify-content-between align-items-center py-3" *ngFor="let question of questions">
+              <span class="question-text text-uppercase fw-bold">{{ question.text }}</span>
+              <div class="pill-toggle d-flex">
+                <button type="button" class="pill-btn" [class.selected]="question.value === true" (click)="setAnswer(question, true)">YES</button>
+                <button type="button" class="pill-btn" [class.selected]="question.value === false" (click)="setAnswer(question, false)">NO</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- E-SIGNATURE SECTION -->
+          <div class="signature-section pt-4 mt-2">
+            <div class="brutal-divider mb-4"></div>
+            
+            <div class="mb-4">
+              <label class="form-label text-uppercase fw-bold small">FULL NAME AS SIGNATURE:</label>
+              <input type="text" class="form-control" [placeholder]="currentMember?.memName || 'Full Name'" [(ngModel)]="signatureName" name="signatureName" />
+            </div>
+
+            <div class="acknowledgements">
+              <label class="custom-checkbox mb-3 d-flex align-items-start">
+                <input type="checkbox" [(ngModel)]="acknowledgements.medicalAcknowledged" name="medicalAcknowledged" />
+                <span class="checkbox-box me-3"></span>
+                <span class="checkbox-label text-uppercase small fw-bold">I confirm the PAR-Q answers are accurate and I will seek medical advice when appropriate.</span>
+              </label>
+
+              <label class="custom-checkbox mb-3 d-flex align-items-start">
+                <input type="checkbox" [(ngModel)]="acknowledgements.liabilityAcknowledged" name="liabilityAcknowledged" />
+                <span class="checkbox-box me-3"></span>
+                <span class="checkbox-label text-uppercase small fw-bold">I accept the facility waiver and understand normal exercise risks.</span>
+              </label>
+
+              <label class="custom-checkbox mb-4 d-flex align-items-start">
+                <input type="checkbox" [(ngModel)]="acknowledgements.privacyAcknowledged" name="privacyAcknowledged" />
+                <span class="checkbox-box me-3"></span>
+                <span class="checkbox-label text-uppercase small fw-bold">I consent to storage of health consent details under the active retention policy.</span>
+              </label>
+            </div>
+
+            <div class="timestamp-row p-2 mb-4 d-flex justify-content-between align-items-center">
+              <span class="mono-text">TIMESTAMP: {{ today | date: 'yyyy-MM-dd HH:mm:ss' }}</span>
+              <span class="mono-text">IP: {{ maskIp('127.0.0.1') }}</span>
+            </div>
+
+            <div *ngIf="errorMessage" class="alert alert-danger p-2 small mb-3 border-brutal">
+              {{ errorMessage }}
+            </div>
+            <div *ngIf="successMessage" class="alert alert-success p-2 small mb-3 border-brutal">
+              {{ successMessage }}
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 py-3 fs-5" [disabled]="!canSubmit() || isSubmitting">
+              {{ isSubmitting ? 'PROCESSING...' : 'SUBMIT & SIGN' }}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-lg-4">
+        <!-- CONSENT HISTORY -->
+        <div class="card p-4 mb-4">
+          <h2 class="h4 mb-3">CONSENT HISTORY</h2>
+          <div class="brutal-divider mb-4"></div>
+          
+          <div class="timeline" *ngIf="history.length > 0; else emptyHistory">
+            <div class="timeline-item d-flex mb-4" *ngFor="let item of history; let last = last" [class.muted-entry]="item.status !== 'ACTIVE'">
+              <div class="timeline-line-container">
+                <div class="timeline-dot"></div>
+                <div *ngIf="!last" class="timeline-line"></div>
+              </div>
+              <div class="timeline-content ps-3 flex-grow-1">
+                <div class="d-flex justify-content-between align-items-start mb-1">
+                  <span class="fw-bold text-uppercase small">{{ item.acknowledgedAt | date: 'dd MMM yyyy' }}</span>
+                  <span class="status-pill" [class.pill-active]="item.status === 'ACTIVE'">{{ item.status }}</span>
+                </div>
+                <div class="text-muted small fw-bold">VERSION {{ item.formVersion }}</div>
+                <a href="javascript:void(0)" class="download-link mt-2 d-inline-block small fw-bold text-uppercase" (click)="downloadHistory()">DOWNLOAD PDF ↓</a>
+              </div>
+            </div>
+          </div>
+          <ng-template #emptyHistory>
+            <div class="text-center py-5">
+              <span class="fs-1">📄</span>
+              <p class="text-muted mt-2 small fw-bold text-uppercase">No previous records found</p>
+            </div>
+          </ng-template>
+        </div>
+
+        <!-- STAFF NOTES (READ ONLY) -->
+        <div class="card staff-notes-card p-4" *ngIf="currentMember?.notes">
+          <label class="text-uppercase small fw-bold tracking-wider mb-2">STAFF NOTES (READ ONLY)</label>
+          <div class="brutal-divider mb-3"></div>
+          <p class="mb-3 fw-medium">{{ currentMember?.notes }}</p>
+          <div class="text-muted small fw-bold text-uppercase">LATEST UPDATE RECORDED</div>
+        </div>
+
+        <button class="btn btn-secondary w-100 mt-4 brutal-shadow" (click)="downloadHistory()" [disabled]="!history.length">
+          DOWNLOAD FULL HISTORY
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

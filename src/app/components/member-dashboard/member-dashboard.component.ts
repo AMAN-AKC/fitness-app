@@ -15,6 +15,7 @@ import {
 import { BranchDto, PlanDto } from '../../services/admin-api.service';
 
 interface UpcomingClass {
+  bookingId: number;
   category: string;
   categoryColor: string;
   name: string;
@@ -53,6 +54,9 @@ export class MemberDashboardComponent implements OnInit {
   errorMessage = '';
 
   upcomingClasses: UpcomingClass[] = [];
+  pastClasses: UpcomingClass[] = [];
+  allBookings: UpcomingClass[] = [];
+  showPastClasses = false;
 
   invoices: Invoice[] = [];
 
@@ -99,12 +103,49 @@ export class MemberDashboardComponent implements OnInit {
     this.router.navigate(['/login']);
   }
 
+  goToUpgrade(): void {
+    this.router.navigate(['/plans'], { queryParams: { upgrade: 'true' } });
+  }
+
+  loadMemberData(): void {
+    this.showAlert = false;
+  }
+
+  toggleClasses(showPast: boolean): void {
+    this.showPastClasses = showPast;
+    this.upcomingClasses = this.allBookings.filter((b: UpcomingClass) => !this.isPast(b.date));
+    this.pastClasses = this.allBookings.filter((b: UpcomingClass) => this.isPast(b.date));
+  }
+
+  private isPast(dateStr: string): boolean {
+    const d = new Date(dateStr);
+    return d < new Date();
+  }
+
   closeAlert(): void {
     this.showAlert = false;
   }
 
   openHealthForms(): void {
     this.router.navigate(['/health-forms']);
+  }
+
+  cancelBooking(booking: UpcomingClass): void {
+    if (!confirm(`Are you sure you want to cancel your booking for ${booking.name}?`)) {
+      return;
+    }
+
+    this.isLoading = true;
+    this.frontdeskApi.cancelBooking(booking.bookingId).subscribe({
+      next: () => {
+        this.loadMemberSummary(); // Refresh data
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Cancellation failed. You may be within the 2-hour cutoff.';
+        this.isLoading = false;
+      }
+    });
   }
 
   getStatusColor(status: string): string {
@@ -203,12 +244,15 @@ export class MemberDashboardComponent implements OnInit {
         this.applyMemberSummary(member);
         this.applyMembershipSummary(memberships, plans, branches, member);
         this.invoices = this.mapInvoices(invoices);
-        this.upcomingClasses = this.mapUpcomingClasses(
+        this.allBookings = this.mapUpcomingClasses(
           bookings,
           classes,
           trainers,
           branches,
-        ).slice(0, 3);
+        );
+        this.upcomingClasses = this.allBookings.filter((b: UpcomingClass) => !this.isPast(b.date)).slice(0, 5);
+        this.pastClasses = this.allBookings.filter((b: UpcomingClass) => this.isPast(b.date)).slice(0, 5);
+        
         this.chartData = {
           classesCount: bookings.length,
           chartData: this.buildChartData(bookings),
@@ -331,9 +375,10 @@ export class MemberDashboardComponent implements OnInit {
         const scheduledDate = classItem?.startDate || '';
 
         return {
-          category: classItem?.classesName?.split(' ')[0] || 'Class',
+          bookingId: booking.bookingId || 0,
+          category: classItem?.className?.split(' ')[0] || 'Class',
           categoryColor: colorPalette[index % colorPalette.length],
-          name: classItem?.classesName || `Class #${booking.classId}`,
+          name: classItem?.className || `Class #${booking.classId}`,
           trainer:
             trainer?.trainerName || `Trainer #${classItem?.trainerId || ''}`,
           room: `Room ${classItem?.roomId || '—'}`,

@@ -84,7 +84,7 @@ export class AuthService {
   getDashboardRoute(role: string): string {
     switch (this.normalizeRole(role)) {
       case 'admin':
-        return '/global-dashboard';
+        return '/admin/dashboard';
       case 'manager':
         return '/manager-dashboard';
       case 'trainer':
@@ -92,7 +92,7 @@ export class AuthService {
       case 'frontdesk':
         return '/frontdesk-dashboard';
       case 'member':
-        return '/member-dashboard';
+        return '/member/dashboard';
       default:
         return '/login';
     }

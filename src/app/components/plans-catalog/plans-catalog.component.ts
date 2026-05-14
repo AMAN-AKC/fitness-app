@@ -1,15 +1,18 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FrontdeskApiService } from '../../services/frontdesk-api.service';
 import { PlanDto } from '../../services/admin-api.service';
 
 export interface Plan {
   id: string;
   name: string;
-  duration: number;
+  durationDays: number;
   price: number;
   description: string;
   features: string[];
   popular: boolean;
+  taxPercent?: number;
+  prorationType?: string;
 }
 
 @Component({
@@ -23,7 +26,11 @@ export class PlansCatalogComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
 
-  constructor(private frontdeskApi: FrontdeskApiService) {}
+  constructor(
+    private frontdeskApi: FrontdeskApiService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
     this.initializePlans();
@@ -36,7 +43,7 @@ export class PlansCatalogComponent implements OnInit {
         this.plans = plansDto.map(p => ({
           id: p.planId?.toString() || '',
           name: p.planName,
-          duration: p.durationDays,
+          durationDays: p.durationDays,
           price: p.price,
           description: `Access from ${p.accessStart} to ${p.accessEnd}`,
           features: [
@@ -44,7 +51,9 @@ export class PlansCatalogComponent implements OnInit {
             `${p.durationDays} days access`,
             p.prorationRule ? `Proration: ${p.prorationRule}` : 'Standard billing'
           ],
-          popular: p.price > 1000 && p.price < 5000 // Just a visual heuristic
+          popular: p.price > 1000 && p.price < 5000,
+          taxPercent: p.taxPercent || 0,
+          prorationType: p.prorationRule || 'Standard'
         }));
         this.isLoading = false;
       },
@@ -56,8 +65,13 @@ export class PlansCatalogComponent implements OnInit {
   }
 
   selectPlan(plan: Plan): void {
-    console.log('Selected plan:', plan.name);
-    // TODO: Navigate to checkout with plan.id
+    const isUpgrade = this.route.snapshot.queryParams['upgrade'] === 'true';
+    this.router.navigate(['/member/checkout'], { 
+      queryParams: { 
+        planId: plan.id,
+        upgrade: isUpgrade ? 'true' : undefined
+      } 
+    });
   }
 
   formatPrice(price: number): string {

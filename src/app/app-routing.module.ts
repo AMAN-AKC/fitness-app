@@ -15,6 +15,10 @@ import { AdminUserManagementComponent } from './components/admin-user-management
 import { AdminBranchManagementComponent } from './components/admin-branch-management/admin-branch-management.component';
 import { AdminPlancatalogComponent } from './components/admin-plancatalog/admin-plancatalog.component';
 import { HealthFormsComponent } from './components/health-forms/health-forms.component';
+import { NotificationsCenterComponent } from './components/notifications-center/notifications-center.component';
+import { PlansCatalogComponent } from './components/plans-catalog/plans-catalog.component';
+import { CheckoutComponent } from './components/checkout/checkout.component';
+import { ManagerScheduleComponent } from './components/manager-schedule/manager-schedule.component';
 import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
@@ -23,71 +27,73 @@ const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'resetpassword', component: ResetpasswordComponent },
   {
-    path: 'global-dashboard',
+    path: 'admin',
     component: GlobalDashboardComponent,
     canActivate: [AuthGuard],
     data: { roles: ['admin'] },
+    children: [
+      { path: 'dashboard', component: AdminDashboardComponent },
+      { path: 'users', component: AdminUserManagementComponent },
+      { path: 'branches', component: AdminBranchManagementComponent },
+      { path: 'plans', component: AdminPlancatalogComponent },
+      { path: 'notifications', component: NotificationsCenterComponent },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
   },
   {
-    path: 'admin-dashboard',
-    component: AdminDashboardComponent,
-    canActivate: [AuthGuard],
-    data: { roles: ['admin'] },
-  },
-  {
-    path: 'admin-users',
-    component: AdminUserManagementComponent,
-    canActivate: [AuthGuard],
-    data: { roles: ['admin'] },
-  },
-  {
-    path: 'admin-branches',
-    component: AdminBranchManagementComponent,
-    canActivate: [AuthGuard],
-    data: { roles: ['admin'] },
-  },
-  {
-    path: 'admin-plans',
-    component: AdminPlancatalogComponent,
-    canActivate: [AuthGuard],
-    data: { roles: ['admin'] },
-  },
-  {
-    path: 'member-dashboard',
-    component: MemberDashboardComponent,
-    canActivate: [AuthGuard],
-    data: { roles: ['member'] },
-  },
-  {
-    path: 'health-forms',
-    component: HealthFormsComponent,
-    canActivate: [AuthGuard],
-    data: { roles: ['member'] },
-  },
-  {
-    path: 'frontdesk-dashboard',
-    component: FrontdeskDashboardComponent,
-    canActivate: [AuthGuard],
-    data: { roles: ['frontdesk'] },
-  },
-  {
-    path: 'member-registration',
-    component: MemberRegistrationComponent,
+    path: 'frontdesk',
+    component: GlobalDashboardComponent,
     canActivate: [AuthGuard],
     data: { roles: ['frontdesk', 'admin'] },
+    children: [
+      { path: 'dashboard', component: FrontdeskDashboardComponent, data: { roles: ['frontdesk', 'admin'] } },
+      { path: 'registration', component: MemberRegistrationComponent, data: { roles: ['frontdesk', 'admin'] } },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
   },
   {
-    path: 'manager-dashboard',
-    component: ManagerDashboardComponent,
+    path: 'manager',
+    component: GlobalDashboardComponent,
     canActivate: [AuthGuard],
     data: { roles: ['manager'] },
+    children: [
+      { path: 'dashboard', component: ManagerDashboardComponent },
+      { path: 'schedule', component: ManagerScheduleComponent },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
   },
   {
-    path: 'trainer-dashboard',
-    component: TrainerDashboardComponent,
+    path: 'trainer',
+    component: GlobalDashboardComponent,
     canActivate: [AuthGuard],
     data: { roles: ['trainer'] },
+    children: [
+      { path: 'dashboard', component: TrainerDashboardComponent },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
   },
+  {
+    path: 'member',
+    component: GlobalDashboardComponent,
+    canActivate: [AuthGuard],
+    data: { roles: ['member'] },
+    children: [
+      { path: 'dashboard', component: MemberDashboardComponent },
+      { path: 'health-forms', component: HealthFormsComponent },
+      { path: 'plans', component: PlansCatalogComponent },
+      { path: 'checkout', component: CheckoutComponent },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
+  },
+  // Redirects for old paths
+  { path: 'member-dashboard', redirectTo: 'member/dashboard' },
+  { path: 'health-forms', redirectTo: 'member/health-forms' },
+  // Redirects for old paths
+  { path: 'admin-dashboard', redirectTo: 'admin/dashboard' },
+  { path: 'frontdesk-dashboard', redirectTo: 'frontdesk/dashboard' },
+  { path: 'manager-dashboard', redirectTo: 'manager/dashboard' },
+  { path: 'trainer-dashboard', redirectTo: 'trainer/dashboard' },
+  
   { path: 'error-showcase', component: ErrorPageComponent },
   { path: '**', redirectTo: '' },
 ];

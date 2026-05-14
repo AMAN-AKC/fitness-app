@@ -83,9 +83,14 @@ export interface MembershipDto {
 export interface InvoiceDto {
   invoiceId?: number;
   invoiceNumber?: string;
+  planName?: string;
   memberId: number;
   membershipId?: number;
+  mrp?: number;
+  taxes?: number;
+  discount?: number;
   finalAmount?: number;
+  promoCode?: string;
   paidAmount?: number;
   outstanding?: number;
   status?:
@@ -112,7 +117,7 @@ export interface ClassBookingDto {
 
 export interface ClassesDto {
   classId?: number;
-  classesName: string;
+  className: string;
   trainerId: number;
   roomId: number;
   branchId: number;
@@ -154,7 +159,7 @@ export interface PaymentDto {
   paymentId?: number;
   invoiceId: number;
   memberId: number;
-  amount: number;
+  amountPaid: number;
   paymentMethod: PaymentMethod;
   status?: PaymentStatus;
   gatewayReference?: string;
@@ -208,8 +213,25 @@ export interface PriceBreakdownDto {
 })
 export class FrontdeskApiService {
   private readonly baseUrl = environment.apiBaseUrl;
+  private readonly OFFLINE_KEY = 'fitness_offline_attendance';
 
   constructor(private http: HttpClient) {}
+
+  // AC06: Client-side offline queue
+  getOfflineQueue(): AttendanceDto[] {
+    const data = localStorage.getItem(this.OFFLINE_KEY);
+    return data ? JSON.parse(data) : [];
+  }
+
+  saveToOfflineQueue(attendance: AttendanceDto): void {
+    const queue = this.getOfflineQueue();
+    queue.push({ ...attendance, syncStatus: 'PENDING', checkInTime: new Date().toISOString() });
+    localStorage.setItem(this.OFFLINE_KEY, JSON.stringify(queue));
+  }
+
+  clearOfflineQueue(): void {
+    localStorage.removeItem(this.OFFLINE_KEY);
+  }
 
   getMembers(): Observable<MemberDto[]> {
     return this.http.get<MemberDto[]>(`${this.baseUrl}/members`);
@@ -405,6 +427,17 @@ export class FrontdeskApiService {
     return this.http.get(`${this.baseUrl}/consents/member/${memberId}/download`, {
       responseType: 'blob',
     });
+  }
+
+  addAdministrativeNote(
+    consentId: number,
+    note: string,
+  ): Observable<HealthConsentDto> {
+    return this.http.post<HealthConsentDto>(
+      `${this.baseUrl}/consents/${consentId}/notes`,
+      {},
+      { params: { note } },
+    );
   }
 
   // AC07: Export daily attendance CSV

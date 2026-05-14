@@ -26,6 +26,8 @@ export class ResetpasswordComponent implements OnInit {
   
   hasToken = false;
   token = '';
+  otp = '';
+  otpSent = false;
   errorMessage = '';
   isSubmitting = false;
 
@@ -95,13 +97,34 @@ export class ResetpasswordComponent implements OnInit {
       this.authService.requestPasswordReset(this.resetEmail).subscribe({
         next: () => {
           this.resetSent = true;
+          this.otpSent = true;
           this.isSubmitting = false;
+          this.startCountdown();
         },
         error: (err) => {
           this.errorMessage = this.authService.getErrorMessage(err);
           this.isSubmitting = false;
         }
       });
+    }
+  }
+
+  startCountdown(): void {
+    this.countdown = 60;
+    const interval = setInterval(() => {
+      this.countdown--;
+      if (this.countdown <= 0) {
+        clearInterval(interval);
+      }
+    }, 1000);
+  }
+
+  onVerifyOTP(): void {
+    if (this.otp.length === 6) {
+      this.token = this.otp;
+      this.hasToken = true;
+    } else {
+      this.errorMessage = "Please enter a valid 6-digit code.";
     }
   }
 

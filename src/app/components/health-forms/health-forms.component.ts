@@ -15,17 +15,20 @@ interface ParqQuestion {
   selector: 'app-health-forms',
   templateUrl: './health-forms.component.html',
   styleUrls: ['./health-forms.component.css'],
+  standalone: false
 })
 export class HealthFormsComponent implements OnInit {
   currentMember: MemberDto | null = null;
-  currentVersion = '';
-  consentRequired = true;
-  requiresReconfirmation = false;
+  currentVersion: string = '';
+  consentRequired: boolean = true;
+  requiresReconfirmation: boolean = false;
   history: HealthConsentDto[] = [];
-  isLoading = false;
-  isSubmitting = false;
-  errorMessage = '';
-  successMessage = '';
+  isLoading: boolean = false;
+  isSubmitting: boolean = false;
+  errorMessage: string = '';
+  successMessage: string = '';
+  signatureName: string = '';
+  today: Date = new Date();
 
   questions: ParqQuestion[] = [
     { key: 'heartCondition', text: 'Has a doctor ever said you have a heart condition?', value: null },
@@ -55,7 +58,9 @@ export class HealthFormsComponent implements OnInit {
     this.api.getCurrentMember().subscribe({
       next: (member) => {
         this.currentMember = member;
-        this.loadPolicyAndHistory(member.memberId as number);
+        if (member.memberId) {
+          this.loadPolicyAndHistory(member.memberId);
+        }
       },
       error: (error) => {
         this.errorMessage = error?.error?.message || 'Unable to load your member profile.';
@@ -74,8 +79,16 @@ export class HealthFormsComponent implements OnInit {
       this.questions.every((question) => question.value !== null) &&
       this.acknowledgements.medicalAcknowledged &&
       this.acknowledgements.liabilityAcknowledged &&
-      this.acknowledgements.privacyAcknowledged
+      this.acknowledgements.privacyAcknowledged &&
+      this.signatureName.trim().length > 0
     );
+  }
+
+  scrollToForm(): void {
+    const element = document.getElementById('consentForm');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
   }
 
   submitForm(): void {
@@ -92,6 +105,7 @@ export class HealthFormsComponent implements OnInit {
     this.isSubmitting = true;
     this.errorMessage = '';
     this.successMessage = '';
+    
     this.api
       .submitConsent({
         memberId: this.currentMember.memberId,
@@ -103,7 +117,9 @@ export class HealthFormsComponent implements OnInit {
         next: () => {
           this.successMessage = 'Consent recorded with timestamp, version, and IP.';
           this.resetForm();
-          this.loadPolicyAndHistory(this.currentMember?.memberId as number);
+          if (this.currentMember?.memberId) {
+            this.loadPolicyAndHistory(this.currentMember.memberId);
+          }
         },
         error: (error) => {
           this.errorMessage = error?.error?.message || 'Unable to submit consent.';
@@ -130,7 +146,13 @@ export class HealthFormsComponent implements OnInit {
   }
 
   maskIp(value?: string): string {
-    return value ? '****' : '';
+    if (!value) return '****';
+    const session = localStorage.getItem('fitness_auth_session');
+    if (session) {
+      const role = JSON.parse(session).role;
+      if (role === 'STAFF' || role === 'TRAINER') return '****';
+    }
+    return value;
   }
 
   private loadPolicyAndHistory(memberId: number): void {
@@ -166,6 +188,7 @@ export class HealthFormsComponent implements OnInit {
 
   private resetForm(): void {
     this.questions = this.questions.map((question) => ({ ...question, value: null }));
+    this.signatureName = '';
     this.acknowledgements = {
       medicalAcknowledged: false,
       liabilityAcknowledged: false,

@@ -69,11 +69,19 @@ export interface PromoCodeDto {
 }
 
 export interface AuditLogDto {
-  id?: number;
+  auditId?: number;
   username?: string;
   entity?: string;
   action?: string;
   timestamp?: string;
+}
+
+export interface FeatureFlagDto {
+  flagId: number;
+  flagName: string;
+  enabled: boolean;
+  lastModifiedBy: string;
+  updatedAt?: string;
 }
 
 @Injectable({
@@ -83,6 +91,27 @@ export class AdminApiService {
   private readonly baseUrl = environment.apiBaseUrl;
 
   constructor(private http: HttpClient) {}
+
+  // Existing methods ... (getUsers, getBranches, etc.)
+
+  getFeatureFlags(): Observable<FeatureFlagDto[]> {
+    return this.http.get<FeatureFlagDto[]>(`${this.baseUrl}/admin/feature-flags`);
+  }
+
+  updateFeatureFlag(
+    id: number,
+    enabled: boolean,
+    modifiedBy: string,
+  ): Observable<FeatureFlagDto> {
+    const params = new HttpParams()
+      .set('enabled', enabled)
+      .set('modifiedBy', modifiedBy);
+    return this.http.put<FeatureFlagDto>(
+      `${this.baseUrl}/admin/feature-flags/${id}`,
+      {},
+      { params },
+    );
+  }
 
   getUsers(): Observable<SystemUserDto[]> {
     return this.http.get<SystemUserDto[]>(`${this.baseUrl}/users`);
@@ -171,5 +200,9 @@ export class AdminApiService {
 
   deactivatePromoCode(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/promo-codes/${id}`);
+  }
+
+  getRevenueMTD(): Observable<number> {
+    return this.http.get<number>(`${this.baseUrl}/payments/revenue/mtd`);
   }
 }

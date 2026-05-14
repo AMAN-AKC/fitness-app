@@ -8,6 +8,7 @@ export interface AuthSession {
   role: string;
   userId: string;
   username: string;
+  fullName?: string;
 }
 
 export interface AuthErrorResponse {

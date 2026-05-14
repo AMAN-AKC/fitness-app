@@ -1,214 +1,128 @@
-<div class="landing-container">
+<div class="landing-container min-h-screen overflow-x-hidden">
+  <!-- MARQUEE (Top) -->
+  <div class="marquee-text">
+    <div class="marquee-content">
+      NEW: QR CHECK-INS ARE HERE • 500+ CLUBS TRUST FITCLUB • JOIN THE REVOLUTION • NEW: QR CHECK-INS ARE HERE • 500+ CLUBS TRUST FITCLUB • JOIN THE REVOLUTION • 
+    </div>
+  </div>
+
   <!-- NAVBAR -->
-  <nav class="navbar" [class.scrolled]="scrolled">
-    <div class="navbar-content">
-      <div class="navbar-brand">
-        <div class="logo-icon">
-          <svg
-            class="dumbbell-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M6 4h12M6 4v16M18 4v16M8 7h8M8 17h8"></path>
-          </svg>
-        </div>
-        <span class="logo-text">FitClub</span>
+  <nav class="navbar sticky-top bg-white px-6">
+    <div class="container-fluid max-w-[1400px] mx-auto d-flex justify-between align-items-center">
+      <div class="navbar-brand-box">
+        <span class="fw-black text-uppercase" style="font-size: 28px; letter-spacing: -0.05em;">FitClub</span>
       </div>
-
-      <div class="navbar-links">
-        <a
-          href="#features"
-          (click)="scrollToSection('features')"
-          class="nav-link"
-          >Features</a
-        >
-        <a href="#pricing" (click)="scrollToSection('pricing')" class="nav-link"
-          >Pricing</a
-        >
-        <a href="#docs" (click)="scrollToSection('docs')" class="nav-link"
-          >Docs</a
-        >
-        <a href="#about" (click)="scrollToSection('about')" class="nav-link"
-          >About</a
-        >
-      </div>
-
-      <div class="navbar-buttons">
-        <button class="btn-login" (click)="goToLogin()">Login</button>
-        <button class="btn-get-started">Get Started →</button>
+      
+      <div class="d-flex gap-4">
+        <button class="btn font-black uppercase tracking-tighter border-4 border-black px-6 py-2 bg-yellow" (click)="goToLogin()">Login to Dashboard</button>
       </div>
     </div>
   </nav>
 
   <!-- HERO SECTION -->
-  <section class="hero">
-    <div class="hero-content">
-      <div class="badge">
-        <div class="badge-dot"></div>
-        <span class="badge-text">New — Attendance QR check-in now live</span>
-      </div>
-
-      <h1 class="hero-title">Manage Your Fitness Club —<br />End to End.</h1>
-
-      <p class="hero-description">
-        Streamline member onboarding, billing, class scheduling, and
-        branch-level analytics — all from one beautiful platform.
-      </p>
-
-      <div class="hero-buttons">
-        <button class="btn-primary">Get Started Free</button>
-        <button class="btn-secondary">▶ Watch 2-min Demo</button>
-      </div>
-
-      <p class="hero-trust">
-        Trusted by 500+ clubs · No credit card required · 14-day free trial
-      </p>
-
-      <div class="hero-dashboard">
-        <div class="dashboard-header">
-          <div class="window-dot red"></div>
-          <div class="window-dot yellow"></div>
-          <div class="window-dot green"></div>
-        </div>
-
-        <div class="dashboard-content">
-          <div class="stats-grid">
-            <div *ngFor="let stat of stats" class="stat-card">
-              <div class="stat-label">{{ stat.label }}</div>
-              <div class="stat-value">{{ stat.value }}</div>
-              <div class="stat-trend">{{ stat.trend }}</div>
-            </div>
+  <section class="hero-section">
+    <div class="container max-w-[1200px]">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-7 text-start animate-slide-up">
+          <div class="hero-subtitle mb-6">
+            v2.0 IS NOW LIVE — SECURE & FAST
           </div>
 
-          <div class="chart">
-            <div
-              *ngFor="let height of chartBars"
-              class="chart-bar"
-              [style.height]="height + '%'"
-            ></div>
+          <h1 class="hero-title">
+            The Ultimate<br />
+            <span class="bg-[#ffde03] px-2 border-4 border-black">Fitness OS</span><br />
+            for Modern Clubs.
+          </h1>
+
+          <p class="fs-4 font-bold mb-10 pe-lg-5 text-black">
+            High-performance management system for gym owners who value speed and precision.
+          </p>
+
+          <div class="d-flex flex-wrap gap-4 mb-10">
+            <button class="btn-neo btn-neo-primary" (click)="goToLogin()">
+              Access Platform <span>→</span>
+            </button>
+          </div>
+
+          <div class="d-flex align-items-center gap-6 font-black uppercase small tracking-widest">
+            <div class="d-flex gap-1 bg-[#76ff03] p-1 border-2 border-black">⭐⭐⭐⭐⭐ 4.9/5</div>
+            <div class="ps-4">Trusted by 500+ Gyms</div>
+          </div>
+        </div>
+
+        <div class="col-lg-5 d-none d-lg-block">
+          <div class="position-relative">
+            <div class="hero-stats-card">
+              <div class="display-1 font-black mb-0">12K+</div>
+              <div class="font-black text-2xl uppercase tracking-tighter">Daily Check-ins</div>
+            </div>
+            
+            <!-- Floating Badge -->
+            <div class="position-absolute bottom-[-40px] start-[-40px] bg-white border-4 border-black neo-shadow-cyan p-6">
+              <div class="d-flex align-items-center gap-4">
+                <div class="w-12 h-12 bg-[#76ff03] border-4 border-black"></div>
+                <div>
+                  <div class="font-black uppercase text-lg">System Online</div>
+                  <div class="font-bold text-xs uppercase opacity-60">Global Status: Normal</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- FEATURES SECTION -->
-  <section id="features" class="features">
-    <div class="features-header">
-      <div class="features-label">EVERYTHING YOU NEED</div>
-      <h2 class="features-title">Built for every part of your club</h2>
-      <p class="features-description">
-        Powerful features designed for fitness professionals
-      </p>
-    </div>
+  <!-- FEATURES GRID -->
+  <section id="features" class="features-section">
+    <div class="container">
+      <div class="row mb-12 align-items-end g-4">
+        <div class="col-md-6">
+          <div class="bg-[#d500f9] text-white px-4 py-1 border-4 border-black d-inline-block font-black uppercase mb-4">
+            Capabilities
+          </div>
+          <h2 class="display-3 font-black text-uppercase mb-0">Built for Power.</h2>
+        </div>
+        <div class="col-md-6 text-md-end">
+          <p class="font-bold uppercase text-lg mb-0 mx-auto mx-md-0 max-w-[400px]">
+            Every module is engineered for maximum throughput and zero downtime.
+          </p>
+        </div>
+      </div>
 
-    <div class="features-grid">
-      <div *ngFor="let feature of features" class="feature-card">
-        <div class="feature-icon">{{ feature.icon }}</div>
-        <h3 class="feature-title">{{ feature.title }}</h3>
-        <p class="feature-description">{{ feature.description }}</p>
-        <a href="#" class="feature-link">Learn more →</a>
+      <div class="row g-6">
+        <div *ngFor="let feature of features" class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon-box">
+              {{ feature.icon }}
+            </div>
+            <h3 class="h2 font-black text-uppercase mb-4">{{ feature.title }}</h3>
+            <p class="font-bold text-black opacity-80 mb-6">{{ feature.description }}</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- ROLES SECTION -->
-  <section class="roles">
-    <div class="roles-container">
-      <p class="roles-title">Role-based access for your entire team</p>
+  <section class="py-24 bg-[#ffde03] border-t-5 border-black">
+    <div class="container">
+      <div class="text-center mb-16">
+         <h2 class="display-3 font-black text-uppercase bg-black text-white p-4 inline-block border-4 border-white neo-shadow">
+          One System. Infinite Roles.
+        </h2>
+      </div>
       <div class="roles-grid">
-        <div *ngFor="let role of roles" class="role-card">
-          <div class="role-emoji">{{ role.emoji }}</div>
-          <div class="role-name">{{ role.name }}</div>
-          <div class="role-description">{{ role.description }}</div>
+        <div *ngFor="let role of roles; let i = index" class="role-box">
+          <div class="display-4 mb-4">{{ role.emoji }}</div>
+          <div class="font-black text-xl uppercase mb-4">{{ role.name }}</div>
+          <div class="font-bold uppercase text-xs leading-relaxed">{{ role.description }}</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- SOCIAL PROOF SECTION -->
-  <section class="social-proof">
-    <div class="metrics-grid">
-      <div
-        *ngFor="let metric of metrics; let last = last"
-        class="metric"
-        [class.last]="last"
-      >
-        <div class="metric-value">{{ metric.value }}</div>
-        <div class="metric-label">{{ metric.label }}</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA BANNER SECTION -->
-  <section class="cta-banner">
-    <div class="cta-content">
-      <h2 class="cta-title">Ready to transform your club?</h2>
-      <p class="cta-description">
-        Start your 14-day free trial. No card required.
-      </p>
-
-      <div class="cta-buttons">
-        <button class="btn-primary">Get Started Free</button>
-        <button class="btn-secondary">Schedule a Demo</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- FOOTER SECTION -->
-  <footer class="footer">
-    <div class="footer-content">
-      <div class="footer-brand">
-        <div class="logo-icon">
-          <svg
-            class="dumbbell-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M6 4h12M6 4v16M18 4v16M8 7h8M8 17h8"></path>
-          </svg>
-        </div>
-        <span class="logo-text">FitClub</span>
-        <p class="footer-tagline">Your fitness club. Fully managed.</p>
-      </div>
-
-      <div class="footer-column">
-        <h4 class="footer-heading">Product</h4>
-        <ul class="footer-links">
-          <li><a href="#">Features</a></li>
-          <li><a href="#">Pricing</a></li>
-          <li><a href="#">Demo</a></li>
-          <li><a href="#">Integrations</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-column">
-        <h4 class="footer-heading">Company</h4>
-        <ul class="footer-links">
-          <li><a href="#">About</a></li>
-          <li><a href="#">Careers</a></li>
-          <li><a href="#">Contact</a></li>
-          <li><a href="#">Blog</a></li>
-        </ul>
-      </div>
-
-      <div class="footer-column">
-        <h4 class="footer-heading">Legal</h4>
-        <ul class="footer-links">
-          <li><a href="#">Privacy</a></li>
-          <li><a href="#">Terms</a></li>
-          <li><a href="#">Security</a></li>
-          <li><a href="#">Status</a></li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="footer-bottom">
-      <p class="footer-copyright">© 2024 FitClub. All rights reserved.</p>
-    </div>
-  </footer>
+  <div class="bg-black py-8 text-center border-t-5 border-black">
+    <p class="font-black text-white text-xs uppercase tracking-widest mb-0">© 2024 FitClub OS. SECURE PLATFORM ACCESS ONLY.</p>
+  </div>
 </div>

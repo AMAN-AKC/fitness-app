@@ -73,13 +73,16 @@
     <!-- LEFT - Upcoming Classes -->
     <div class="card">
       <div class="card-header">
-        <h3 class="card-title">Upcoming Classes</h3>
+        <div class="tabs">
+          <button (click)="toggleClasses(false)" [class.active-tab]="!showPastClasses">Upcoming</button>
+          <button (click)="toggleClasses(true)" [class.active-tab]="showPastClasses">Past History</button>
+        </div>
         <a href="#" class="view-all">View All →</a>
       </div>
 
       <div class="classes-list">
         <div
-          *ngFor="let classItem of upcomingClasses; let last = last"
+          *ngFor="let classItem of (showPastClasses ? pastClasses : upcomingClasses); let last = last"
           class="class-item"
           [class.last-item]="last"
         >
@@ -100,6 +103,7 @@
           </div>
           <button
             class="cancel-btn"
+            (click)="cancelBooking(classItem)"
             [disabled]="!classItem.canCancel"
             [title]="
               !classItem.canCancel

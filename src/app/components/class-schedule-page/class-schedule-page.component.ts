@@ -85,12 +85,11 @@ export class ClassSchedulePageComponent implements OnInit {
           const [hour, min] = (c.classTime || '00:00').split(':');
           return {
             id: c.classId?.toString() || '',
-            name: c.classesName,
+            name: c.className,
             time: `${hour}:${min}`,
             duration: c.durationMins,
             trainer:
-              this.trainerNames.get(c.trainerId) ||
-              `Trainer #${c.trainerId}`,
+              this.trainerNames.get(c.trainerId) || `Trainer #${c.trainerId}`,
             capacity: c.capacity,
             booked: 0,
             level: c.prerequisites ? 'Intermediate' : 'Beginner',
@@ -109,8 +108,7 @@ export class ClassSchedulePageComponent implements OnInit {
         this.isLoading = false;
       },
       error: (err) => {
-        this.errorMessage =
-          err?.error?.message || 'Failed to load class data';
+        this.errorMessage = err?.error?.message || 'Failed to load class data';
         this.isLoading = false;
       },
     });
@@ -138,15 +136,9 @@ export class ClassSchedulePageComponent implements OnInit {
 
   applyFilters(): void {
     this.filteredClasses = this.allClasses.filter((c) => {
-      if (
-        this.selectedBranchId &&
-        c.branchId !== this.selectedBranchId
-      )
+      if (this.selectedBranchId && c.branchId !== this.selectedBranchId)
         return false;
-      if (
-        this.selectedTrainerId &&
-        c.trainerId !== this.selectedTrainerId
-      )
+      if (this.selectedTrainerId && c.trainerId !== this.selectedTrainerId)
         return false;
       if (this.statusFilter !== 'ALL' && c.status !== this.statusFilter)
         return false;

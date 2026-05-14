@@ -1,170 +1,242 @@
-.consent-page {
-  max-width: 920px;
+.health-forms-page {
+  background-color: var(--bg);
+  min-height: 100vh;
+}
+
+.max-width-1100 {
+  max-width: 1100px;
+}
+
+.centered {
   margin: 0 auto;
-  padding: 32px 20px 48px;
-  color: #0f172a;
 }
 
-.consent-header,
-.history-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+/* Header Card */
+.header-card {
+  border-radius: 0 !important;
 }
 
-.consent-header h1,
-.consent-panel h2,
-.history-panel h2 {
-  margin: 0;
+.status-badge {
+  padding: 10px 16px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 13px;
+  border: 3px solid var(--black);
+  box-shadow: 3px 3px 0 var(--black);
 }
 
-.consent-header p {
-  margin: 6px 0 0;
-  color: #64748b;
+.status-active {
+  background-color: var(--green);
+  color: white;
 }
 
-.status-banner,
-.alert-card,
-.consent-panel,
-.history-panel {
-  margin-top: 18px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #ffffff;
+.status-required {
+  background-color: var(--red);
+  color: white;
 }
 
-.status-banner {
-  padding: 14px 16px;
-  color: #166534;
-  background: #f0fdf4;
-  border-color: #bbf7d0;
+.pulse-outline {
+  animation: pulse-brutal 1.5s infinite;
 }
 
-.status-banner.error {
-  color: #991b1b;
-  background: #fef2f2;
-  border-color: #fecaca;
+@keyframes pulse-brutal {
+  0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
 }
 
-.alert-card {
-  display: flex;
-  gap: 12px;
-  padding: 14px 16px;
-  color: #92400e;
-  background: #fffbeb;
-  border-color: #fde68a;
+/* Alert Banner */
+.alert-banner {
+  background-color: var(--red);
+  border: 3px solid var(--black);
+  box-shadow: 4px 4px 0 var(--black);
+  padding: 16px 20px;
+  color: white;
 }
 
-.consent-panel,
-.history-panel {
-  padding: 22px;
+.alert-text {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 14px;
 }
 
-.question-list {
-  display: grid;
-  gap: 12px;
-  margin-top: 16px;
+/* PAR-Q Form */
+.parq-card {
+  border-radius: 0 !important;
 }
 
-.question-row,
-.history-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 14px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+.brutal-divider {
+  height: 3px;
+  background-color: var(--black);
+  width: 100%;
 }
 
-.answer-group {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
+.intro-note {
+  background-color: #F3F3F1;
+  border: 3px solid var(--black);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--muted);
 }
 
-.answer-group button,
-.primary-btn,
-.secondary-btn {
-  height: 40px;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: #334155;
-  font-weight: 700;
+.question-text {
+  font-size: 14px;
+  max-width: 70%;
+  line-height: 1.4;
+}
+
+/* Pill Toggle */
+.pill-toggle {
+  border: 3px solid var(--black);
+  overflow: hidden;
+}
+
+.pill-btn {
+  border: none;
+  background: white;
+  padding: 8px 16px;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.pill-btn:first-child {
+  border-right: 3px solid var(--black);
+}
+
+.pill-btn.selected {
+  background-color: var(--yellow);
+  color: var(--black);
+}
+
+/* Custom Checkbox */
+.custom-checkbox {
+  cursor: pointer;
+  position: relative;
+}
+
+.custom-checkbox input {
+  position: absolute;
+  opacity: 0;
   cursor: pointer;
 }
 
-.answer-group button {
-  min-width: 64px;
-}
-
-.answer-group button.selected,
-.primary-btn {
-  background: #2563eb;
-  border-color: #2563eb;
-  color: #ffffff;
-}
-
-.primary-btn {
-  width: 100%;
-  margin-top: 20px;
-}
-
-.secondary-btn {
-  padding: 0 14px;
-}
-
-.primary-btn:disabled,
-.secondary-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
-.ack-row {
+.checkbox-box {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--black);
+  background-color: white;
+  flex-shrink: 0;
   display: flex;
-  gap: 10px;
-  margin-top: 12px;
-  line-height: 1.45;
+  align-items: center;
+  justify-content: center;
 }
 
-.history-row {
-  margin-top: 12px;
+.custom-checkbox input:checked ~ .checkbox-box {
+  background-color: var(--yellow);
 }
 
-.history-row p {
-  margin: 4px 0;
-  color: #64748b;
+.custom-checkbox input:checked ~ .checkbox-box::after {
+  content: '✔';
+  font-size: 14px;
+  color: var(--black);
+  font-weight: 800;
 }
 
-.history-row small {
-  color: #94a3b8;
+.checkbox-label {
+  line-height: 1.5;
+}
+
+/* Timestamp Row */
+.timestamp-row {
+  background-color: #F3F3F1;
+  border: 3px solid var(--black);
+}
+
+.mono-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-left: 10px;
+}
+
+.timeline-item {
+  position: relative;
+}
+
+.timeline-line-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 24px;
+}
+
+.timeline-dot {
+  width: 14px;
+  height: 14px;
+  background-color: var(--black);
+  border: 3px solid var(--black);
+}
+
+.timeline-line {
+  width: 3px;
+  background-color: var(--black);
+  flex-grow: 1;
 }
 
 .status-pill {
-  padding: 5px 10px;
-  border-radius: 999px;
-  color: #166534;
-  background: #dcfce7;
-  font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border: 2px solid var(--black);
 }
 
-.status-pill.expired {
-  color: #991b1b;
-  background: #fee2e2;
+.pill-active {
+  background-color: var(--green);
+  color: white;
 }
 
-@media (max-width: 680px) {
-  .consent-header,
-  .question-row,
-  .history-row {
-    align-items: stretch;
-    flex-direction: column;
-  }
+.muted-entry {
+  opacity: 0.6;
+}
 
-  .answer-group button {
-    flex: 1;
-  }
+.download-link {
+  color: var(--blue);
+  text-decoration: none;
+  border-bottom: 2px solid var(--blue);
+}
+
+.download-link:hover {
+  color: var(--pink);
+  border-bottom-color: var(--pink);
+}
+
+/* Staff Notes */
+.staff-notes-card {
+  border-left: 6px solid var(--orange) !important;
+  border-radius: 0 !important;
+}
+
+/* Global Card Shadow */
+.brutal-shadow {
+  box-shadow: 6px 6px 0 var(--black);
+}
+
+.btn-primary:disabled {
+  background-color: var(--muted) !important;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
 }

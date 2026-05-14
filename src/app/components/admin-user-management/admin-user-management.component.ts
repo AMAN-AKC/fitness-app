@@ -54,6 +54,10 @@ export class AdminUserManagementComponent implements OnInit {
   isDrawerOpen = false;
   drawerRole: RoleType = 'Member';
   drawerActive = true;
+  drawerMode: 'edit' | 'create' = 'edit';
+  drawerPassword = '';
+  drawerUsername = '';
+  drawerEmail = '';
 
   // CSV Bulk Upload
   isBulkUploading = false;
@@ -71,11 +75,11 @@ export class AdminUserManagementComponent implements OnInit {
   };
 
   roleColors: Record<RoleType, string> = {
-    Member: 'bg-[#EFF5FF] text-[#2563EB] border-[#2563EB]/20',
-    'Front-Desk': 'bg-[#F0FDFA] text-[#0D9488] border-[#0D9488]/20',
-    Trainer: 'bg-[#FAF5FF] text-[#9333EA] border-[#9333EA]/20',
-    Manager: 'bg-[#FFFBEB] text-[#D97706] border-[#D97706]/20',
-    Admin: 'bg-[#FEF2F2] text-[#DC2626] border-[#DC2626]/20',
+    Member: 'bg-blue-soft',
+    'Front-Desk': 'bg-teal-soft',
+    Trainer: 'bg-pink-soft',
+    Manager: 'bg-amber-soft',
+    Admin: 'bg-admin-dark',
   };
 
   roleDescriptions: Record<RoleType, string> = {
@@ -145,8 +149,22 @@ export class AdminUserManagementComponent implements OnInit {
 
   handleEdit(user: User): void {
     this.editingUser = user;
+    this.drawerMode = 'edit';
+    this.drawerUsername = user.name;
+    this.drawerEmail = user.email;
     this.drawerRole = user.role;
     this.drawerActive = user.status === 'Active';
+    this.isDrawerOpen = true;
+  }
+
+  onCreateStaff(): void {
+    this.editingUser = null;
+    this.drawerMode = 'create';
+    this.drawerUsername = '';
+    this.drawerEmail = '';
+    this.drawerRole = 'Front-Desk';
+    this.drawerActive = true;
+    this.drawerPassword = 'Staff@' + Math.floor(1000 + Math.random() * 9000);
     this.isDrawerOpen = true;
   }
 
@@ -214,6 +232,28 @@ export class AdminUserManagementComponent implements OnInit {
   }
 
   saveChanges(): void {
+    if (this.drawerMode === 'create') {
+      const newUser: SystemUserDto = {
+        username: this.drawerUsername,
+        email: this.drawerEmail,
+        role: this.toBackendRole(this.drawerRole),
+        isActive: this.drawerActive,
+      };
+
+      this.adminApi.createUser(newUser, this.drawerPassword).subscribe({
+        next: (savedUser) => {
+          this.users.push(this.fromDto(savedUser));
+          this.filterUsers();
+          this.closeDrawer();
+        },
+        error: (error) => {
+          this.errorMessage =
+            error?.error?.message || 'Unable to create staff account.';
+        },
+      });
+      return;
+    }
+
     if (!this.editingUser) {
       this.closeDrawer();
       return;
@@ -221,6 +261,8 @@ export class AdminUserManagementComponent implements OnInit {
 
     const updatedUser: User = {
       ...this.editingUser,
+      name: this.drawerUsername,
+      email: this.drawerEmail,
       role: this.drawerRole,
       status: this.drawerActive ? 'Active' : 'Deactivated',
     };

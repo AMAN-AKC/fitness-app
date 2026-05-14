@@ -68,6 +68,16 @@
         <p class="kpi-trend kpi-trend--danger">7 days remaining</p>
       </div>
     </div>
+
+    <!-- Offline Sync Indicator (AC06) -->
+    <div *ngIf="offlineCount > 0" class="kpi-card" (click)="syncOfflineData()" 
+         style="cursor: pointer; background-color: #FEF3C7; border: 3px solid #D97706; box-shadow: 6px 6px 0 #D97706;">
+      <div class="kpi-content">
+        <div class="kpi-label" style="color: #92400E;">Pending Offline Sync</div>
+        <div class="kpi-value" style="color: #D97706;">{{ offlineCount }}</div>
+        <p class="kpi-trend" style="color: #92400E;">Tap to Sync Now 🔄</p>
+      </div>
+    </div>
   </div>
 
   <!-- QUICK CHECK-IN CARD -->
@@ -77,13 +87,6 @@
     </div>
 
     <h2 class="quick-checkin-title">Quick Check-In</h2>
-    <button
-      type="button"
-      (click)="goToRegistration()"
-      class="register-member-link"
-    >
-      Register New Member
-    </button>
 
     <ng-container *ngIf="!memberFound">
       <!-- QR Code Area -->
@@ -115,17 +118,9 @@
           type="text"
           [(ngModel)]="searchValue"
           name="search"
-          placeholder="Search by name or Member ID..."
-          class="search-input"
         />
-        <button
-          *ngIf="searchValue"
-          type="button"
-          (click)="clearSearch()"
-          class="clear-search"
-        >
-          ×
-        </button>
+        <button type="submit" class="search-btn">Search</button>
+        <button type="button" class="qr-btn" (click)="simulateQrScan()">Scan QR 📸</button>
       </form>
     </ng-container>
 
@@ -181,15 +176,18 @@
           </p>
         </div>
 
-        <div class="member-actions">
-          <button class="action-btn action-btn--primary">
-            Process Renewal
+        <div class="result-actions">
+          <button class="check-in-btn" (click)="confirmCheckIn()" [disabled]="memberFound.status === 'blocked'">
+            Confirm Check-in
           </button>
-          <button
-            (click)="clearSearch()"
-            class="action-btn action-btn--secondary"
-          >
-            Dismiss
+          <button class="override-btn" (click)="addHealthNote()" style="background-color: var(--orange); border-color: var(--black); color: var(--black);">
+            Add Health Note
+          </button>
+          <button *ngIf="memberFound.status === 'blocked'" class="override-btn" (click)="confirmOverrideCheckIn()">
+            Force Check-in (Override)
+          </button>
+          <button class="cancel-search-btn" (click)="clearSearch()">
+            Cancel
           </button>
         </div>
       </div>

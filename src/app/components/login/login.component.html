@@ -1,146 +1,97 @@
-<div class="login-container">
+<div class="split-screen row g-0 min-vh-100">
   <!-- LEFT PANEL -->
-  <div class="left-panel">
-    <!-- Logo -->
-    <div class="logo-section">
-      <div class="logo-icon">
-        <svg
-          class="dumbbell-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path d="M6 4h12M6 4v16M18 4v16M8 7h8M8 17h8"></path>
-        </svg>
-      </div>
-      <span class="logo-text">FitClub</span>
+  <div class="col-md-6 split-left d-none d-md-flex flex-column justify-content-center">
+    <!-- Brand -->
+    <div class="brutal-logo-box" style="width: fit-content;">
+      <span class="font-black text-uppercase" style="font-size: 32px;">FitClub</span>
     </div>
 
-    <!-- Content -->
-    <div class="left-panel-content">
-      <div class="quote-mark">"</div>
-      <h1 class="main-title">Your fitness club.<br />Fully managed.</h1>
-      <p class="subtitle">One platform. Every role. Zero chaos.</p>
+    <!-- Hero -->
+    <div class="gap-large">
+      <h1 class="brutal-h1 mb-4">
+        The Future of<br />
+        <span class="bg-white px-3 border-4 border-black">Fitness Mgmt.</span>
+      </h1>
+      <p class="fs-4 font-bold uppercase opacity-80">Simple • Powerful • Brutalist</p>
+    </div>
 
-      <!-- Features -->
-      <div class="features-list">
-        <div *ngFor="let feature of features" class="feature-item">
-          <div class="feature-icon">
-            <svg class="check-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
-              ></path>
-            </svg>
-          </div>
-          <span class="feature-text">{{ feature }}</span>
-        </div>
+    <!-- Cool Features Grid -->
+    <div class="d-flex flex-column" style="max-width: 500px;">
+      <!-- Feature 1 -->
+      <div class="feature-box shadow-[8px_8px_0_#00e5ff]">
+        <div class="feature-icon-brutal bg-[#00e5ff]">🛡️</div>
+        <div class="feature-text">Secure role-based access control (RBAC)</div>
+      </div>
+      
+      <!-- Feature 2 -->
+      <div class="feature-box shadow-[8px_8px_0_#76ff03]">
+        <div class="feature-icon-brutal bg-[#76ff03]">⌛</div>
+        <div class="feature-text">JWT session management with auto-timeout</div>
       </div>
 
-      <!-- Testimonial -->
-      <div class="testimonial-card">
-        <div class="testimonial-avatar">PR</div>
-        <div class="testimonial-content">
-          <p class="testimonial-text">
-            "FitClub reduced our admin overhead by 60% in the first month."
-          </p>
-          <div class="testimonial-author">
-            — Priya R., Manager, PowerFit Bangalore
-          </div>
-        </div>
+      <!-- Feature 3 -->
+      <div class="feature-box shadow-[8px_8px_0_#ff1744]">
+        <div class="feature-icon-brutal bg-[#ff1744] text-white">📊</div>
+        <div class="feature-text">Personalised dashboard per role</div>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="feature-box shadow-[8px_8px_0_#d500f9]">
+        <div class="feature-icon-brutal bg-[#d500f9] text-white">📝</div>
+        <div class="feature-text">Audit trail on every action</div>
       </div>
     </div>
+    
+    <div class="mt-auto"></div>
   </div>
 
   <!-- RIGHT PANEL -->
-  <div class="right-panel">
-    <div class="login-form-wrapper">
-      <div class="login-card">
-        <a href="#" (click)="goToLanding()" class="back-link">← Back to Home</a>
-        <h2 class="form-title">Welcome back</h2>
-        <p class="form-subtitle">Sign in to your account</p>
-
-        <!-- Error Message -->
-        <div *ngIf="errorMessage" class="error-alert">
-          {{ errorMessage }}
+  <div class="col-md-6 d-flex align-items-center justify-content-center p-4">
+    <div class="w-100" style="max-width: 480px;">
+      <div class="brutal-card overflow-hidden">
+        <!-- Card Header -->
+        <div class="card-header-brutal text-center">
+          <h2 class="font-black text-uppercase m-0" style="font-size: 3rem;">Login</h2>
         </div>
 
-        <form
-          [formGroup]="loginForm"
-          (ngSubmit)="onSubmit()"
-          class="login-form"
-        >
-          <!-- Username Field -->
-          <div class="form-group">
-            <label class="form-label">Username</label>
-            <input
-              type="text"
-              formControlName="username"
-              placeholder="your username"
-              class="form-input"
-            />
+        <!-- Card Body -->
+        <div class="card-body-brutal">
+          <!-- Error Alert -->
+          <div *ngIf="errorMessage" class="bg-black text-[#ffde03] border-4 border-black p-4 mb-8 font-black uppercase text-center shadow-[6px_6px_0_#ff1744]">
+            ⚠️ {{ errorMessage }}
           </div>
 
-          <!-- Password Field -->
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <div class="password-field">
-              <input
-                [type]="showPassword ? 'text' : 'password'"
-                formControlName="password"
-                placeholder="••••••••"
-                class="form-input"
-              />
-              <button
-                type="button"
-                class="toggle-password"
-                (click)="togglePasswordVisibility()"
-              >
-                <svg
-                  *ngIf="!showPassword"
-                  class="eye-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <svg
-                  *ngIf="showPassword"
-                  class="eye-icon"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
-                  ></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+            <!-- Username -->
+            <div class="gap-medium">
+              <label class="brutal-label">Username</label>
+              <input type="text" formControlName="username" placeholder="enter your id" class="brutal-input" />
             </div>
-            <div class="forgot-password">
-              <a href="javascript:void(0)" (click)="goToForgetPassword()"
-                >Forgot password?</a
-              >
+
+            <!-- Password -->
+            <div class="gap-medium">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="brutal-label mb-0">Password</label>
+                <a href="javascript:void(0)" (click)="goToForgetPassword()" class="brutal-link">Forgot?</a>
+              </div>
+              <input type="password" formControlName="password" placeholder="••••••••" class="brutal-input" />
             </div>
+
+            <!-- Submit -->
+            <button type="submit" class="brutal-btn w-100" style="margin-top: 2rem;" [disabled]="isLoading">
+              <span *ngIf="!isLoading">Login →</span>
+              <span *ngIf="isLoading">Verifying...</span>
+            </button>
+          </form>
+
+          <!-- Footer Info -->
+          <div class="text-center" style="margin-top: 4rem;">
+            <p class="font-black uppercase text-[10px] tracking-widest text-black opacity-60" style="line-height: 1.6;">
+              New Member? Please visit our reception<br/>
+              to activate your system access.
+            </p>
           </div>
-
-          <!-- Sign In Button -->
-          <button type="submit" class="sign-in-button" [disabled]="isLoading">
-            <span *ngIf="!isLoading">Sign In</span>
-            <div *ngIf="isLoading" class="spinner"></div>
-          </button>
-        </form>
-
-        <!-- Sign Up Link -->
-        <p class="signup-prompt">
-          Don't have an account?
-          <a href="#" class="signup-link">Sign up here</a>
-        </p>
+        </div>
       </div>
     </div>
   </div>

@@ -1,215 +1,206 @@
-<div class="max-w-[1000px] mx-auto pb-10">
-  <div class="mb-8">
-    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Checkout</h1>
-    <p class="text-[#475569] text-[14px]">Select a plan and complete your purchase</p>
+<div class="checkout-wrapper">
+  <!-- PAGE HEADER -->
+  <div class="header-section mb-12">
+    <h1 class="page-title">Complete Your Membership</h1>
+    <br/>
+    <p class="page-subtitle">Finalize your plan selection and secure your access.</p>
   </div>
 
-  <!-- SUCCESS BANNER -->
-  <div
-    *ngIf="orderPlaced"
-    class="mb-6 p-6 bg-[#F0FDF4] border border-[#16A34A] rounded-[12px] text-center"
-  >
-    <div class="text-[48px] mb-2">✓</div>
-    <p class="font-bold text-[16px] text-[#15803D] mb-1">
-      Order Placed Successfully!
-    </p>
-    <p class="text-[13px] text-[#15803D]">
-      {{ successMessage }}
-    </p>
-  </div>
-
-  <!-- ERROR / INFO -->
-  <div
-    *ngIf="errorMessage"
-    class="mb-4 p-4 bg-[#FEF2F2] border border-[#FECACA] rounded-[8px] text-[13px] text-[#DC2626] font-medium"
-  >
-    {{ errorMessage }}
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- LEFT COLUMN: Plan Selection + Payment Method -->
-    <div class="lg:col-span-2 space-y-6">
-
-      <!-- PLAN SELECTION -->
-      <div class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm">
-        <div class="p-6 border-b border-[#E8ECF4]">
-          <h2 class="font-bold text-[18px] text-[#0F172A]">Select a Plan</h2>
-        </div>
-        <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div
-            *ngFor="let plan of plans"
-            (click)="selectPlan(plan.planId!)"
-            class="p-5 border-2 rounded-[10px] cursor-pointer transition-all hover:shadow-md"
-            [class]="
-              selectedPlanId === plan.planId
-                ? 'border-[#2563EB] bg-[#EFF5FF]'
-                : 'border-[#E8ECF4] bg-white'
-            "
-          >
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="font-bold text-[14px] text-[#0F172A]">{{ plan.planName }}</h3>
-              <span
-                *ngIf="selectedPlanId === plan.planId"
-                class="text-[10px] px-2 py-0.5 bg-[#2563EB] text-white rounded font-bold"
-              >SELECTED</span>
-            </div>
-            <p class="text-[12px] text-[#475569] mb-2">
-              {{ plan.durationDays }} days ·
-              {{ plan.accessStart }} – {{ plan.accessEnd }}
-            </p>
-            <p class="font-bold text-[18px] text-[#2563EB]">
-              ₹{{ plan.price | number }}
-            </p>
-            <p class="text-[11px] text-[#94A3B8]">
-              + {{ plan.taxPercent || 0 }}% tax
-            </p>
-          </div>
-        </div>
+  <!-- SUCCESS OVERLAY (AC02, AC04) -->
+  <div *ngIf="isSuccess" class="overlay">
+    <div class="success-card neo-card animate-pop">
+      <div class="success-icon-wrapper">
+        <span class="success-check">✓</span>
       </div>
+      <h2 class="success-title font-black text-3xl uppercase mb-4">Payment Successful!</h2>
+      <p class="success-text font-bold mb-6">{{ successMessage }}</p>
+      <div class="success-redirect font-black text-lg mb-6">
+        Redirecting to dashboard...
+      </div>
+      <button (click)="navigateToDashboard()" class="primary-btn w-full px-8">Go To Dashboard →</button>
+    </div>
+  </div>
 
-      <!-- PROMO CODE -->
-      <div class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm">
-        <div class="p-6 border-b border-[#E8ECF4]">
-          <h2 class="font-bold text-[18px] text-[#0F172A]">Promo Code</h2>
+  <!-- PAYMENT GATEWAY SIMULATION (AC02) -->
+  <div *ngIf="showPaymentGateway" class="overlay">
+    <div class="gateway-card neo-card animate-pop">
+      <div class="gateway-header">
+        <div class="flex items-center gap-2">
+          <span class="gateway-badge">SECURE</span>
+          <h2 class="font-black text-xl uppercase">Payment Gateway</h2>
         </div>
-        <div class="p-6">
-          <div class="flex gap-3">
-            <input
-              [(ngModel)]="promoCode"
-              type="text"
-              placeholder="Enter promo code (e.g. NEW10)"
-              class="flex-1 h-10 px-4 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10"
-            />
-            <button
-              (click)="applyPromoCode()"
-              [disabled]="!promoCode.trim()"
-              class="h-10 px-6 bg-[#2563EB] text-white text-[13px] font-bold rounded-[8px] hover:bg-[#1D4ED8] disabled:bg-[#94A3B8] transition-colors"
-            >
-              Apply
-            </button>
+        <button (click)="cancelPayment()" class="text-3xl font-black">×</button>
+      </div>
+      
+      <div class="gateway-body">
+        <div class="payment-details-box">
+          <div class="flex justify-between mb-4">
+            <span class="font-black uppercase text-sm">Payable Amount</span>
+            <span class="font-black text-2xl">₹{{ breakdown?.finalAmount | number }}</span>
           </div>
-          <p
-            *ngIf="appliedDiscount > 0"
-            class="mt-3 text-[12px] text-[#16A34A] font-medium"
-          >
-            ✓ {{ successMessage }}
+          <div class="flex justify-between">
+            <span class="font-bold text-sm uppercase">Method</span>
+            <span class="font-black text-sm uppercase">{{ selectedPaymentMethod }}</span>
+          </div>
+        </div>
+
+        <div class="mt-8">
+          <p class="text-[12px] text-center font-bold uppercase p-4 border-2 border-dashed border-black">
+            This is a simulated secure environment. No actual charges will be applied.
           </p>
         </div>
       </div>
 
-      <!-- PAYMENT METHOD (AC02) -->
-      <div class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm">
-        <div class="p-6 border-b border-[#E8ECF4]">
-          <h2 class="font-bold text-[18px] text-[#0F172A]">Payment Method</h2>
-          <p class="text-[12px] text-[#94A3B8] mt-1">Gateway stub — no real charge</p>
-        </div>
-        <div class="p-6 space-y-3">
-          <label
-            *ngFor="let method of paymentMethods"
-            class="flex items-center gap-3 p-4 border border-[#E8ECF4] rounded-[10px] cursor-pointer hover:bg-[#F8F9FC] transition-colors"
-            [class.border-[#2563EB]]="selectedPaymentMethod === method.type"
-            [class.bg-[#EFF5FF]]="selectedPaymentMethod === method.type"
-          >
-            <input
-              type="radio"
-              [(ngModel)]="selectedPaymentMethod"
-              [value]="method.type"
-              class="w-5 h-5 accent-[#2563EB]"
-            />
-            <span class="font-medium text-[14px] text-[#0F172A]">{{
-              method.label
-            }}</span>
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <!-- RIGHT COLUMN: Price Breakdown (AC01) -->
-    <div
-      class="bg-white border border-[#E8ECF4] rounded-[12px] p-6 shadow-sm h-fit sticky top-6"
-    >
-      <h3 class="font-bold text-[16px] text-[#0F172A] mb-4">Price Breakdown</h3>
-
-      <div *ngIf="!breakdown && !isLoadingBreakdown" class="text-center py-8">
-        <p class="text-[#94A3B8] text-[13px]">Select a plan to see the price breakdown</p>
-      </div>
-
-      <div *ngIf="isLoadingBreakdown" class="text-center py-8">
-        <p class="text-[#2563EB] text-[13px]">Calculating...</p>
-      </div>
-
-      <div *ngIf="breakdown && !isLoadingBreakdown">
-        <div class="space-y-3 mb-4 pb-4 border-b border-[#E8ECF4]">
-          <div class="flex justify-between text-[13px]">
-            <span class="text-[#475569]">Plan</span>
-            <span class="font-bold text-[#0F172A]">{{ breakdown.planName }}</span>
-          </div>
-          <div class="flex justify-between text-[13px]">
-            <span class="text-[#475569]">Duration</span>
-            <span class="font-bold text-[#0F172A]">{{ breakdown.durationDays }} days</span>
-          </div>
-          <div class="flex justify-between text-[13px]">
-            <span class="text-[#475569]">Base Price</span>
-            <span class="font-bold text-[#0F172A]">₹{{ breakdown.basePrice | number }}</span>
-          </div>
-          <div
-            *ngIf="breakdown.discount > 0"
-            class="flex justify-between text-[13px]"
-          >
-            <span class="text-[#16A34A]">Discount</span>
-            <span class="font-bold text-[#16A34A]">−₹{{ breakdown.discount | number }}</span>
-          </div>
-          <div class="flex justify-between text-[13px]">
-            <span class="text-[#475569]">Subtotal</span>
-            <span class="font-bold text-[#0F172A]">₹{{ breakdown.priceAfterDiscount | number }}</span>
-          </div>
-          <div class="flex justify-between text-[13px]">
-            <span class="text-[#475569]">Tax ({{ breakdown.taxPercent }}%)</span>
-            <span class="font-bold text-[#0F172A]">₹{{ breakdown.taxAmount | number }}</span>
-          </div>
-        </div>
-
-        <!-- PRORATION (AC06) -->
-        <div
-          *ngIf="breakdown.proration"
-          class="mb-4 pb-4 border-b border-[#E8ECF4]"
-        >
-          <p class="text-[11px] uppercase text-[#94A3B8] font-bold mb-2">Proration Details</p>
-          <div class="space-y-2 text-[12px]">
-            <div class="flex justify-between">
-              <span class="text-[#475569]">Current Plan</span>
-              <span class="font-medium text-[#0F172A]">{{ breakdown.proration.currentPlanName }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[#475569]">Remaining Days</span>
-              <span class="font-medium text-[#0F172A]">{{ breakdown.proration.remainingDays }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-[#16A34A]">Credit Applied</span>
-              <span class="font-bold text-[#16A34A]">−₹{{ breakdown.proration.creditApplied | number }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex justify-between mb-6">
-          <span class="font-bold text-[14px] text-[#0F172A]">Total Amount</span>
-          <span class="font-bold text-[20px] text-[#2563EB]"
-            >₹{{ breakdown.finalAmount | number }}</span
-          >
-        </div>
-
-        <button
-          (click)="placeOrder()"
-          [disabled]="!breakdown || orderPlaced || isProcessing"
-          class="w-full h-12 bg-[#2563EB] text-white font-bold rounded-[8px] hover:bg-[#1D4ED8] disabled:bg-[#94A3B8] transition-colors"
-        >
-          {{ isProcessing ? 'Processing...' : orderPlaced ? 'Order Placed ✓' : 'Place Order' }}
+      <div class="gateway-footer">
+        <button (click)="cancelPayment()" class="secondary-btn flex-1" [disabled]="isProcessing">Cancel</button>
+        <button (click)="completePayment()" class="primary-btn flex-1" [disabled]="isProcessing">
+          <span *ngIf="!isProcessing">Confirm Payment</span>
+          <span *ngIf="isProcessing">Processing...</span>
         </button>
-
-        <p class="text-[11px] text-[#94A3B8] text-center mt-4">
-          By placing order, you agree to our Terms &amp; Conditions
-        </p>
       </div>
     </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+    
+    <!-- LEFT: Configuration -->
+    <div class="lg:col-span-2 space-y-10">
+      
+      <!-- PLAN SELECTOR -->
+      <section class="neo-card overflow-hidden">
+        <div class="card-header-accented">
+          <h2 class="card-title">Choose Your Plan</h2>
+          <span class="card-badge">{{ plans.length }} Options</span>
+        </div>
+        <div class="card-body grid grid-cols-1 md:grid-cols-2 gap-6 p-8">
+          <div
+            *ngFor="let plan of plans"
+            (click)="selectPlan(plan.planId!)"
+            class="plan-tile"
+            [class.active]="selectedPlanId === plan.planId"
+          >
+            <div class="flex justify-between items-start">
+              <span class="plan-name">{{ plan.planName }}</span>
+              <div *ngIf="selectedPlanId === plan.planId" class="active-indicator">
+                SELECTED
+              </div>
+            </div>
+            <div class="plan-tile-price">
+              <span class="currency">₹</span>
+              <span class="amount">{{ plan.price | number }}</span>
+              <span class="tax-tag">+{{ plan.taxPercent || 0 }}% TAX</span>
+            </div>
+            <div class="pt-4 mt-auto border-t-2 border-black flex justify-between font-bold text-xs">
+              <span class="uppercase">{{ plan.durationDays }} Days</span>
+              <span class="uppercase">{{ plan.accessStart }} - {{ plan.accessEnd }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PROMO & METHOD -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- PROMO -->
+        <section class="neo-card">
+          <div class="p-6 border-b-4 border-black bg-[#ffde03]">
+            <h2 class="font-black uppercase">Promo Code</h2>
+          </div>
+          <div class="p-6">
+            <div class="promo-input-group">
+              <input
+                [(ngModel)]="promoCode"
+                type="text"
+                placeholder="ENTER CODE"
+                class="promo-input"
+              />
+              <button (click)="applyPromoCode()" class="promo-btn" [disabled]="!promoCode.trim()">Apply</button>
+            </div>
+            <p *ngIf="appliedDiscount > 0" class="mt-4 font-black uppercase text-green-600 text-sm">✓ Discount Applied!</p>
+            <p *ngIf="errorMessage && !showPaymentGateway" class="mt-4 font-black uppercase text-red-600 text-sm">{{ errorMessage }}</p>
+          </div>
+        </section>
+
+        <!-- METHOD -->
+        <section class="neo-card">
+          <div class="p-6 border-b-4 border-black bg-[#d500f9] text-white">
+            <h2 class="font-black uppercase">Payment Method</h2>
+          </div>
+          <div class="p-6 space-y-4">
+            <div
+              *ngFor="let method of paymentMethods"
+              (click)="selectedPaymentMethod = method.type"
+              class="method-tile"
+              [class.active]="selectedPaymentMethod === method.type"
+            >
+              <span class="text-2xl">{{ method.label.split(' ')[0] }}</span>
+              <span class="uppercase">{{ method.label.split(' ').slice(1).join(' ') }}</span>
+              <div class="radio-circle"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- RIGHT: Summary -->
+    <aside class="lg:col-span-1">
+      <div class="summary-card neo-card sticky top-24">
+        <h3 class="summary-title">Order Summary</h3>
+        
+        <div *ngIf="!breakdown && !isLoadingBreakdown" class="text-center py-12">
+          <p class="font-black uppercase text-lg">Select a plan to continue</p>
+        </div>
+
+        <div *ngIf="isLoadingBreakdown" class="p-8 space-y-4">
+          <div class="h-8 bg-gray-200 animate-pulse border-2 border-black"></div>
+          <div class="h-8 bg-gray-200 animate-pulse border-2 border-black"></div>
+        </div>
+
+        <div *ngIf="breakdown && !isLoadingBreakdown" class="space-y-6">
+          <div class="detail-row">
+            <span class="uppercase">Membership</span>
+            <span>₹{{ breakdown.basePrice | number }}</span>
+          </div>
+          
+          <div *ngIf="breakdown.discount > 0" class="detail-row text-green-600">
+            <span class="uppercase">Discount</span>
+            <span>-₹{{ breakdown.discount | number }}</span>
+          </div>
+
+          <div *ngIf="breakdown.proration" class="p-4 border-4 border-black mb-4 bg-gray-50">
+            <div class="detail-row mb-0 border-none">
+              <span class="uppercase">Upgrade Credit</span>
+              <span class="text-green-600">-₹{{ breakdown.proration.creditApplied | number }}</span>
+            </div>
+            <p class="text-[10px] font-black uppercase mt-1">From {{ breakdown.proration.currentPlanName }}</p>
+          </div>
+
+          <div class="detail-row">
+            <span class="uppercase">Tax ({{ breakdown.taxPercent }}%)</span>
+            <span>₹{{ breakdown.taxAmount | number }}</span>
+          </div>
+
+          <div class="mt-8">
+            <div class="flex justify-between items-center mb-6">
+              <span class="font-black uppercase text-xl">Total</span>
+              <span class="total-amount">₹{{ breakdown.finalAmount | number }}</span>
+            </div>
+          </div>
+
+          <button
+            (click)="placeOrder()"
+            [disabled]="!breakdown || orderPlaced || isProcessing"
+            class="place-order-btn"
+          >
+            <span *ngIf="!isProcessing">Place Order →</span>
+            <span *ngIf="isProcessing">Loading...</span>
+          </button>
+          
+          <p class="text-center font-black uppercase text-[10px] mt-6 tracking-widest">
+            FitClub Payments Gateway
+          </p>
+        </div>
+      </div>
+    </aside>
   </div>
 </div>

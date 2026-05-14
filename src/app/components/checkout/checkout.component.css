@@ -1,14 +1,344 @@
-/* Button utilities */
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
+.checkout-wrapper {
+  padding: 2rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #f0f0f0; /* Classic neo-brutalist off-white */
+  min-height: 100vh;
 }
 
-button:hover:not(:disabled) {
-  opacity: 1;
+/* BASE NEO-BRUTALIST CARD */
+.neo-card {
+  background: white;
+  border: 4px solid #000000;
+  box-shadow: 8px 8px 0px 0px #000000;
+  transition: all 0.2s ease;
 }
 
-/* Radio button styling */
-input[type="radio"] {
+.neo-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 10px 10px 0px 0px #000000;
+}
+
+.page-title {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #000000;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  -webkit-text-stroke: 1px #000;
+  background: #ffde03; /* Bright Yellow */
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  border: 4px solid #000;
+  box-shadow: 6px 6px 0px 0px #000;
+  margin-bottom: 1rem;
+}
+
+.page-subtitle {
+  color: #000;
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: #00e5ff; /* Cyan */
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0px 0px #000;
+}
+
+/* OVERLAYS */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.success-card {
+  width: 100%;
+  max-width: 500px;
+  padding: 3rem;
+  text-align: center;
+  background: #76ff03; /* Lime Green */
+}
+
+.gateway-card {
+  width: 100%;
+  max-width: 480px;
+  background: #ffffff;
+}
+
+.gateway-header {
+  padding: 1.5rem;
+  border-bottom: 4px solid #000;
+  background: #ff1744; /* Bright Red */
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gateway-badge {
+  background: #000;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 12px;
+  border: 2px solid #fff;
+}
+
+.gateway-body {
+  padding: 1.5rem;
+}
+
+.payment-details-box {
+  background: #fff;
+  padding: 1.5rem;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0px 0px #000;
+}
+
+.gateway-footer {
+  padding: 1.5rem;
+  display: flex;
+  gap: 1.5rem;
+  border-top: 4px solid #000;
+}
+
+/* PLAN TILES */
+.plan-tile {
+  padding: 1.5rem;
+  border: 4px solid #000;
+  background: white;
   cursor: pointer;
+  box-shadow: 4px 4px 0px 0px #000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.plan-tile:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px #000;
+}
+
+.plan-tile.active {
+  background: #ffde03; /* Yellow */
+  transform: translate(-4px, -4px);
+  box-shadow: 8px 8px 0px 0px #000;
+}
+
+.plan-name {
+  font-weight: 900;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+}
+
+.plan-tile-price {
+  margin: 0.5rem 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.currency {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.amount {
+  font-size: 2.5rem;
+  font-weight: 900;
+}
+
+.tax-tag {
+  background: #000;
+  color: white;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.active-indicator {
+  background: #000;
+  color: #fff;
+  font-weight: 900;
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 2px solid #fff;
+}
+
+/* PROMO & METHOD */
+.promo-input-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.promo-input {
+  flex: 1;
+  height: 54px;
+  padding: 0 1.5rem;
+  border: 4px solid #000;
+  outline: none;
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.promo-btn {
+  padding: 0 2rem;
+  background: #000;
+  color: #fff;
+  font-weight: 900;
+  text-transform: uppercase;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0px 0px #ffde03;
+}
+
+.method-tile {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem;
+  border: 4px solid #000;
+  background: white;
+  cursor: pointer;
+  box-shadow: 4px 4px 0px 0px #000;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.method-tile.active {
+  background: #d500f9; /* Purple */
+  color: white;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px #000;
+}
+
+.radio-circle {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  border: 4px solid #000;
+  background: white;
+}
+
+.method-tile.active .radio-circle {
+  background: #000;
+  border-color: #fff;
+}
+
+/* SUMMARY */
+.summary-card {
+  padding: 2.5rem;
+}
+
+.summary-title {
+  font-size: 2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  background: #000;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  text-align: center;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid #000;
+  padding-bottom: 0.5rem;
+}
+
+.total-amount {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #000;
+  background: #ffde03;
+  padding: 0.5rem 1rem;
+  border: 4px solid #000;
+  box-shadow: 6px 6px 0px 0px #000;
+  display: block;
+  text-align: right;
+}
+
+.place-order-btn {
+  width: 100%;
+  height: 70px;
+  background: #000;
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  border: 4px solid #000;
+  box-shadow: 8px 8px 0px 0px #ff1744; /* Red shadow */
+  transition: all 0.1s;
+  cursor: pointer;
+}
+
+.place-order-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 10px 10px 0px 0px #ff1744;
+}
+
+.place-order-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 4px 4px 0px 0px #ff1744;
+}
+
+.primary-btn {
+  background: #000;
+  color: #fff;
+  height: 54px;
+  border: 4px solid #000;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.secondary-btn {
+  background: #fff;
+  color: #000;
+  height: 54px;
+  border: 4px solid #000;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+/* ANIMATIONS */
+@keyframes pop {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-pop {
+  animation: pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.card-header-accented {
+  padding: 1.5rem;
+  border-bottom: 4px solid #000;
+  background: #00e5ff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-title {
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 1.25rem;
+}
+
+.card-badge {
+  background: #000;
+  color: #fff;
+  padding: 4px 12px;
+  font-weight: 900;
+  font-size: 12px;
 }

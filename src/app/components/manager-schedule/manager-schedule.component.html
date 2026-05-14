@@ -1,0 +1,191 @@
+<div class="schedule-container">
+  <!-- Header -->
+  <div class="brutal-card header-card">
+    <div class="header-content">
+      <h1 class="title">Class Scheduling</h1>
+      <p class="subtitle">Manage recurring sessions, assign trainers, and optimize room usage.</p>
+    </div>
+    <button class="brutal-btn primary-btn" (click)="openCreateModal()">
+      Schedule New Class ➕
+    </button>
+  </div>
+
+  <!-- Filter & Actions Bar -->
+  <div class="brutal-card filter-bar">
+    <div class="filter-group">
+      <button class="brutal-btn small" [class.active]="viewFilter === 'ALL'" (click)="setFilter('ALL')">All View</button>
+      <button class="brutal-btn small" [class.active]="viewFilter === 'TODAY'" (click)="setFilter('TODAY')">Today</button>
+      <button class="brutal-btn small" [class.active]="viewFilter === 'WEEK'" (click)="setFilter('WEEK')">This Week</button>
+    </div>
+    
+    <div class="action-group">
+      <input type="file" #fileInput (change)="onFileSelected($event)" style="display: none">
+      <button class="brutal-btn small secondary" (click)="fileInput.click()">📤 Import CSV</button>
+      <button class="brutal-btn small info" (click)="exportCsv()">📥 Export CSV</button>
+    </div>
+  </div>
+
+  <!-- Status Messages -->
+  <div *ngIf="successMessage" class="status-banner success">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="status-banner error">{{ errorMessage }}</div>
+
+  <!-- Class Grid -->
+  <div class="class-grid" *ngIf="!isLoading">
+    <div *ngFor="let cls of filteredClasses" class="brutal-card class-card" [class.cancelled]="cls.status === 'CANCELLED'">
+      <div class="card-badge" [class.cancelled-badge]="cls.status === 'CANCELLED'">
+        {{ cls.status }}
+      </div>
+      <h3 class="class-name">{{ cls.className }}</h3>
+      
+      <div class="info-row">
+        <span class="icon">👤</span>
+        <span class="text">Trainer ID: {{ cls.trainerId }}</span>
+      </div>
+      <div class="info-row">
+        <span class="icon">🏠</span>
+        <span class="text">Room ID: {{ cls.roomId }}</span>
+      </div>
+      <div class="info-row">
+        <span class="icon">🕒</span>
+        <span class="text">{{ cls.classTime }} ({{ cls.durationMins }} mins)</span>
+      </div>
+      <div class="info-row">
+        <span class="icon">📅</span>
+        <span class="text">{{ cls.weekdays }}</span>
+      </div>
+      <div class="info-row">
+        <span class="icon">👥</span>
+        <span class="text">Capacity: {{ cls.capacity }}</span>
+      </div>
+
+      <div class="card-actions">
+        <button class="brutal-btn small secondary" (click)="openEditModal(cls)">Edit</button>
+        <button class="brutal-btn small info" (click)="openSubModal(cls)">Sub</button>
+        <button *ngIf="cls.status !== 'CANCELLED'" class="brutal-btn small danger" (click)="openCancelModal(cls.classId!)">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Processing Schedule...</p>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-backdrop" *ngIf="isModalOpen">
+    <div class="brutal-card modal-content">
+      <div class="modal-header">
+        <h2>{{ isEditMode ? 'Update Class' : 'Schedule New Class' }}</h2>
+        <button (click)="closeModal()" class="close-btn">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Class Name</label>
+          <input type="text" [(ngModel)]="editingClass.className" placeholder="e.g. HIIT Morning" class="brutal-input">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Trainer</label>
+            <select [(ngModel)]="editingClass.trainerId" class="brutal-input">
+              <option *ngFor="let t of trainers" [value]="t.trainerId">{{ t.trainerName }}</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Room</label>
+            <select [(ngModel)]="editingClass.roomId" class="brutal-input">
+              <option *ngFor="let r of rooms" [value]="r.facilityId">{{ r.facilityName }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" [(ngModel)]="editingClass.startDate" class="brutal-input">
+          </div>
+          <div class="form-group">
+            <label>End Date</label>
+            <input type="date" [(ngModel)]="editingClass.endDate" class="brutal-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Time</label>
+            <input type="time" [(ngModel)]="editingClass.classTime" class="brutal-input">
+          </div>
+          <div class="form-group">
+            <label>Duration (mins)</label>
+            <input type="number" [(ngModel)]="editingClass.durationMins" class="brutal-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Weekdays (e.g. Mon,Wed,Fri)</label>
+          <input type="text" [(ngModel)]="editingClass.weekdays" placeholder="Mon,Tue..." class="brutal-input">
+        </div>
+
+        <div class="form-group">
+          <label>Plan Eligibility</label>
+          <select [(ngModel)]="editingClass.planEligibility" class="brutal-input">
+            <option value="ALL">All Members</option>
+            <option value="GOLD">Gold Only</option>
+            <option value="PLATINUM">Platinum Only</option>
+            <option value="STUDENT">Student Only</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Capacity</label>
+          <input type="number" [(ngModel)]="editingClass.capacity" class="brutal-input">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="brutal-btn secondary" (click)="closeModal()">Discard</button>
+        <button class="brutal-btn primary-btn" (click)="saveClass()">Save Schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel Modal -->
+  <div class="modal-backdrop" *ngIf="isCancelModalOpen">
+    <div class="brutal-card modal-content small">
+      <h2>Cancel Class</h2>
+      <p>This will notify all booked members. Please provide a reason.</p>
+      <textarea [(ngModel)]="cancelReason" placeholder="Reason for cancellation..." class="brutal-input"></textarea>
+      <div class="modal-footer">
+        <button class="brutal-btn secondary" (click)="isCancelModalOpen = false">No, Go Back</button>
+        <button class="brutal-btn danger" (click)="confirmCancel()">Confirm Cancellation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Substitute Modal -->
+  <div class="modal-backdrop" *ngIf="isSubModalOpen">
+    <div class="brutal-card modal-content small">
+      <h2>Substitute Trainer</h2>
+      <p>Assign a temporary instructor. Members will be notified.</p>
+      
+      <div class="form-group">
+        <label>New Trainer</label>
+        <select [(ngModel)]="subTrainerId" class="brutal-input">
+          <option *ngFor="let t of trainers" [value]="t.trainerId">{{ t.trainerName }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Reason for Change</label>
+        <textarea [(ngModel)]="subReason" placeholder="e.g. Instructor sick leave..." class="brutal-input"></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button class="brutal-btn secondary" (click)="isSubModalOpen = false">Cancel</button>
+        <button class="brutal-btn primary-btn" (click)="confirmSubstitute()">Confirm Sub</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,4 @@
-<div class="dashboard-shell">
+<div class="dashboard-shell" *ngIf="!isLoading">
   <div class="dashboard-header">
     <div>
       <h1>Manager Dashboard</h1>
@@ -15,32 +15,34 @@
   <div class="stats-grid">
     <section class="card stat-card stat-card--green">
       <span class="stat-label">Active Members</span>
-      <span class="stat-value">1,248</span>
-      <span class="stat-chip stat-chip--green">↑ +47 this week</span>
+      <span class="stat-value">{{ stats?.activeMembers | number }}</span>
+      <span class="stat-chip stat-chip--green">↑ Stable Growth</span>
     </section>
 
     <section class="card stat-card stat-card--blue">
       <span class="stat-label">New Joins This Month</span>
-      <span class="stat-value stat-value--blue">63</span>
-      <span class="stat-chip stat-chip--blue">📈 +12% vs last mo</span>
+      <span class="stat-value stat-value--blue">{{ stats?.newJoinsThisMonth | number }}</span>
+      <span class="stat-chip" [ngClass]="stats?.newJoinsTrend >= 0 ? 'stat-chip--blue' : 'stat-chip--red'">
+        {{ stats?.newJoinsTrend >= 0 ? '📈' : '📉' }} {{ stats?.newJoinsTrend | number:'1.0-1' }}% vs last mo
+      </span>
     </section>
 
     <section class="card stat-card stat-card--red">
       <span class="stat-label">Churn / Cancellations</span>
-      <span class="stat-value stat-value--red">18</span>
-      <span class="stat-chip stat-chip--red">↑ 4 vs last month</span>
+      <span class="stat-value stat-value--red">{{ stats?.churnThisMonth | number }}</span>
+      <span class="stat-chip stat-chip--muted">Current Cycle</span>
     </section>
 
     <section class="card stat-card stat-card--revenue">
       <span class="stat-label">Monthly Revenue</span>
-      <span class="stat-value">₹4.28L</span>
+      <span class="stat-value">{{ formatCurrency(stats?.monthlyRevenue || 0) }}</span>
       <div class="revenue-bar"></div>
     </section>
 
     <section class="card stat-card">
       <span class="stat-label">Classes This Week</span>
-      <span class="stat-value">42</span>
-      <span class="stat-chip stat-chip--muted">87% avg occupancy</span>
+      <span class="stat-value">{{ stats?.classesThisWeek | number }}</span>
+      <span class="stat-chip stat-chip--muted">{{ stats?.avgClassOccupancy | number:'1.0-0' }}% avg occupancy</span>
     </section>
   </div>
 
@@ -65,7 +67,7 @@
           <div *ngFor="let data of revenueData" class="chart-bar-wrap">
             <div
               class="chart-bar"
-              [style.height]="(data.value / 428500) * 200 + 'px'"
+              [style.height]="(data.value / (stats?.monthlyRevenue || 500000)) * 180 + 'px'"
             ></div>
             <span class="chart-label">{{ data.name }}</span>
           </div>
@@ -74,10 +76,10 @@
         <div class="panel-footer">
           <span>
             Total:
-            <strong>{{ formatCurrency(2263500) }}</strong>
-            (6 months)
+            <strong>{{ formatCurrency(stats?.monthlyRevenue || 0) }}</strong>
+            (Current Month)
           </span>
-          <span class="positive-text">📈 +18.5% vs previous</span>
+          <span class="positive-text">📈 Real-time Analytics</span>
         </div>
       </div>
     </section>
@@ -105,6 +107,9 @@
             ></div>
           </div>
         </div>
+        <div *ngIf="classData.length === 0" class="empty-state py-5 text-center">
+          <p class="text-muted">No class utilization data available.</p>
+        </div>
       </div>
 
       <div class="panel-footer panel-footer--center">
@@ -118,7 +123,7 @@
   <section class="card dunning-card">
     <div class="panel-header dunning-header">
       <h3>Pending Dunning</h3>
-      <div class="outstanding-badge">Total Outstanding: ₹38,200</div>
+      <div class="outstanding-badge">Total Outstanding: {{ formatCurrency(stats?.dunningQueue?.length * 2500 || 0) }}</div>
     </div>
 
     <div class="table-wrap">
@@ -160,8 +165,19 @@
               </button>
             </td>
           </tr>
+          <tr *ngIf="dunningMembers.length === 0">
+            <td colspan="6" class="text-center py-4 text-muted">
+              No pending dunning items found.
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
   </section>
+</div>
+
+<!-- Loading State -->
+<div class="loading-overlay" *ngIf="isLoading">
+  <div class="loader"></div>
+  <p>Loading Dashboard Analytics...</p>
 </div>

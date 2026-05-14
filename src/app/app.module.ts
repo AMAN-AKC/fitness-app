@@ -44,6 +44,7 @@ import { PlansCatalogComponent } from './components/plans-catalog/plans-catalog.
 import { ErrorStatesViewComponent } from './components/error-states-view/error-states-view.component';
 import { GlobalErrorComponent } from './components/global-error/global-error.component';
 import { PlaceholderPageComponent } from './components/placeholder-page/placeholder-page.component';
+import { ManagerScheduleComponent } from './components/manager-schedule/manager-schedule.component';
 
 @NgModule({
   declarations: [
@@ -77,6 +78,7 @@ import { PlaceholderPageComponent } from './components/placeholder-page/placehol
     ErrorStatesViewComponent,
     GlobalErrorComponent,
     PlaceholderPageComponent,
+    ManagerScheduleComponent,
   ],
   imports: [
     BrowserModule,

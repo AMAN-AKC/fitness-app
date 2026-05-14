@@ -116,7 +116,7 @@ export class DunningQueuePageComponent implements OnInit {
     const payment: PaymentDto = {
       invoiceId: item.invoiceId,
       memberId: item.memberId,
-      amount: item.amount,
+      amountPaid: item.amount,
       paymentMethod: 'CARD', // Default to card for retry
     };
 

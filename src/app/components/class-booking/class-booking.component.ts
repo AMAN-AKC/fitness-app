@@ -61,7 +61,7 @@ export class ClassBookingComponent implements OnInit {
 
         this.classes = classes.filter(c => c.status === 'ACTIVE').map(c => {
           // Determine a random emoji based on class name heuristic
-          const nameLower = c.classesName.toLowerCase();
+          const nameLower = c.className.toLowerCase();
           let emoji = '💪';
           if (nameLower.includes('yoga') || nameLower.includes('pilates')) emoji = '🧘';
           else if (nameLower.includes('zumba') || nameLower.includes('dance')) emoji = '🎵';
@@ -69,7 +69,7 @@ export class ClassBookingComponent implements OnInit {
 
           return {
             id: c.classId?.toString() || '',
-            name: c.classesName,
+            name: c.className,
             trainer: trainerMap.get(c.trainerId) || `Trainer #${c.trainerId}`,
             date: c.startDate, // Ideally format this based on current week
             time: c.classTime,

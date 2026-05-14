@@ -74,34 +74,51 @@ export class FrontdeskDashboardComponent implements OnInit {
 
   recentCheckIns: CheckInRecord[] = [];
 
-  todaysClasses: ClassRoster[] = [
-    {
-      id: 1,
-      name: 'Morning Yoga Flow',
-      time: '07:00 AM',
-      enrolled: 0,
-      cap: 20,
-    },
-    { id: 2, name: 'HIIT Intensity', time: '18:00 PM', enrolled: 0, cap: 20 },
-    { id: 3, name: 'Zumba Party', time: '19:00 PM', enrolled: 0, cap: 20 },
-  ];
+  todaysClasses: ClassRoster[] = [];
 
   classMembers: ClassMember[] = [];
+  
+  offlineCount = 0;
 
   constructor(
     private authService: AuthService,
     private frontdeskApi: FrontdeskApiService,
-    private router: Router,
+    public router: Router,
   ) {}
 
   ngOnInit(): void {
     const session = this.authService.getCurrentSession();
     if (session) {
-      this.currentUserName = session.username;
+      this.currentUserName = session.fullName || session.username;
     }
     this.updateDateTime();
     setInterval(() => this.updateDateTime(), 1000);
     this.loadFrontdeskData();
+    this.checkOfflineQueue();
+  }
+
+  checkOfflineQueue(): void {
+    this.offlineCount = this.frontdeskApi.getOfflineQueue().length;
+  }
+
+  syncOfflineData(): void {
+    const queue = this.frontdeskApi.getOfflineQueue();
+    if (queue.length === 0) return;
+
+    this.isLoading = true;
+    this.frontdeskApi.syncPendingCheckIns().subscribe({
+        next: () => {
+            this.frontdeskApi.clearOfflineQueue();
+            this.checkOfflineQueue();
+            this.successMessage = 'Offline data synced successfully!';
+            this.loadTodayAttendance();
+            this.isLoading = false;
+        },
+        error: () => {
+            this.errorMessage = 'Failed to sync offline data. Server may be down.';
+            this.isLoading = false;
+        }
+    });
   }
 
   logout(): void {
@@ -172,9 +189,9 @@ export class FrontdeskDashboardComponent implements OnInit {
           .filter(c => c.status === 'ACTIVE')
           .map(c => ({
             id: c.classId || 0,
-            name: c.classesName,
+            name: c.className,
             time: c.classTime,
-            enrolled: 0, // We will update this if we expand the class
+            enrolled: 0, 
             cap: c.capacity
           }));
 
@@ -219,14 +236,21 @@ export class FrontdeskDashboardComponent implements OnInit {
       return;
     }
 
-    const member = this.members.find(
-      (m) =>
-        String(m.memberId) === query ||
-        `mem-${m.memberId}`.toLowerCase() === query ||
-        m.memName.toLowerCase().includes(query) ||
-        m.email.toLowerCase().includes(query) ||
-        m.phone.includes(query),
-    );
+    const member = this.members.find((m) => {
+      const mid = String(m.memberId);
+      const name = (m.memName || '').toLowerCase();
+      const email = (m.email || '').toLowerCase();
+      const phone = (m.phone || '');
+      
+      return (
+        mid === query ||
+        `mem-${mid}` === query ||
+        `m-${mid}` === query ||
+        name.includes(query) ||
+        email.includes(query) ||
+        phone.includes(query)
+      );
+    });
 
     if (!member) {
       this.memberFound = null;
@@ -267,15 +291,84 @@ export class FrontdeskDashboardComponent implements OnInit {
           this.searchValue = '';
         },
         error: (error) => {
-          this.errorMessage =
-            error?.error?.message || 'Check-in failed for this member.';
+            if (error.status === 0 || error.status === 504) {
+                this.frontdeskApi.saveToOfflineQueue({
+                    memberId: this.memberFound!.memberId,
+                    branchId: this.selectedBranchId,
+                    scanMethod: 'MANUAL'
+                });
+                this.checkOfflineQueue();
+                this.successMessage = 'Network error: Check-in saved to offline queue.';
+                this.memberFound = null;
+            } else {
+                this.errorMessage = error?.error?.message || 'Check-in failed for this member.';
+            }
         },
       });
   }
 
-  goToRegistration(): void {
-    this.router.navigate(['/member-registration']);
+  addHealthNote(): void {
+    if (!this.memberFound) return;
+    const note = prompt('Enter administrative health note (non-diagnostic):');
+    if (!note) return;
+
+    this.isLoading = true;
+    this.frontdeskApi.getConsentStatus(this.memberFound.memberId).subscribe({
+      next: (status) => {
+        if (status.latestConsent?.consentId) {
+          this.frontdeskApi.addAdministrativeNote(status.latestConsent.consentId, note).subscribe({
+            next: () => {
+              this.successMessage = 'Health note added successfully.';
+              this.isLoading = false;
+              if (this.memberFound) this.memberFound.healthNotes = note;
+            },
+            error: (err: any) => {
+              this.errorMessage = err.error?.message || 'Failed to add note.';
+              this.isLoading = false;
+            }
+          });
+        } else {
+          this.errorMessage = 'No active consent found to attach note to.';
+          this.isLoading = false;
+        }
+      }
+    });
   }
+
+  confirmOverrideCheckIn(): void {
+    if (!this.memberFound) return;
+    const reason = prompt('Please provide a reason for the override:');
+    if (!reason) return;
+
+    this.isLoading = true;
+    const session = this.authService.getCurrentSession();
+    this.frontdeskApi.overrideCheckIn({
+      memberId: this.memberFound.memberId,
+      branchId: this.selectedBranchId,
+      scanMethod: 'MANUAL'
+    }, Number(session?.userId || 0), reason).subscribe({
+      next: (attendance) => {
+        this.successMessage = `OVERRIDE SUCCESS: ${this.memberFound?.name} checked in.`;
+        this.recentCheckIns = [this.toCheckInRecord(attendance), ...this.recentCheckIns];
+        this.checkInsToday += 1;
+        this.memberFound = null;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Override check-in failed.';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  simulateQrScan(): void {
+    const qrData = prompt('Scan QR Code (Simulated Member ID):');
+    if (qrData) {
+      this.searchValue = qrData;
+      this.handleSearch(new Event('submit'));
+    }
+  }
+
 
   toggleClassExpanded(classId: number): void {
     if (this.expandedClass === classId) {
@@ -285,16 +378,13 @@ export class FrontdeskDashboardComponent implements OnInit {
     this.expandedClass = classId;
     this.classMembers = [];
     
-    // Fetch bookings for this class
     this.frontdeskApi.getBookingsByClass(classId).subscribe({
       next: (bookings) => {
-        // Update the enrolled count
         const cls = this.todaysClasses.find(c => c.id === classId);
         if (cls) {
           cls.enrolled = bookings.length;
         }
 
-        // Load members for these bookings
         this.classMembers = bookings.map(b => {
           const member = this.members.find(m => m.memberId === b.memberId);
           return {
@@ -310,10 +400,26 @@ export class FrontdeskDashboardComponent implements OnInit {
   }
 
   markMemberStatus(
-    member: ClassMember,
+    member: any,
     status: 'present' | 'pending' | 'absent',
   ): void {
-    member.status = status;
+    if (status === 'present' && this.expandedClass) {
+        const m = this.members.find(mem => mem.memName === member.name);
+        if (m && m.memberId) {
+            this.frontdeskApi.markClassAttendance(this.expandedClass, m.memberId, this.selectedBranchId).subscribe({
+                next: () => {
+                    member.status = 'present';
+                    this.successMessage = `Attendance marked for ${member.name}`;
+                    setTimeout(() => this.successMessage = '', 3000);
+                },
+                error: (err) => {
+                    this.errorMessage = err.error?.message || 'Failed to mark attendance.';
+                }
+            });
+        }
+    } else {
+        member.status = status;
+    }
   }
 
   markAllPresent(): void {
@@ -322,7 +428,6 @@ export class FrontdeskDashboardComponent implements OnInit {
     });
   }
 
-  // AC07: Export daily attendance CSV
   exportAttendanceCsv(): void {
     if (!this.selectedBranchId) return;
     this.frontdeskApi.exportDailyAttendanceCsv(this.selectedBranchId).subscribe({
@@ -358,7 +463,6 @@ export class FrontdeskDashboardComponent implements OnInit {
       alert: isBlocked ? 'No active membership. Check-in denied.' : undefined,
     };
 
-    // AC05: Load real flags from backend
     if (member.memberId) {
       this.frontdeskApi.getMemberCheckInFlags(member.memberId).subscribe({
         next: (flags) => {

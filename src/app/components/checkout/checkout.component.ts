@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   FrontdeskApiService,
   PaymentDto,
@@ -33,6 +34,9 @@ export class CheckoutComponent implements OnInit {
   currentMemberId = 0;
   promoCode = '';
   appliedDiscount = 0;
+  showPaymentGateway = false;
+  isSuccess = false;
+  isUpgrade = false;
 
   paymentMethods: PaymentMethod[] = [
     { id: 'CARD', type: 'CARD', label: '💳 Credit/Debit Card' },
@@ -44,14 +48,30 @@ export class CheckoutComponent implements OnInit {
     private frontdeskApi: FrontdeskApiService,
     private adminApi: AdminApiService,
     private authService: AuthService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
-    const session = this.authService.getCurrentSession();
-    if (session) {
-      this.currentMemberId = Number(session.userId);
-    }
-    this.loadPlans();
+    this.isLoadingBreakdown = true;
+    this.frontdeskApi.getCurrentMember().subscribe({
+      next: (member) => {
+        this.currentMemberId = Number(member.memberId);
+        this.loadPlans();
+        
+        // Read planId and upgrade flag from URL
+        this.route.queryParams.subscribe(params => {
+          this.isUpgrade = params['upgrade'] === 'true';
+          if (params['planId']) {
+            this.selectPlan(Number(params['planId']));
+          }
+        });
+      },
+      error: () => {
+        this.errorMessage = 'Unable to identify current member profile.';
+        this.isLoadingBreakdown = false;
+      }
+    });
   }
 
   loadPlans(): void {
@@ -76,12 +96,11 @@ export class CheckoutComponent implements OnInit {
     if (!this.selectedPlanId) return;
     this.isLoadingBreakdown = true;
 
-    this.frontdeskApi
-      .getPlanBreakdown(
-        this.selectedPlanId,
-        this.appliedDiscount > 0 ? this.appliedDiscount : undefined,
-      )
-      .subscribe({
+    const request = this.isUpgrade 
+      ? this.frontdeskApi.getUpgradeBreakdown(this.currentMemberId, this.selectedPlanId, this.appliedDiscount > 0 ? this.appliedDiscount : undefined)
+      : this.frontdeskApi.getPlanBreakdown(this.selectedPlanId, this.appliedDiscount > 0 ? this.appliedDiscount : undefined);
+
+    request.subscribe({
         next: (bd) => {
           this.breakdown = bd;
           this.isLoadingBreakdown = false;
@@ -131,32 +150,23 @@ export class CheckoutComponent implements OnInit {
     // Step 1: Create Invoice
     const invoice: InvoiceDto = {
       memberId: this.currentMemberId,
+      planName: this.plans.find(p => p.planId === this.selectedPlanId)?.planName || 'Membership Plan',
+      mrp: this.breakdown.basePrice,
+      taxes: this.breakdown.taxAmount,
+      discount: this.breakdown.discount,
       finalAmount: this.breakdown.finalAmount,
+      promoCode: this.promoCode || undefined,
       status: 'ISSUED',
     };
 
     this.frontdeskApi.createInvoice(invoice).subscribe({
       next: (createdInvoice) => {
         if (createdInvoice.invoiceId) {
-          // Step 2: Process Payment (gateway stub)
-          const payment: PaymentDto = {
-            invoiceId: createdInvoice.invoiceId,
-            memberId: this.currentMemberId,
-            amount: this.breakdown!.finalAmount,
-            paymentMethod: this.selectedPaymentMethod,
-          };
-
-          this.frontdeskApi.processPayment(payment).subscribe({
-            next: (result) => {
-              this.orderPlaced = true;
-              this.successMessage = `Payment successful! Receipt: ${result.transactionId || result.gatewayReference || 'Generated'}`;
-              this.isProcessing = false;
-            },
-            error: (err) => {
-              this.isProcessing = false;
-              this.errorMessage = `Payment failed: ${err.error?.message || 'Unknown error'}`;
-            },
-          });
+          this.isProcessing = false;
+          this.showPaymentGateway = true;
+          this.successMessage = `Invoice ${createdInvoice.invoiceNumber || createdInvoice.invoiceId} generated.`;
+          // We'll use the createdInvoice ID in the next step
+          this.createdInvoiceId = createdInvoice.invoiceId;
         }
       },
       error: (err) => {
@@ -164,5 +174,47 @@ export class CheckoutComponent implements OnInit {
         this.errorMessage = `Invoice creation failed: ${err.error?.message || 'Unknown error'}`;
       },
     });
+  }
+
+  navigateToDashboard(): void {
+    this.router.navigate(['/member/dashboard']);
+  }
+
+  private createdInvoiceId: number | null = null;
+
+  completePayment(): void {
+    if (!this.createdInvoiceId || !this.breakdown) return;
+    
+    this.isProcessing = true;
+    const payment: PaymentDto = {
+      invoiceId: this.createdInvoiceId,
+      memberId: this.currentMemberId,
+      amountPaid: this.breakdown.finalAmount,
+      paymentMethod: this.selectedPaymentMethod,
+    };
+
+    this.frontdeskApi.processPayment(payment).subscribe({
+      next: (result) => {
+        this.isSuccess = true;
+        this.orderPlaced = true;
+        this.showPaymentGateway = false;
+        this.successMessage = `Payment successful! Transaction: ${result.transactionId || 'TXN-SUCCESS'}`;
+        this.isProcessing = false;
+        
+        // Auto redirect after 3 seconds
+        setTimeout(() => {
+          this.router.navigate(['/member/dashboard']);
+        }, 3000);
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.errorMessage = `Payment failed: ${err.error?.message || 'Transaction Declined'}`;
+      },
+    });
+  }
+
+  cancelPayment(): void {
+    this.showPaymentGateway = false;
+    this.errorMessage = 'Payment cancelled. Your invoice is still pending.';
   }
 }

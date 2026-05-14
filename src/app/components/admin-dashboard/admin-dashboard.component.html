@@ -3,35 +3,38 @@
 >
   <!-- HEADER -->
   <div class="flex items-center justify-between">
-    <h1 class="font-bold text-[24px]">Admin Dashboard</h1>
+    <div>
+       <h1 class="font-bold text-[28px] tracking-tight mb-1">Admin Dashboard</h1>
+       <p class="text-[14px] text-muted">Centralized control for systems, branches, and logs.</p>
+    </div>
     <div
-      class="flex items-center gap-2 text-[13px] text-[#475569] font-medium bg-white px-3 py-1.5 rounded-full border border-[#E8ECF4] shadow-sm"
+      class="flex items-center gap-3 text-[13px] text-[#475569] font-semibold bg-white px-4 py-2 rounded-lg border border-[#E8ECF4] shadow-sm"
     >
-      <div class="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse"></div>
+      <div class="w-2.5 h-2.5 rounded-full bg-green animate-pulse"></div>
       All Systems Operational
     </div>
   </div>
 
   <!-- KPI TILES (6) -->
-  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-5">
     <!-- Total Members -->
     <div
-      class="bg-white rounded-[12px] p-4 border border-[#E8ECF4] shadow-sm flex flex-col justify-between"
+      class="bg-white rounded-xl p-5 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:shadow-md transition-all"
     >
-      <div class="flex justify-between items-start mb-2">
+      <div class="flex justify-between items-start mb-3">
         <div
-          class="w-8 h-8 rounded-full bg-[#EFF5FF] flex items-center justify-center text-[#2563EB]"
+          class="w-10 h-10 rounded-lg bg-blue/10 flex items-center justify-center text-blue"
         >
-          <i class="text-lg">👥</i>
+          <span class="text-xl">👥</span>
         </div>
       </div>
       <div>
         <div
-          class="text-[12px] font-bold text-[#475569] uppercase tracking-[0.05em] mb-0.5"
+          class="text-[12px] font-bold text-muted uppercase tracking-widest mb-1"
         >
           Total Members
         </div>
-        <div class="font-bold text-[24px] leading-tight">
+        <div class="font-bold text-[32px] leading-none">
           {{ totalMembers }}
         </div>
       </div>
@@ -39,26 +42,26 @@
 
     <!-- Active Memberships -->
     <div
-      class="bg-white rounded-[12px] p-4 border border-[#E8ECF4] shadow-sm flex flex-col justify-between"
+      class="bg-white rounded-xl p-5 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:shadow-md transition-all"
     >
-      <div class="flex justify-between items-start mb-2">
+      <div class="flex justify-between items-start mb-3">
         <div
-          class="w-8 h-8 rounded-full bg-[#F0FDF4] flex items-center justify-center text-[#16A34A]"
+          class="w-10 h-10 rounded-lg bg-green/10 flex items-center justify-center text-green"
         >
-          <i class="text-lg">⚡</i>
+          <span class="text-xl">⚡</span>
         </div>
       </div>
       <div>
         <div
-          class="text-[12px] font-bold text-[#475569] uppercase tracking-[0.05em] mb-0.5"
+          class="text-[12px] font-bold text-muted uppercase tracking-widest mb-1"
         >
           Active Plans
         </div>
         <div
-          class="font-bold text-[24px] text-[#16A34A] leading-tight flex items-baseline gap-2"
+          class="font-bold text-[32px] text-green leading-none flex items-baseline gap-2"
         >
           {{ activePlansCount }}
-          <span class="text-[11px] font-bold text-[#94A3B8]">{{
+          <span class="text-[12px] font-bold text-muted tracking-normal">{{
             totalPlansCount
               ? Math.round((activePlansCount / totalPlansCount) * 100) +
                 "% of total"
@@ -70,52 +73,52 @@
 
     <!-- Revenue MTD -->
     <div
-      class="bg-white rounded-[12px] p-4 border border-[#E8ECF4] shadow-sm flex flex-col justify-between"
+      class="bg-white rounded-xl p-5 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:shadow-md transition-all"
     >
-      <div class="flex justify-between items-start mb-2">
+      <div class="flex justify-between items-start mb-3">
         <div
-          class="w-8 h-8 rounded-full bg-[#EFF5FF] flex items-center justify-center text-[#2563EB]"
+          class="w-10 h-10 rounded-lg bg-pink/10 flex items-center justify-center text-pink"
         >
-          <i class="text-lg">₹</i>
+          <span class="text-xl">₹</span>
         </div>
       </div>
       <div>
         <div
-          class="text-[12px] font-bold text-[#475569] uppercase tracking-[0.05em] mb-0.5"
+          class="text-[12px] font-bold text-muted uppercase tracking-widest mb-1"
         >
           Revenue MTD
         </div>
         <div
-          class="font-bold text-[24px] leading-tight flex items-baseline gap-2"
+          class="font-bold text-[32px] leading-none flex items-baseline gap-2"
         >
-          ₹12.4L
-          <span class="text-[11px] font-bold text-[#16A34A]">↗ +12%</span>
+          {{ formatCurrency(revenueMTD) }}
+          <span class="text-[12px] font-bold text-green">↗ +12%</span>
         </div>
       </div>
     </div>
 
     <!-- Branches -->
     <div
-      class="bg-white rounded-[12px] p-4 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:border-[#2563EB]/50 transition-colors cursor-pointer group"
+      class="bg-white rounded-xl p-5 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:border-blue transition-all cursor-pointer group"
     >
-      <div class="flex justify-between items-start mb-2">
+      <div class="flex justify-between items-start mb-3">
         <div
-          class="w-8 h-8 rounded-full bg-[#F8F9FC] flex items-center justify-center text-[#475569] group-hover:bg-[#EFF5FF] group-hover:text-[#2563EB] transition-colors"
+          class="w-10 h-10 rounded-lg bg-yellow/10 flex items-center justify-center text-yellow group-hover:bg-yellow transition-colors"
         >
-          <i class="text-lg">📍</i>
+          <span class="text-xl">📍</span>
         </div>
         <span
-          class="text-[#94A3B8] group-hover:text-[#2563EB] opacity-0 group-hover:opacity-100 transition-all"
+          class="text-muted group-hover:text-blue opacity-0 group-hover:opacity-100 transition-all"
           >→</span
         >
       </div>
       <div>
         <div
-          class="text-[12px] font-bold text-[#475569] uppercase tracking-[0.05em] mb-0.5 group-hover:text-[#2563EB] transition-colors"
+          class="text-[12px] font-bold text-muted uppercase tracking-widest mb-1 group-hover:text-blue transition-colors"
         >
           Branches
         </div>
-        <div class="font-bold text-[24px] leading-tight">
+        <div class="font-bold text-[32px] leading-none">
           {{ branches.length }}
         </div>
       </div>
@@ -123,53 +126,48 @@
 
     <!-- Staff Accounts -->
     <div
-      class="bg-white rounded-[12px] p-4 border border-[#E8ECF4] shadow-sm flex flex-col justify-between"
+      class="bg-white rounded-xl p-5 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:shadow-md transition-all"
     >
-      <div class="flex justify-between items-start mb-2">
+      <div class="flex justify-between items-start mb-3">
         <div
-          class="w-8 h-8 rounded-full bg-[#F8F9FC] flex items-center justify-center text-[#475569]"
+          class="w-10 h-10 rounded-lg bg-purple/10 flex items-center justify-center text-purple"
         >
-          <i class="text-lg">🛡️</i>
+          <span class="text-xl">🛡️</span>
         </div>
         <div
-          class="px-2 py-0.5 rounded-[4px] bg-[#FFFBEB] text-[#D97706] text-[10px] font-bold border border-[#D97706]/20"
+          class="px-2 py-0.5 rounded bg-yellow text-black text-[10px] font-bold border border-black/10"
         >
           {{ lockedStaffCount }} locked
         </div>
       </div>
       <div>
         <div
-          class="text-[12px] font-bold text-[#475569] uppercase tracking-[0.05em] mb-0.5"
+          class="text-[12px] font-bold text-muted uppercase tracking-widest mb-1"
         >
           Staff Accounts
         </div>
-        <div class="font-bold text-[24px] leading-tight">{{ staffCount }}</div>
+        <div class="font-bold text-[32px] leading-none">{{ staffCount }}</div>
       </div>
     </div>
 
     <!-- Pending Audit Items -->
     <div
-      class="bg-[#FFFBEB] rounded-[12px] p-4 border border-[#D97706]/20 shadow-sm flex flex-col justify-between"
+      class="bg-yellow rounded-xl p-5 border border-black shadow-hard flex flex-col justify-between hover:shadow-hover transition-all"
     >
-      <div class="flex justify-between items-start mb-2">
+      <div class="flex justify-between items-start mb-3">
         <div
-          class="w-8 h-8 rounded-full bg-white flex items-center justify-center text-[#D97706] shadow-sm"
+          class="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-black shadow-sm border border-black"
         >
-          <i class="text-lg">⚠️</i>
-        </div>
-        <div
-          class="px-2 py-0.5 rounded-[4px] bg-[#FFFBEB] text-[#D97706] text-[10px] font-bold border border-[#D97706]/20"
-        >
-          {{ lockedStaffCount }} locked
+          <span class="text-xl">⚠️</span>
         </div>
       </div>
       <div>
         <div
-          class="text-[12px] font-bold text-[#D97706] uppercase tracking-[0.05em] mb-0.5"
+          class="text-[12px] font-bold text-black uppercase tracking-widest mb-1"
         >
           Pending Audits
         </div>
-        <div class="font-bold text-[24px] text-[#D97706] leading-tight">
+        <div class="font-bold text-[32px] text-black leading-none">
           {{ auditLogs.length }}
         </div>
       </div>
@@ -177,41 +175,41 @@
   </div>
 
   <!-- THREE-COLUMN MIDDLE ROW -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- LEFT: System Health / Feature Flags -->
     <div
-      class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm flex flex-col h-[480px]"
+      class="bg-white border border-[#E8ECF4] rounded-xl shadow-sm flex flex-col h-[520px]"
     >
       <div
-        class="px-5 py-4 border-b border-[#E8ECF4] flex items-center justify-between bg-[#F8F9FC]/50 rounded-t-[12px]"
+        class="px-6 py-5 border-b border-[#E8ECF4] flex items-center justify-between bg-gray-50 rounded-t-xl"
       >
-        <h2 class="font-bold text-[15px] flex items-center gap-2">
+        <h2 class="font-bold text-[16px] tracking-tight">
           Feature Flags
         </h2>
         <div
-          class="flex items-center gap-1.5 text-[11px] font-bold text-[#16A34A]"
+          class="flex items-center gap-1.5 text-[12px] font-bold text-green"
         >
-          <i class="text-sm">✓</i> Healthy
+          <span class="w-2 h-2 rounded-full bg-green"></span> Healthy
         </div>
       </div>
-      <div class="flex-1 overflow-y-auto p-1 custom-scrollbar">
+      <div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
         <div
           *ngFor="let flag of flags"
-          class="flex items-center justify-between p-4 border-b border-[#E8ECF4] last:border-b-0 hover:bg-[#F8F9FC] transition-colors rounded-[8px]"
+          class="flex items-center justify-between p-4 border-b border-[#E8ECF4] last:border-b-0 hover:bg-gray-50 transition-colors rounded-lg"
         >
           <div>
-            <div class="font-medium text-[14px] text-[#0F172A] mb-0.5">
+            <div class="font-bold text-[15px] text-[#0F172A] mb-0.5">
               {{ flag.name }}
             </div>
-            <div class="text-[11px] text-[#94A3B8]">
-              Last modified by {{ flag.by }} · {{ flag.lastModified }}
+            <div class="text-[11px] text-muted">
+              Modified by {{ flag.by }} · {{ flag.lastModified }}
             </div>
           </div>
           <div class="flex items-center gap-3">
             <span
               [class]="
-                'text-[10px] font-bold tracking-wide w-6 text-right ' +
-                (flag.enabled ? 'text-[#16A34A]' : 'text-[#94A3B8]')
+                'text-[10px] font-bold tracking-widest w-8 text-right ' +
+                (flag.enabled ? 'text-green' : 'text-muted')
               "
             >
               {{ flag.enabled ? "ON" : "OFF" }}
@@ -219,13 +217,13 @@
             <button
               (click)="toggleFlag(flag.id)"
               [class]="
-                'w-9 h-5 rounded-full relative transition-colors ' +
-                (flag.enabled ? 'bg-[#2563EB]' : 'bg-[#CBD5E1]')
+                'w-10 h-6 rounded-full relative transition-colors border border-black/10 ' +
+                (flag.enabled ? 'bg-blue' : 'bg-gray-200')
               "
             >
               <div
                 [class]="
-                  'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
+                  'absolute top-0.5 left-0.5 w-4.5 h-4.5 rounded-full bg-white transition-transform shadow-sm ' +
                   (flag.enabled ? 'translate-x-4' : 'translate-x-0')
                 "
               ></div>
@@ -237,62 +235,43 @@
 
     <!-- CENTER: Recent Audit Log -->
     <div
-      class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm flex flex-col h-[480px]"
+      class="bg-white border border-[#E8ECF4] rounded-xl shadow-sm flex flex-col h-[520px]"
     >
       <div
-        class="px-5 py-4 border-b border-[#E8ECF4] flex items-center justify-between bg-[#F8F9FC]/50 rounded-t-[12px]"
+        class="px-6 py-5 border-b border-[#E8ECF4] flex flex-col gap-4 bg-gray-50 rounded-t-xl"
       >
-        <h2 class="font-bold text-[15px]">Recent Audit Log</h2>
-        <button
-          class="text-[12px] font-bold text-[#2563EB] hover:text-[#1D4ED8] flex items-center gap-1"
-        >
-          View All →
-        </button>
+        <div class="flex items-center justify-between">
+           <h2 class="font-bold text-[16px] tracking-tight">Audit Log</h2>
+           <button class="text-[12px] font-bold text-blue hover:underline">View All →</button>
+        </div>
+        <div class="flex gap-2">
+            <button (click)="setFilter('ALL')" [class.bg-yellow]="selectedFilter === 'ALL'" class="px-4 h-9 rounded-lg text-[12px] font-bold border border-black shadow-sm transition-all" [class.bg-white]="selectedFilter !== 'ALL'">All</button>
+            <button (click)="setFilter('SECURITY')" [class.bg-yellow]="selectedFilter === 'SECURITY'" class="px-4 h-9 rounded-lg text-[12px] font-bold border border-[#E8ECF4] text-muted hover:bg-white hover:border-black transition-all" [class.bg-white]="selectedFilter !== 'SECURITY'">Security</button>
+            <button (click)="setFilter('BILLING')" [class.bg-yellow]="selectedFilter === 'BILLING'" class="px-4 h-9 rounded-lg text-[12px] font-bold border border-[#E8ECF4] text-muted hover:bg-white hover:border-black transition-all" [class.bg-white]="selectedFilter !== 'BILLING'">Billing</button>
+        </div>
       </div>
-      <div class="flex-1 p-2 overflow-y-auto">
+      <div class="flex-1 overflow-y-auto p-2">
         <table class="w-full text-left border-collapse">
-          <thead>
-            <tr>
-              <th
-                class="px-3 py-2 text-[11px] uppercase text-[#94A3B8] font-bold w-[30%]"
-              >
-                User
-              </th>
-              <th
-                class="px-3 py-2 text-[11px] uppercase text-[#94A3B8] font-bold w-[30%]"
-              >
-                Entity
-              </th>
-              <th
-                class="px-3 py-2 text-[11px] uppercase text-[#94A3B8] font-bold text-right"
-              >
-                Action
-              </th>
-            </tr>
-          </thead>
           <tbody>
             <tr
-              *ngFor="let log of auditLogs; let i = index"
+              *ngFor="let log of filteredLogs; let i = index"
               [class]="
-                'border-b border-[#E8ECF4]/50 last:border-0 ' +
-                (i === auditLogs.length - 1 ? 'opacity-60' : '')
+                'border-b border-[#E8ECF4]/50 last:border-0 hover:bg-gray-50 transition-colors rounded-lg'
               "
             >
-              <td class="px-3 py-4">
-                <div class="text-[13px] font-bold text-[#0F172A]">
+              <td class="px-4 py-4">
+                <div class="text-[14px] font-bold text-[#0F172A]">
                   {{ log.user }}
                 </div>
-                <div class="text-[11px] text-[#94A3B8]">{{ log.time }}</div>
+                <div class="text-[11px] text-muted">{{ log.time }}</div>
               </td>
-              <td class="px-3 py-4 text-[13px] text-[#475569] font-medium">
+              <td class="px-4 py-4 text-[13px] text-muted font-medium">
                 {{ log.entity }}
               </td>
-              <td class="px-3 py-4 text-right">
+              <td class="px-4 py-4 text-right">
                 <span
-                  class="inline-flex px-2 py-1 rounded-[4px] text-[10px] font-bold tracking-wide"
-                  [style.backgroundColor]="log.color + '15'"
+                  class="inline-flex px-3 py-1 rounded bg-white border border-black/10 text-[10px] font-bold tracking-widest shadow-sm"
                   [style.color]="log.color"
-                  [style.border]="'1px solid ' + log.color + '30'"
                 >
                   {{ log.action }}
                 </span>
@@ -305,182 +284,81 @@
 
     <!-- RIGHT: Branch Overview -->
     <div
-      class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm flex flex-col h-[480px]"
+      class="bg-white border border-[#E8ECF4] rounded-xl shadow-sm flex flex-col h-[520px]"
     >
       <div
-        class="px-5 py-4 border-b border-[#E8ECF4] flex items-center justify-between bg-[#F8F9FC]/50 rounded-t-[12px]"
+        class="px-6 py-5 border-b border-[#E8ECF4] flex items-center justify-between bg-gray-50 rounded-t-xl"
       >
-        <h2 class="font-bold text-[15px]">Branch Overview</h2>
+        <h2 class="font-bold text-[16px] tracking-tight">Branch Overview</h2>
         <span
-          class="bg-[#EFF5FF] text-[#2563EB] text-[11px] font-bold px-2 py-0.5 rounded-full"
+          class="bg-blue/10 text-blue text-[11px] font-bold px-2 py-0.5 rounded-lg border border-blue/20"
           >{{ branches.length }} Total</span
         >
       </div>
-      <div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
+      <div class="flex-1 overflow-y-auto p-3 custom-scrollbar">
         <div
           *ngFor="let branch of branches"
-          class="p-3 border-b border-[#E8ECF4] last:border-0 hover:bg-[#F8F9FC] transition-colors rounded-[8px]"
+          class="p-4 mb-3 border border-[#E8ECF4] hover:border-blue hover:shadow-sm transition-all rounded-xl"
         >
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center justify-between mb-3">
             <div>
-              <div class="font-bold text-[14px] text-[#0F172A]">
+              <div class="font-bold text-[15px] text-[#0F172A]">
                 {{ branch.name }}
               </div>
-              <div class="text-[12px] text-[#94A3B8]">{{ branch.city }}</div>
+              <div class="text-[12px] text-muted">{{ branch.city }}</div>
             </div>
             <div class="flex items-center gap-1.5">
-              <div
-                *ngIf="branch.active"
-                class="w-2 h-2 rounded-full bg-[#16A34A]"
-              ></div>
-              <div
-                *ngIf="!branch.active"
-                class="w-2 h-2 rounded-full bg-[#94A3B8]"
-              ></div>
               <span
-                *ngIf="branch.active"
-                class="text-[11px] font-medium text-[#475569]"
-                >Active</span
+                class="px-2 py-0.5 rounded text-[10px] font-bold tracking-widest"
+                [class]="branch.active ? 'bg-green/10 text-green' : 'bg-gray-100 text-muted'"
               >
-              <span
-                *ngIf="!branch.active"
-                class="text-[11px] font-medium text-[#94A3B8]"
-                >Inactive</span
-              >
+                {{ branch.active ? "ACTIVE" : "INACTIVE" }}
+              </span>
             </div>
           </div>
           <div class="flex gap-2">
             <span
-              class="inline-flex items-center gap-1.5 px-2 py-1 bg-[#EFF5FF] text-[#2563EB] rounded-md text-[11px] font-bold border border-[#2563EB]/20"
+              class="px-2.5 py-1.5 bg-gray-50 text-muted rounded-lg text-[11px] font-bold border border-[#E8ECF4] flex-1 text-center"
             >
-              👥 {{ formatNumber(branch.members) }} members
+              👥 {{ formatNumber(branch.members) }}
             </span>
             <span
-              class="inline-flex items-center gap-1.5 px-2 py-1 bg-[#F0FDFA] text-[#0D9488] rounded-md text-[11px] font-bold border border-[#0D9488]/20"
+              class="px-2.5 py-1.5 bg-gray-50 text-muted rounded-lg text-[11px] font-bold border border-[#E8ECF4] flex-1 text-center"
             >
-              ⚡ {{ branch.classes }} classes today
+              ⚡ {{ branch.classes }}
             </span>
           </div>
         </div>
       </div>
-      <div class="p-3 border-t border-[#E8ECF4]">
+      <div class="p-4 border-t border-[#E8ECF4]">
         <button
           (click)="onAddBranch()"
-          class="w-full h-10 border border-[#E8ECF4] bg-white hover:bg-[#F8F9FC] hover:border-[#CBD5E1] text-[#475569] font-bold text-[13px] rounded-[8px] transition-all flex items-center justify-center gap-2 shadow-sm"
+          class="w-full h-12 bg-white hover:bg-yellow text-black font-bold text-[14px] rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm border border-black"
         >
-          ➕ Add Branch
+          <span>➕</span> Add Branch
         </button>
       </div>
     </div>
   </div>
 
-  <!-- BOTTOM: Code Quality Metrics Strip -->
+  <!-- BOTTOM: Quality Strip -->
   <div
-    class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm p-6 w-full"
+    class="bg-white border border-[#E8ECF4] rounded-xl shadow-sm p-8 w-full"
   >
-    <h2
-      class="font-bold text-[14px] text-[#94A3B8] uppercase tracking-widest mb-4"
-    >
-      Code Quality Metrics
-    </h2>
+    <div class="flex items-center justify-between mb-6">
+       <h2 class="font-bold text-[14px] text-muted uppercase tracking-[0.2em]">System Quality Health</h2>
+       <div class="text-[12px] font-bold text-green">SCAN: CLEAN</div>
+    </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-      <div class="flex items-center gap-3">
-        <div
-          class="w-12 h-12 rounded-[8px] bg-[#F0FDF4] border border-[#16A34A]/20 flex items-center justify-center font-bold text-[20px] text-[#16A34A]"
-        >
-          A
-        </div>
-        <div>
-          <div
-            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
-          >
-            Security
-          </div>
-          <div class="text-[13px] font-bold text-[#0F172A]">Passing</div>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <div
-          class="w-12 h-12 rounded-[8px] bg-[#F0FDF4] border border-[#16A34A]/20 flex items-center justify-center font-bold text-[20px] text-[#16A34A]"
-        >
-          A
-        </div>
-        <div>
-          <div
-            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
-          >
-            Reliability
-          </div>
-          <div class="text-[13px] font-bold text-[#0F172A]">Passing</div>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <div
-          class="w-12 h-12 rounded-[8px] bg-[#F8F9FC] border border-[#E8ECF4] flex items-center justify-center font-bold text-[20px] text-[#475569]"
-        >
-          3
-        </div>
-        <div>
-          <div
-            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
-          >
-            Issues
-          </div>
-          <div class="text-[13px] font-bold text-[#0F172A]">Low severity</div>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <div
-          class="w-12 h-12 rounded-[8px] bg-[#F0FDF4] border border-[#16A34A]/20 flex items-center justify-center font-bold text-[18px] text-[#16A34A]"
-        >
-          84<span class="text-[12px]">%</span>
-        </div>
-        <div>
-          <div
-            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
-          >
-            Coverage
-          </div>
-          <div class="text-[13px] font-bold text-[#0F172A]">Adequate</div>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <div
-          class="w-12 h-12 rounded-[8px] bg-[#F0FDF4] border border-[#16A34A]/20 flex items-center justify-center font-bold text-[18px] text-[#16A34A]"
-        >
-          1.2<span class="text-[12px]">%</span>
-        </div>
-        <div>
-          <div
-            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
-          >
-            Duplications
-          </div>
-          <div class="text-[13px] font-bold text-[#0F172A]">
-            &lt; 3.0% threshold
-          </div>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <div
-          class="w-12 h-12 rounded-[8px] bg-[#F0FDF4] border border-[#16A34A]/20 flex items-center justify-center font-bold text-[20px] text-[#16A34A]"
-        >
-          A
-        </div>
-        <div>
-          <div
-            class="text-[11px] font-medium text-[#94A3B8] uppercase tracking-wider"
-          >
-            Security Hotspots
-          </div>
-          <div class="text-[13px] font-bold text-[#0F172A]">100% Reviewed</div>
-        </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+      <div *ngFor="let metric of ['Security', 'Reliability', 'Issues', 'Coverage', 'Duplications', 'Hotspots']" class="flex flex-col gap-3">
+         <div class="w-14 h-14 rounded-xl bg-gray-50 border border-[#E8ECF4] flex items-center justify-center font-bold text-xl text-[#0F172A] shadow-sm">
+            {{ metric === 'Issues' ? '3' : metric === 'Coverage' ? '84%' : metric === 'Duplications' ? '1.2%' : 'A' }}
+         </div>
+         <div>
+            <div class="text-[11px] font-bold text-muted uppercase tracking-widest mb-1">{{ metric }}</div>
+            <div class="text-[13px] font-bold text-[#0F172A]">PASSING</div>
+         </div>
       </div>
     </div>
   </div>
