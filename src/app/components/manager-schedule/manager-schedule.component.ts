@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ManagerApiService } from '../../services/manager-api.service';
+import { FrontdeskApiService } from '../../services/frontdesk-api.service';
 
 interface FitnessClass {
   classId?: number;
@@ -100,7 +101,12 @@ export class ManagerScheduleComponent implements OnInit {
   hasConflict = false;
   conflictMessage = '';
 
-  constructor(private managerApi: ManagerApiService) {}
+  members: any[] = [];
+
+  constructor(
+    private managerApi: ManagerApiService,
+    private frontdeskApi: FrontdeskApiService
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
@@ -112,8 +118,8 @@ export class ManagerScheduleComponent implements OnInit {
     this.managerApi.getClasses().subscribe({
       next: (data) => {
         this.classes = data;
-        this.applyFilters();
         this.loadTrainersAndRooms();
+        this.loadMembers();
       },
       error: (err) => {
         this.errorMessage = 'Failed to load classes.';
@@ -122,11 +128,57 @@ export class ManagerScheduleComponent implements OnInit {
     });
   }
 
+  loadMembers(): void {
+    this.frontdeskApi.getMembers().subscribe({
+      next: (data) => {
+        this.members = data;
+        this.mapMemberNamesToBookings();
+      },
+      error: () => {}
+    });
+  }
+
   loadTrainersAndRooms(): void {
-    this.managerApi.getTrainers().subscribe(data => this.trainers = data);
-    this.managerApi.getRooms().subscribe(data => {
-      this.rooms = data;
-      this.isLoading = false;
+    this.managerApi.getTrainers().subscribe({
+      next: (trainersData) => {
+        this.trainers = trainersData;
+        this.managerApi.getRooms().subscribe({
+          next: (roomsData) => {
+            this.rooms = roomsData;
+            this.mapNamesToClasses();
+            this.isLoading = false;
+          },
+          error: () => {
+            this.isLoading = false;
+          }
+        });
+      },
+      error: () => {
+        this.isLoading = false;
+      }
+    });
+  }
+
+  mapNamesToClasses(): void {
+    const trainerMap = new Map<number, string>();
+    this.trainers.forEach(t => trainerMap.set(t.trainerId, t.trainerName));
+
+    const roomMap = new Map<number, string>();
+    this.rooms.forEach(r => roomMap.set(r.facilityId, r.facilityName));
+
+    this.classes.forEach(c => {
+      c.trainerName = trainerMap.get(c.trainerId) || `Trainer #${c.trainerId}`;
+      c.roomName = roomMap.get(c.roomId) || `Room #${c.roomId}`;
+    });
+    this.applyFilters();
+  }
+
+  mapMemberNamesToBookings(): void {
+    if (!this.enrolledBookings || this.enrolledBookings.length === 0 || !this.members || this.members.length === 0) return;
+    const memberMap = new Map<number, string>();
+    this.members.forEach(m => memberMap.set(m.memberId, m.fullName || m.username || `Member #${m.memberId}`));
+    this.enrolledBookings.forEach(b => {
+      b.memberName = memberMap.get(b.memberId) || `Member #${b.memberId}`;
     });
   }
 
@@ -272,6 +324,7 @@ export class ManagerScheduleComponent implements OnInit {
       this.managerApi.getBookingsByClass(cls.classId).subscribe({
         next: (data) => {
           this.enrolledBookings = data.filter(b => b.bookingStatus === 'CONFIRMED' || b.bookingStatus === 'WAITLISTED');
+          this.mapMemberNamesToBookings();
         },
         error: (err) => {
           console.error('Failed to load class bookings', err);

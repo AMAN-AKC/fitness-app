@@ -758,3 +758,11 @@
 .gap-2 {
   gap: 8px;
 }
+
+/* Ensure select option dropdown items are highly visible and do not merge with light/dark backgrounds */
+.brutal-input option,
+.brutal-select-filter option,
+select option {
+  background-color: #ffffff !important;
+  color: #111111 !important;
+}

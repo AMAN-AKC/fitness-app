@@ -554,4 +554,28 @@ export class FrontdeskApiService {
     }
     return this.http.get<PriceBreakdownDto>(url);
   }
+
+  getTrainerByUserId(userId: number): Observable<TrainerDto> {
+    return this.http.get<TrainerDto>(`${this.baseUrl}/trainers/user/${userId}`);
+  }
+
+  getClassesByTrainer(trainerId: number): Observable<ClassesDto[]> {
+    return this.http.get<ClassesDto[]>(`${this.baseUrl}/classes/trainer/${trainerId}`);
+  }
+
+  getPtSessionsByTrainer(trainerId: number): Observable<PtSessionDto[]> {
+    return this.http.get<PtSessionDto[]>(`${this.baseUrl}/pt-sessions/trainer/${trainerId}`);
+  }
+
+  updatePtSessionStatus(id: number, status: string, notes?: string): Observable<PtSessionDto> {
+    let url = `${this.baseUrl}/pt-sessions/${id}/status?status=${status}`;
+    if (notes) {
+      url += `&notes=${encodeURIComponent(notes)}`;
+    }
+    return this.http.patch<PtSessionDto>(url, {});
+  }
+
+  getRooms(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/facilities`);
+  }
 }

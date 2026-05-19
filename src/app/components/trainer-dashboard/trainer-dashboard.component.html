@@ -33,9 +33,8 @@
         <div class="kpi-number">{{ ptSessionsToday }}</div>
         <!-- Time chips -->
         <div class="time-chips">
-          <span class="time-chip chip-blue">10:00 AM</span>
-          <span class="time-chip">2:00 PM</span>
-          <span class="time-chip">5:00 PM</span>
+          <span *ngFor="let time of sessionTimes; let first = first" class="time-chip" [class.chip-blue]="first">{{ time }}</span>
+          <span *ngIf="sessionTimes.length === 0" class="time-chip">NONE</span>
         </div>
       </div>
     </div>
@@ -57,45 +56,28 @@
       <div class="card-header-row">
         <h2 class="card-heading">MY CLASSES THIS WEEK</h2>
         <div class="week-nav">
-          <button class="nav-arrow-btn">←</button>
-          <span class="week-title-text">WEEK OF APR 22</span>
-          <button class="nav-arrow-btn">→</button>
+          <button class="nav-arrow-btn" (click)="$event.preventDefault()">←</button>
+          <span class="week-title-text">{{ currentWeekRangeLabel }}</span>
+          <button class="nav-arrow-btn" (click)="$event.preventDefault()">→</button>
         </div>
       </div>
 
       <!-- 7-column CSS Grid calendar -->
       <div class="calendar-grid-container">
-        <div *ngFor="let day of ['MON 22', 'TUE 23', 'WED 24', 'THU 25', 'FRI 26', 'SAT 27', 'SUN 28']; let i = index" class="calendar-col">
-          <div class="col-day-header">{{ day }}</div>
+        <div *ngFor="let day of currentWeekDays; let i = index" class="calendar-col">
+          <div class="col-day-header">{{ day.label }}</div>
           
           <div class="col-body-slots">
-            <!-- Thursday Classes -->
-            <ng-container *ngIf="i === 3">
-              <div class="class-block block-yoga" (click)="toggleClassExpanded(1)">
-                <span class="block-title">YOGA</span>
-                <span class="block-time">7:00 AM</span>
-              </div>
-            </ng-container>
-
-            <!-- Friday Classes -->
-            <ng-container *ngIf="i === 4">
-              <div class="class-block block-strength" (click)="toggleClassExpanded(2)">
-                <span class="block-title">STRENGTH</span>
-                <span class="block-time">2:00 PM</span>
-              </div>
-              <div class="class-block block-yoga block-substitute" (click)="toggleClassExpanded(1)">
-                <span class="block-title">YOGA (SUB)</span>
-                <span class="block-time">6:00 PM</span>
-              </div>
-            </ng-container>
-
-            <!-- Saturday Classes -->
-            <ng-container *ngIf="i === 5">
-              <div class="class-block block-cardio" (click)="toggleClassExpanded(3)">
-                <span class="block-title">CARDIO</span>
-                <span class="block-time">10:00 AM</span>
-              </div>
-            </ng-container>
+            <div *ngFor="let cls of getClassesForDay(day.name, day.dateStr)" 
+                 class="class-block" 
+                 [ngClass]="getCategoryClass(cls.className)"
+                 (click)="toggleClassExpanded(cls)">
+              <span class="block-title">{{ cls.className | uppercase }}</span>
+              <span class="block-time">{{ cls.classTime.substring(0, 5) }}</span>
+            </div>
+            <div *ngIf="getClassesForDay(day.name, day.dateStr).length === 0" style="font-size: 9px; color: var(--muted); text-align: center; margin-top: 10px; text-transform: uppercase;">
+              FREE
+            </div>
           </div>
         </div>
       </div>
@@ -103,21 +85,21 @@
       <!-- Expanded Details Panel (below calendar, not modal) -->
       <div class="details-pane-container" *ngIf="expandedClass">
         <h3 class="pane-title">
-          {{ expandedClass === 1 ? 'YOGA BASICS' : expandedClass === 2 ? 'STRENGTH CORE' : 'CARDIO BLAST' }}
+          {{ expandedClass.className | uppercase }}
         </h3>
         <div class="pane-meta">
           <span class="meta-label">ROOM:</span>
-          <span class="meta-val font-mono">{{ expandedClass === 1 ? 'ROOM A' : expandedClass === 2 ? 'ROOM B' : 'ROOM C' }}</span>
+          <span class="meta-val font-mono">{{ expandedClass.roomName }}</span>
           <span class="meta-divider">|</span>
           <span class="meta-label">ENROLLED:</span>
-          <span class="meta-val font-mono">18/20</span>
+          <span class="meta-val font-mono">{{ expandedClass.enrolledCount !== undefined ? expandedClass.enrolledCount : '...' }}/{{ expandedClass.capacity }}</span>
           <span class="meta-divider">|</span>
           <a href="#" class="materials-link" (click)="$event.preventDefault()">MATERIALS LINK →</a>
         </div>
       </div>
 
       <div class="card-footer-row">
-        <button class="view-schedule-btn">VIEW FULL SCHEDULE →</button>
+        <button class="view-schedule-btn" (click)="$event.preventDefault()">VIEW FULL SCHEDULE →</button>
       </div>
     </section>
 
@@ -155,6 +137,10 @@
             </ng-template>
           </div>
         </div>
+        
+        <div *ngIf="ptRequests.length === 0" style="padding: 40px; text-align: center; font-family: Inter, Arial, sans-serif; text-transform: uppercase; font-weight: bold; color: var(--muted);">
+          NO PENDING PT REQUESTS.
+        </div>
       </div>
     </section>
   </div>
@@ -163,7 +149,7 @@
   <section class="trainer-card completed-sessions-card">
     <div class="card-header-row">
       <h2 class="card-heading">COMPLETED SESSIONS</h2>
-      <button class="btn-secondary btn-sm">EXPORT THIS MONTH ↓</button>
+      <button class="btn-secondary btn-sm" (click)="$event.preventDefault()">EXPORT THIS MONTH ↓</button>
     </div>
 
     <div class="table-responsive">
@@ -209,13 +195,19 @@
                     class="editor-textarea"
                   ></textarea>
                   <div class="editor-actions">
-                    <button class="btn-primary btn-sm" (click)="s.notes = notesTextarea.value; saveNotes(s.id)">SAVE</button>
+                    <button class="btn-primary btn-sm" (click)="saveNotes(s.id, notesTextarea.value)">SAVE</button>
                     <button class="btn-secondary btn-sm" (click)="cancelNotes()">CANCEL</button>
                   </div>
                 </div>
               </td>
             </tr>
           </ng-container>
+          
+          <tr *ngIf="completedSessions.length === 0">
+            <td colspan="6" style="padding: 30px; text-align: center; text-transform: uppercase; font-weight: bold; color: var(--muted);">
+              NO COMPLETED SESSIONS RECORDED.
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>

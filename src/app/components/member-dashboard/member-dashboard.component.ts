@@ -342,6 +342,29 @@ export class MemberDashboardComponent implements OnInit {
       }));
   }
 
+  getClassDateInCurrentWeek(weekdays: string): Date {
+    const daysMap: { [key: string]: number } = {
+      'mon': 1, 'tue': 2, 'wed': 3, 'thu': 4, 'fri': 5, 'sat': 6, 'sun': 0
+    };
+    
+    const parts = weekdays.split(',');
+    const firstDayStr = parts[0].toLowerCase().trim().slice(0, 3);
+    const targetDayOfWeek = daysMap[firstDayStr] !== undefined ? daysMap[firstDayStr] : 1;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentDayOfWeek = today.getDay();
+    
+    let diff = targetDayOfWeek - currentDayOfWeek;
+    if (diff < 0) {
+      diff += 7;
+    }
+    
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + diff);
+    return targetDate;
+  }
+
   private mapUpcomingClasses(
     bookings: ClassBookingDto[],
     classes: ClassesDto[],
@@ -372,7 +395,12 @@ export class MemberDashboardComponent implements OnInit {
               (item) => Number(item.branchId) === Number(classItem.branchId),
             )
           : null;
-        const scheduledDate = classItem?.startDate || '';
+        
+        const scheduledDate = classItem
+          ? (classItem.status === 'ACTIVE' && classItem.weekdays
+              ? this.getClassDateInCurrentWeek(classItem.weekdays).toISOString().split('T')[0]
+              : classItem.endDate || classItem.startDate || '')
+          : '';
 
         return {
           bookingId: booking.bookingId || 0,

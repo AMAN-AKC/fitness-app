@@ -179,7 +179,7 @@
             <div class="enrolled-avatar font-heading font-black">
               {{ b.memberId }}
             </div>
-            <span class="enrolled-name font-body uppercase">MEMBER #{{ b.memberId }}</span>
+            <span class="enrolled-name font-body uppercase">{{ b.memberName || 'MEMBER #' + b.memberId }}</span>
             <span
               class="brutal-badge font-heading font-bold status-badge"
               [style.background-color]="b.bookingStatus === 'CONFIRMED' ? '#00D26A' : '#7C3AED'"
