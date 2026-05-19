@@ -1,174 +1,483 @@
-<div class="max-w-[1200px] mx-auto pb-10">
-  <div class="mb-8">
-    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Book Your Classes</h1>
-    <p class="text-[#475569] text-[14px]">
-      Reserve spots in our upcoming fitness classes
-    </p>
+<div class="class-booking-container pb-10">
+  <!-- LOADING SPINNER -->
+  <div *ngIf="isLoading && classes.length === 0" class="loading-overlay">
+    <div class="brutal-loader">LOADING CLASSES...</div>
   </div>
 
-  <!-- FILTERS -->
-  <div
-    class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 mb-6 flex gap-4"
-  >
-    <div class="flex-1">
-      <input
-        type="text"
-        [(ngModel)]="searchText"
-        (ngModelChange)="onSearchChange()"
-        placeholder="Search classes or trainer..."
-        class="w-full h-11 px-4 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
-      />
-    </div>
-    <select
-      [(ngModel)]="filterLevel"
-      (ngModelChange)="onLevelChange()"
-      class="h-11 px-4 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
-    >
-      <option *ngFor="let level of levelOptions">{{ level }}</option>
-    </select>
+  <!-- ERROR ALERT -->
+  <div *ngIf="errorMessage" class="brutal-alert brutal-alert-error mb-6">
+    <div class="alert-icon">⚠️</div>
+    <div class="alert-text font-heading font-black uppercase">{{ errorMessage }}</div>
+    <button (click)="errorMessage = ''" class="alert-close">✕</button>
   </div>
 
-  <!-- CLASSES GRID -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    <div
-      *ngFor="let cls of filteredClasses"
-      (click)="selectClass(cls)"
-      class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden hover:shadow-md transition-all cursor-pointer"
-    >
-      <div
-        class="h-32 bg-gradient-to-br from-[#2563EB]/10 to-[#0F172A]/10 flex items-center justify-center text-[56px] border-b border-[#E8ECF4]"
-      >
-        {{ cls.image }}
+  <!-- SUCCESS ALERT -->
+  <div *ngIf="successMessage" class="brutal-alert brutal-alert-success mb-6">
+    <div class="alert-icon">✔</div>
+    <div class="alert-text font-heading font-black uppercase">{{ successMessage }}</div>
+    <button (click)="successMessage = ''" class="alert-close">✕</button>
+  </div>
+
+  <!-- STICKY FILTER BAR -->
+  <header class="filter-bar">
+    <div class="filter-row-top">
+      <!-- Search Input -->
+      <div class="search-wrapper">
+        <input
+          type="text"
+          [(ngModel)]="searchText"
+          (ngModelChange)="filterClasses()"
+          placeholder="SEARCH CLASSES OR TRAINERS..."
+          class="brutal-search-input"
+        />
+        <span class="search-icon">🔍</span>
       </div>
 
-      <div class="p-4">
-        <div class="flex justify-between items-start mb-2">
-          <h3 class="font-bold text-[14px] text-[#0F172A] flex-1">
-            {{ cls.name }}
-          </h3>
-          <span
-            [class]="
-              'text-[11px] font-bold px-2 py-1 rounded-full ' +
-              (cls.level === 'Beginner'
-                ? 'bg-[#F0FDF4] text-[#16A34A]'
-                : cls.level === 'Intermediate'
-                  ? 'bg-[#EFF5FF] text-[#2563EB]'
-                  : 'bg-[#FEF2F2] text-[#DC2626]')
-            "
-          >
-            {{ cls.level }}
-          </span>
-        </div>
-
-        <p class="text-[12px] text-[#475569] mb-3">{{ cls.trainer }}</p>
-
-        <div class="space-y-2 mb-3 text-[12px]">
-          <div class="flex justify-between">
-            <span class="text-[#94A3B8]"
-              >📅 {{ cls.date }} at {{ cls.time }}</span
-            >
-            <span class="text-[#94A3B8]">⏱ {{ cls.duration }} min</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-[#94A3B8]">Seats Available:</span>
-            <span [class]="'font-bold ' + getAvailabilityColor(cls)"
-              >{{ getAvailableSeats(cls) }}/{{ cls.capacity }}</span
-            >
-          </div>
-        </div>
-
-        <div class="h-2 bg-[#F8F9FC] rounded-full overflow-hidden mb-3">
-          <div
-            class="h-full bg-[#2563EB] transition-all"
-            [style.width]="(cls.booked / cls.capacity) * 100 + '%'"
-          ></div>
-        </div>
-
-        <button
-          class="w-full h-10 bg-[#2563EB] text-white font-bold rounded-[8px] text-[13px] hover:bg-[#1D4ED8] transition-colors"
+      <!-- Trainer Dropdown -->
+      <div class="dropdown-wrapper">
+        <select
+          [(ngModel)]="selectedTrainerId"
+          (change)="filterClasses()"
+          class="brutal-select"
         >
-          Reserve ₹{{ cls.price }}
+          <option value="">ALL TRAINERS</option>
+          <option *ngFor="let trainer of trainersList" [value]="trainer.trainerId">
+            {{ trainer.trainerName | uppercase }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Reset Button -->
+      <button (click)="resetFilters()" class="btn-reset">
+        RESET ✕
+      </button>
+    </div>
+
+    <!-- Category Pill Group -->
+    <div class="filter-group">
+      <span class="filter-label">CATEGORY:</span>
+      <div class="pill-group">
+        <button
+          *ngFor="let cat of categoryOptions"
+          (click)="selectedCategory = cat; filterClasses()"
+          [class.active]="selectedCategory === cat"
+          class="category-pill"
+          [style.background-color]="selectedCategory === cat ? '#E7FF3C' : '#FFF'"
+        >
+          {{ cat }}
         </button>
       </div>
     </div>
-  </div>
 
-  <!-- BOOKING DRAWER -->
-  <div *ngIf="bookingDrawerOpen && selectedClass" class="fixed inset-0 z-40">
-    <div
-      class="fixed inset-0 bg-[#0F172A]/20 z-40 backdrop-blur-[1px]"
-      (click)="bookingDrawerOpen = false"
-    ></div>
-    <div
-      class="fixed top-0 right-0 bottom-0 w-[480px] bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right"
-    >
-      <div
-        class="p-6 border-b border-[#E8ECF4] flex justify-between items-center"
-      >
-        <h2 class="font-bold text-[18px] text-[#0F172A]">Confirm Booking</h2>
+    <!-- Day Pills -->
+    <div class="filter-group">
+      <span class="filter-label">WEEKDAY:</span>
+      <div class="pill-group">
         <button
-          (click)="bookingDrawerOpen = false"
-          class="text-[#94A3B8] hover:text-[#0F172A]"
+          *ngFor="let day of dayOptions"
+          (click)="selectedDay = day.value; filterClasses()"
+          [class.active]="selectedDay === day.value"
+          class="day-pill"
+          [style.background-color]="selectedDay === day.value ? '#FF006E' : '#FFF'"
+          [style.color]="selectedDay === day.value ? '#FFF' : '#111'"
         >
-          ✕
+          {{ day.label }}
         </button>
       </div>
+    </div>
 
-      <div class="flex-1 p-6 space-y-6">
+    <!-- Time Pills -->
+    <div class="filter-group">
+      <span class="filter-label">TIME SLOT:</span>
+      <div class="pill-group">
+        <button
+          *ngFor="let t of timeOptions"
+          (click)="selectedTimeSlot = t.value; filterClasses()"
+          [class.active]="selectedTimeSlot === t.value"
+          class="time-pill"
+          [style.background-color]="selectedTimeSlot === t.value ? '#00D9FF' : '#FFF'"
+          [style.color]="selectedTimeSlot === t.value ? '#111' : '#111'"
+        >
+          {{ t.label }}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN AREA -->
+  <main class="classes-main-content">
+    <!-- EMPTY STATE: CALENDAR -->
+    <div *ngIf="filteredClasses.length === 0" class="calendar-empty-state">
+      <div class="status-icon">📅</div>
+      <h2 class="status-title">NO CLASSES SCHEDULED</h2>
+      <p class="status-message">THERE ARE NO ACTIVE CLASSES RUNNING ON SELECTED CALENDAR DATE.</p>
+      <button class="btn-secondary" (click)="resetFilters()">RESET FILTERS</button>
+    </div>
+
+    <!-- Classes Grid -->
+    <div class="classes-grid" *ngIf="filteredClasses.length > 0">
+      <div
+        *ngFor="let cls of filteredClasses"
+        class="class-card"
+        (click)="selectClass(cls)"
+      >
+        <!-- Card Header Image Area -->
         <div
-          class="text-center py-8 bg-gradient-to-br from-[#2563EB]/10 to-[#0F172A]/10 rounded-[12px] text-[64px]"
+          class="card-image-header"
+          [style.background-color]="getCategoryStyles(cls.category).bg"
+        >
+          <span class="card-emoji">{{ cls.image }}</span>
+        </div>
+
+        <!-- Card Body -->
+        <div class="card-body">
+          <!-- Badges -->
+          <div class="badge-row">
+            <!-- Category Badge -->
+            <span
+              class="brutal-badge font-heading"
+              [style.background-color]="getCategoryStyles(cls.category).bg"
+              [style.color]="getCategoryStyles(cls.category).text"
+            >
+              {{ cls.category }}
+            </span>
+            <!-- Status Badge -->
+            <span
+              class="brutal-badge font-heading"
+              [style.background-color]="getClassStatusStyles(getClassStatus(cls)).bg"
+              [style.color]="getClassStatusStyles(getClassStatus(cls)).text"
+            >
+              {{ getClassStatus(cls) }}
+            </span>
+          </div>
+
+          <!-- Title -->
+          <h2 class="class-title font-heading font-black">{{ cls.name | uppercase }}</h2>
+
+          <!-- Detail Rows -->
+          <div class="detail-rows">
+            <div class="detail-row">
+              <span class="detail-icon">🏋️</span>
+              <span class="detail-text font-body uppercase">TRAINER: <strong class="font-bold">{{ cls.trainer }}</strong></span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-icon">📅</span>
+              <span class="detail-text font-body uppercase">{{ formatClassDate(cls.date) }} · {{ cls.time }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-icon">⏱</span>
+              <span class="detail-text font-body uppercase">DURATION: {{ cls.duration }} MIN</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-icon">💳</span>
+              <span class="detail-text font-body uppercase text-green font-bold">PRICE: INCLUDED IN PLAN</span>
+            </div>
+          </div>
+
+          <!-- Capacity Bar -->
+          <div class="capacity-section">
+            <div class="capacity-labels font-heading font-bold">
+              <span>{{ cls.booked }} / {{ cls.capacity }} SPOTS BOOKED</span>
+              <span>{{ getCapacityPercent(cls) }}%</span>
+            </div>
+            <div class="capacity-bar-container">
+              <div
+                class="capacity-bar-fill"
+                [style.width.%]="getCapacityPercent(cls)"
+                [style.background-color]="getCapacityBarColor(cls)"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="card-actions" (click)="$event.stopPropagation()">
+            <!-- Case 1: Already Booked -->
+            <div *ngIf="isUserBooked(cls.id)" class="w-full">
+              <button class="btn-action btn-secondary w-full" style="color: #00D26A; border-color: #00D26A; cursor: default;" disabled>
+                BOOKED ✓
+              </button>
+            </div>
+
+            <!-- Case 2: Already Waitlisted -->
+            <div *ngIf="isUserWaitlisted(cls.id)" class="w-full">
+              <button class="btn-action w-full text-white" [style.background-color]="'#7C3AED'" style="cursor: default;" disabled>
+                WAITLISTED (POS {{ getMemberBooking(cls.id)?.waitlistPosition }})
+              </button>
+            </div>
+
+            <!-- Case 3: Available to Book -->
+            <div *ngIf="!isUserBooked(cls.id) && !isUserWaitlisted(cls.id)" class="w-full">
+              <!-- If Class is Full, Option to join waitlist -->
+              <button
+                *ngIf="getClassStatus(cls) === 'FULL'"
+                (click)="selectClass(cls)"
+                class="btn-action w-full"
+                [style.background-color]="'#FFB800'"
+                style="color: #111;"
+              >
+                JOIN WAITLIST
+              </button>
+              
+              <!-- If Available / Almost Full -->
+              <button
+                *ngIf="getClassStatus(cls) !== 'FULL'"
+                (click)="selectClass(cls)"
+                class="btn-action btn-primary w-full"
+              >
+                BOOK NOW →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- DETAIL DRAWER -->
+  <div class="drawer-overlay" *ngIf="bookingDrawerOpen && selectedClass" (click)="closeDrawer()">
+    <div class="drawer-panel" (click)="$event.stopPropagation()">
+      <!-- Close Button -->
+      <button (click)="closeDrawer()" class="btn-close-drawer">✕</button>
+
+      <div class="drawer-header">
+        <div
+          class="drawer-emoji-box"
+          [style.background-color]="getCategoryStyles(selectedClass.category).bg"
         >
           {{ selectedClass.image }}
         </div>
-
-        <div class="space-y-4 text-[13px]">
-          <div class="flex justify-between pb-3 border-b border-[#E8ECF4]">
-            <span class="text-[#94A3B8]">Class:</span>
-            <span class="font-bold text-[#0F172A]">{{
-              selectedClass.name
-            }}</span>
-          </div>
-          <div class="flex justify-between pb-3 border-b border-[#E8ECF4]">
-            <span class="text-[#94A3B8]">Trainer:</span>
-            <span class="font-bold text-[#0F172A]">{{
-              selectedClass.trainer
-            }}</span>
-          </div>
-          <div class="flex justify-between pb-3 border-b border-[#E8ECF4]">
-            <span class="text-[#94A3B8]">Date & Time:</span>
-            <span class="font-bold text-[#0F172A]"
-              >{{ selectedClass.date }}, {{ selectedClass.time }}</span
-            >
-          </div>
-          <div class="flex justify-between pb-3 border-b border-[#E8ECF4]">
-            <span class="text-[#94A3B8]">Duration:</span>
-            <span class="font-bold text-[#0F172A]"
-              >{{ selectedClass.duration }} minutes</span
-            >
-          </div>
-          <div
-            class="flex justify-between text-[14px] font-bold bg-[#EFF5FF] border border-[#2563EB] rounded-lg p-3"
+        <h2 class="drawer-title font-heading font-black">{{ selectedClass.name | uppercase }}</h2>
+        <div class="drawer-badge-row">
+          <span
+            class="brutal-badge font-heading"
+            [style.background-color]="getCategoryStyles(selectedClass.category).bg"
+            [style.color]="getCategoryStyles(selectedClass.category).text"
           >
-            <span>Price:</span>
-            <span class="text-[#2563EB]">₹{{ selectedClass.price }}</span>
+            {{ selectedClass.category }}
+          </span>
+          <span
+            class="brutal-badge font-heading"
+            [style.background-color]="getClassStatusStyles(getClassStatus(selectedClass)).bg"
+            [style.color]="getClassStatusStyles(getClassStatus(selectedClass)).text"
+          >
+            {{ getClassStatus(selectedClass) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Class details list -->
+        <div class="drawer-details">
+          <div class="drawer-detail-row">
+            <span class="detail-icon">🏋️</span>
+            <div class="detail-info">
+              <span class="detail-label font-heading">TRAINER</span>
+              <span class="detail-value font-body">{{ selectedClass.trainer }}</span>
+            </div>
+          </div>
+          <div class="drawer-detail-row">
+            <span class="detail-icon">📅</span>
+            <div class="detail-info">
+              <span class="detail-label font-heading">DATE & TIME</span>
+              <span class="detail-value font-body">{{ formatClassDate(selectedClass.date) }} &#64; {{ selectedClass.time }}</span>
+            </div>
+          </div>
+          <div class="drawer-detail-row">
+            <span class="detail-icon">⏱</span>
+            <div class="detail-info">
+              <span class="detail-label font-heading">DURATION</span>
+              <span class="detail-value font-body">{{ selectedClass.duration }} MINUTES</span>
+            </div>
+          </div>
+          <div class="drawer-detail-row">
+            <span class="detail-icon">💳</span>
+            <div class="detail-info">
+              <span class="detail-label font-heading">PRICING</span>
+              <span class="detail-value font-body text-green font-bold">FREE (INCLUDED IN MEMBERSHIP)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Class Full Description -->
+        <div class="class-description font-body">
+          <p>
+            Experience a premium, structured training session designed to maximize results. Led by our certified specialist, this class offers professional guidance, dynamic exercises, and a supportive environment suitable for all members.
+          </p>
+        </div>
+
+        <!-- Prerequisites Note -->
+        <div class="prereq-note font-heading" *ngIf="selectedClass.prerequisites">
+          <span class="warning-title">⚠️ WARNING: PREREQUISITES REQUIRED</span>
+          <p class="warning-text">{{ selectedClass.prerequisites | uppercase }}</p>
+        </div>
+        <div class="prereq-note font-heading info-prereq" *ngIf="!selectedClass.prerequisites">
+          <span class="warning-title">💡 PREREQUISITES</span>
+          <p class="warning-text">NONE. ALL FITNESS LEVELS WELCOME!</p>
+        </div>
+
+        <!-- Cancellation Policy -->
+        <div class="cancellation-policy-box font-heading">
+          <span class="policy-title">⏰ CANCELLATION POLICY</span>
+          <p class="policy-text">CANCELLATIONS MUST BE MADE AT LEAST 2 HOURS IN ADVANCE OF THE CLASS START TIME TO AVOID NO-SHOW PENALTIES.</p>
+        </div>
+
+        <div class="brutal-divider"></div>
+
+        <!-- Trainer Mini-Profile -->
+        <div class="trainer-mini-profile">
+          <div class="trainer-avatar font-heading font-black">
+            {{ selectedClass.trainer.substring(0,2).toUpperCase() }}
+          </div>
+          <div class="trainer-profile-info">
+            <div class="trainer-name-row">
+              <span class="trainer-name font-heading font-bold">{{ selectedClass.trainer }}</span>
+              <span class="trainer-rating">★ {{ selectedClass.trainerRating }}</span>
+            </div>
+            <p class="trainer-bio font-body">{{ selectedClass.trainerBio }}</p>
+            <p class="trainer-specialties font-body">SPECIALTIES: {{ selectedClass.trainerSpecialties }}</p>
           </div>
         </div>
       </div>
 
-      <div class="p-6 border-t border-[#E8ECF4] flex gap-3">
-        <button
-          (click)="bookingDrawerOpen = false"
-          class="flex-1 bg-white border border-[#E8ECF4] font-bold h-12 rounded-[8px] hover:bg-[#F8F9FC]"
-        >
-          Cancel
-        </button>
-        <button
-          (click)="bookClass()"
-          class="flex-1 bg-[#2563EB] text-white font-bold h-12 rounded-[8px] hover:bg-[#1D4ED8]"
-        >
-          Book Now
-        </button>
+      <!-- Drawer Footer Sticky Confirm Actions -->
+      <div class="drawer-footer">
+        <!-- Case 1: Already Booked -->
+        <div *ngIf="isUserBooked(selectedClass.id)" class="w-full">
+          <button (click)="cancelBooking(getMemberBooking(selectedClass.id)!.bookingId!)" class="btn-action btn-cancel w-full">
+            CANCEL BOOKING
+          </button>
+        </div>
+
+        <!-- Case 2: Already Waitlisted -->
+        <div *ngIf="isUserWaitlisted(selectedClass.id)" class="w-full">
+          <button (click)="cancelBooking(getMemberBooking(selectedClass.id)!.bookingId!)" class="btn-action btn-cancel w-full">
+            LEAVE WAITLIST
+          </button>
+        </div>
+
+        <!-- Case 3: Available to Book -->
+        <div *ngIf="!isUserBooked(selectedClass.id) && !isUserWaitlisted(selectedClass.id)" class="w-full">
+          <button
+            *ngIf="getClassStatus(selectedClass) === 'FULL'"
+            (click)="bookClass()"
+            class="btn-action w-full"
+            [style.background-color]="'#FFB800'"
+            style="color: #111;"
+            [disabled]="isLoading"
+          >
+            CONFIRM WAITLIST
+          </button>
+          
+          <button
+            *ngIf="getClassStatus(selectedClass) !== 'FULL'"
+            (click)="bookClass()"
+            class="btn-action btn-primary w-full"
+            [disabled]="isLoading"
+          >
+            CONFIRM BOOKING →
+          </button>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- BOOKING CONFIRMATION OVERLAY -->
+  <div class="overlay-container" *ngIf="showConfirmationOverlay">
+    <div class="confirmation-card font-heading">
+      <div class="confirmation-check">✔ BOOKED!</div>
+      <h3 class="confirmation-class-name uppercase">{{ confirmedBookingDetails.name }}</h3>
+      <p class="confirmation-date-time uppercase">{{ confirmedBookingDetails.dateStr }}</p>
+      <p class="confirmation-date-time uppercase">{{ confirmedBookingDetails.timeStr }}</p>
+
+      <button (click)="viewMyBookings()" class="btn-confirm-overlay w-full">
+        VIEW IN MY BOOKINGS →
+      </button>
+
+      <button (click)="closeConfirmationOverlay()" class="btn-close-overlay uppercase">
+        CLOSE
+      </button>
+    </div>
+  </div>
+
+  <!-- UPCOMING BOOKINGS BOTTOM AREA -->
+  <section class="upcoming-bookings-panel" id="upcoming-bookings-panel">
+    <!-- Header Collapsible Row -->
+    <header class="bookings-panel-header">
+      <div class="header-left">
+        <h2 class="font-heading font-black text-lg uppercase">
+          MY UPCOMING BOOKINGS ({{ upcomingBookings.length }})
+        </h2>
+      </div>
+      <div class="header-right">
+        <button
+          (click)="bookingsPanelExpanded = !bookingsPanelExpanded"
+          class="btn-toggle-bookings"
+        >
+          {{ bookingsPanelExpanded ? '▲' : '▼' }}
+        </button>
+      </div>
+    </header>
+
+    <!-- Collapsible Table Content -->
+    <div class="bookings-table-wrapper" *ngIf="bookingsPanelExpanded">
+      <div *ngIf="upcomingBookings.length === 0" class="no-bookings-placeholder font-body uppercase text-muted">
+        YOU HAVE NO UPCOMING BOOKINGS.
+      </div>
+      
+      <table class="brutal-table" *ngIf="upcomingBookings.length > 0">
+        <thead>
+          <tr class="font-heading">
+            <th>CLASS</th>
+            <th>DATE/TIME</th>
+            <th>ROOM</th>
+            <th>STATUS</th>
+            <th>CANCEL</th>
+          </tr>
+        </thead>
+        <tbody class="font-body">
+          <tr *ngFor="let booking of upcomingBookings">
+            <td class="font-bold uppercase">{{ booking.className }}</td>
+            <td class="uppercase">
+              {{ formatClassDate(booking.date) }} · {{ booking.time.substring(0,5) }} ({{ booking.duration }} MIN)
+            </td>
+            <td class="uppercase">{{ booking.roomName }}</td>
+            <td>
+              <span
+                class="brutal-badge font-heading"
+                [style.background-color]="getClassStatusStyles(booking.status).bg"
+                [style.color]="getClassStatusStyles(booking.status).text"
+              >
+                {{ booking.status }}
+              </span>
+            </td>
+            <td>
+              <!-- If Cancel cut-off is valid -->
+              <div *ngIf="booking.canCancel">
+                <button
+                  (click)="cancelBooking(booking.bookingId)"
+                  class="btn-table-cancel"
+                >
+                  CANCEL
+                </button>
+              </div>
+              
+              <!-- If within 2 hours cut-off -->
+              <div *ngIf="!booking.canCancel" class="cancel-disabled-container relative group">
+                <button
+                  class="btn-table-cancel disabled"
+                  disabled
+                >
+                  CANCEL
+                </button>
+                <!-- Tooltip -->
+                <div class="brutal-tooltip font-heading">
+                  CANNOT CANCEL WITHIN 2 HOURS OF CLASS START
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 </div>

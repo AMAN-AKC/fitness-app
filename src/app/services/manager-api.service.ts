@@ -57,6 +57,10 @@ export class ManagerApiService {
     return this.http.get<any[]>(`${this.baseUrl}/classes`);
   }
 
+  getBookingsByClass(classId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/bookings/class/${classId}`);
+  }
+
   createClass(cls: any): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/classes`, cls);
   }
@@ -89,5 +93,22 @@ export class ManagerApiService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post<any[]>(`${this.baseUrl}/classes/import`, formData);
+  }
+
+  // Dunning Management Endpoints
+  getOverdueInvoices(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/dunning/overdue-invoices`);
+  }
+
+  getDunningMemberships(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/dunning/dunning-memberships`);
+  }
+
+  resolveDunning(membershipId: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/dunning/resolve/${membershipId}`, {});
+  }
+
+  suspendDunning(membershipId: number, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/dunning/suspend/${membershipId}?reason=${encodeURIComponent(reason)}`, {});
   }
 }

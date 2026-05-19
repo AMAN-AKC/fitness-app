@@ -114,4 +114,23 @@
       <router-outlet></router-outlet>
     </main>
   </div>
+
+  <!-- FIXED STACKED TOAST SYSTEM (Bottom-Right) -->
+  <div class="toast-stack-container" aria-live="polite">
+    <div 
+      *ngFor="let t of toasts" 
+      class="toast-notification"
+      [class.toast-success]="t.type === 'success'"
+      [class.toast-warning]="t.type === 'warning'"
+      [class.toast-error]="t.type === 'error'"
+      [class.toast-info]="t.type === 'info'"
+    >
+      <div class="toast-indicator"></div>
+      <div class="toast-content">
+        <span class="toast-title font-mono">{{ t.title }}</span>
+        <p class="toast-message">{{ t.message }}</p>
+      </div>
+      <button class="toast-close-btn" (click)="dismissToast(t.id)">✕</button>
+    </div>
+  </div>
 </div>

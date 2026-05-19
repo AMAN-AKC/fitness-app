@@ -1,149 +1,242 @@
-<div class="max-w-[700px] mx-auto pb-10">
-  <div class="mb-6">
-    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Notifications</h1>
-    <p class="text-[#475569] text-[14px]">
-      Stay updated with your membership and class information
-    </p>
-  </div>
-
-  <!-- CONTROLS -->
-  <div
-    class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 mb-6 flex justify-between items-center sticky top-0 z-10"
-  >
-    <div class="flex gap-2">
-      <button
-        (click)="filterType = 'all'"
-        [class]="
-          'px-3 py-1.5 rounded-[6px] text-[12px] font-bold transition-all ' +
-          (filterType === 'all'
-            ? 'bg-[#2563EB] text-white'
-            : 'bg-[#F8F9FC] text-[#475569] hover:text-[#0F172A]')
-        "
-      >
-        All ({{ notifications.length }})
+<div class="notifications-container">
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="header-left">
+      <span class="header-title">NOTIFICATIONS</span>
+      <span class="unread-badge" *ngIf="unreadCount > 0">{{ unreadCount }} UNREAD</span>
+    </div>
+    <div class="header-right">
+      <button class="mark-read-btn" (click)="markAllAsRead()" *ngIf="unreadCount > 0">
+        MARK ALL AS READ
       </button>
-      <button
-        (click)="filterType = 'unread'"
-        [class]="
-          'px-3 py-1.5 rounded-[6px] text-[12px] font-bold transition-all ' +
-          (filterType === 'unread'
-            ? 'bg-[#2563EB] text-white'
-            : 'bg-[#F8F9FC] text-[#475569] hover:text-[#0F172A]')
-        "
-      >
-        Unread ({{ unreadCount }})
+      <button class="settings-btn" (click)="togglePreferences()" aria-label="Settings">
+        ⚙
       </button>
     </div>
+  </header>
 
-    <div class="flex gap-2">
-      <button
-        (click)="markAllAsRead()"
-        class="text-[12px] font-medium text-[#2563EB] hover:underline"
-      >
-        Mark all as read
-      </button>
-      <button
-        (click)="deleteAllNotifications()"
-        class="text-[12px] font-medium text-[#DC2626] hover:underline"
-      >
-        Clear all
-      </button>
-    </div>
-  </div>
-
-  <!-- NOTIFICATIONS LIST -->
-  <div *ngIf="isLoading" class="text-center py-8 text-[#2563EB]">
-    Loading notifications...
-  </div>
-  
-  <div *ngIf="errorMessage" class="bg-red-50 text-red-600 p-4 rounded mb-6 text-center border border-red-200">
-    {{ errorMessage }}
-  </div>
-
-  <div
-    *ngIf="!isLoading && !errorMessage && filteredNotifications.length > 0; else emptyState"
-    class="space-y-3"
-  >
-    <div
-      *ngFor="let notification of filteredNotifications"
-      [class]="
-        'p-4 rounded-[12px] border-l-4 transition-all cursor-pointer ' +
-        getNotificationBgColor(notification.type) +
-        (notification.read ? ' opacity-60' : ' shadow-sm')
-      "
-      (click)="markAsRead(notification)"
+  <!-- FILTER TABS -->
+  <nav class="filter-tabs">
+    <button 
+      *ngFor="let tab of ['ALL', 'UNREAD', 'BOOKINGS', 'PAYMENTS', 'RENEWALS', 'SYSTEM']"
+      (click)="currentTab = $any(tab)"
+      [class.active]="currentTab === tab"
+      class="tab-pill"
     >
-      <div class="flex gap-4">
-        <div
-          [class]="
-            'text-[20px] mt-0.5 flex-shrink-0 ' +
-            getNotificationIconColor(notification.type)
-          "
+      {{ tab }}
+      <span class="tab-count-badge" *ngIf="getTabCount(tab) > 0">{{ getTabCount(tab) }}</span>
+    </button>
+  </nav>
+
+  <!-- NOTIFICATION LIST -->
+  <main class="notifications-list">
+    <div *ngIf="isLoading" class="loading-state">
+      <div class="spinner"></div>
+      <p>LOADING NOTIFICATIONS...</p>
+    </div>
+
+    <div *ngIf="errorMessage" class="error-state">
+      <p>{{ errorMessage }}</p>
+    </div>
+
+    <ng-container *ngIf="!isLoading && !errorMessage">
+      <div 
+        *ngFor="let n of filteredNotifications"
+        class="notification-item"
+        [class.unread]="!n.read"
+        [class.read]="n.read"
+        [style.border-left-color]="n.category === 'BOOKING' ? '#2563EB' : n.category === 'PAYMENT' ? '#00D26A' : n.category === 'RENEWAL' ? '#FFB800' : '#FF3B30'"
+        (click)="markAsRead(n)"
+      >
+        <!-- UNREAD DOT -->
+        <span class="unread-dot" *ngIf="!n.read"></span>
+
+        <!-- ICON SQUARE -->
+        <div 
+          class="icon-square"
+          [style.background-color]="n.category === 'BOOKING' ? '#2563EB' : n.category === 'PAYMENT' ? '#00D26A' : n.category === 'RENEWAL' ? '#FFB800' : '#FF3B30'"
         >
-          {{ getNotificationIcon(notification.type) }}
+          {{ getUnicodeIcon(n.category) }}
         </div>
 
-        <div class="flex-1 min-w-0">
-          <div class="flex justify-between items-start gap-2 mb-1">
-            <h3
-              [class]="
-                'font-bold text-[14px] ' +
-                (notification.read ? 'text-[#475569]' : 'text-[#0F172A]')
-              "
-            >
-              {{ notification.title }}
-            </h3>
-            <span
-              *ngIf="!notification.read"
-              class="flex-shrink-0 w-2 h-2 bg-[#2563EB] rounded-full"
-            ></span>
+        <!-- CENTER TEXT -->
+        <div class="notification-body-container">
+          <h3 class="notification-title">{{ n.title }}</h3>
+          <p class="notification-message">{{ n.message }}</p>
+          <span class="notification-time">{{ n.timeAgo }}</span>
+        </div>
+
+        <!-- RIGHT ACTION BUTTON -->
+        <button class="action-arrow-btn" aria-label="Mark Read">
+          →
+        </button>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div class="empty-state" *ngIf="filteredNotifications.length === 0">
+        <div class="css-inbox-tray">
+          <div class="tray-back"></div>
+          <div class="tray-front"></div>
+        </div>
+        <h3 class="empty-title">YOU'RE ALL CAUGHT UP!</h3>
+        <p class="empty-subtitle">NO NEW NOTIFICATIONS RIGHT NOW.</p>
+      </div>
+    </ng-container>
+  </main>
+
+  <!-- PREFERENCES PANEL (Side Drawer) -->
+  <div class="preferences-panel" [class.open]="isPreferencesOpen">
+    <div class="preferences-header">
+      <h2 class="preferences-title">NOTIFICATION PREFERENCES</h2>
+      <button class="close-panel-btn" (click)="closePreferences()">✕</button>
+    </div>
+
+    <div class="preferences-content">
+      <!-- CATEGORY ROWS -->
+      <div class="pref-row">
+        <div class="pref-info">
+          <span class="pref-name">BOOKING CONFIRMATIONS</span>
+          <p class="pref-desc">Get notified when a new class is booked.</p>
+        </div>
+        <div class="pref-toggles">
+          <div class="toggle-group">
+            <span class="toggle-label">IN-APP</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.bookingConfirmations.inApp">
+              <span class="slider"></span>
+            </label>
           </div>
+          <div class="toggle-group">
+            <span class="toggle-label">EMAIL</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.bookingConfirmations.email">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
 
-          <p class="text-[13px] text-[#475569] mb-2">
-            {{ notification.message }}
-          </p>
+      <div class="pref-row">
+        <div class="pref-info">
+          <span class="pref-name">CANCELLATIONS</span>
+          <p class="pref-desc">Alerts when a trainer or class is cancelled.</p>
+        </div>
+        <div class="pref-toggles">
+          <div class="toggle-group">
+            <span class="toggle-label">IN-APP</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.cancellations.inApp">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-group">
+            <span class="toggle-label">EMAIL</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.cancellations.email">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
 
-          <div class="flex justify-between items-center">
-            <span class="text-[11px] text-[#94A3B8]">{{
-              notification.timestamp
-            }}</span>
-            <button
-              (click)="
-                deleteNotification(notification.id); $event.stopPropagation()
-              "
-              class="text-[11px] text-[#94A3B8] hover:text-[#DC2626] font-medium"
-            >
-              Remove
-            </button>
+      <div class="pref-row">
+        <div class="pref-info">
+          <span class="pref-name">RENEWAL REMINDERS</span>
+          <p class="pref-desc">Reminders about upcoming membership expiry dates.</p>
+        </div>
+        <div class="pref-toggles">
+          <div class="toggle-group">
+            <span class="toggle-label">IN-APP</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.renewalReminders.inApp">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-group">
+            <span class="toggle-label">EMAIL</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.renewalReminders.email">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="pref-row">
+        <div class="pref-info">
+          <span class="pref-name">SCHEDULE CHANGES</span>
+          <p class="pref-desc">Updates on substitutions and time slot revisions.</p>
+        </div>
+        <div class="pref-toggles">
+          <div class="toggle-group">
+            <span class="toggle-label">IN-APP</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.scheduleChanges.inApp">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-group">
+            <span class="toggle-label">EMAIL</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.scheduleChanges.email">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="pref-row">
+        <div class="pref-info">
+          <span class="pref-name">DUNNING ALERTS</span>
+          <p class="pref-desc">Overdue billing retries and grace periods alerts.</p>
+        </div>
+        <div class="pref-toggles">
+          <div class="toggle-group">
+            <span class="toggle-label">IN-APP</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.dunningAlerts.inApp">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-group">
+            <span class="toggle-label">EMAIL</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.dunningAlerts.email">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="pref-row">
+        <div class="pref-info">
+          <span class="pref-name">SYSTEM ANNOUNCEMENTS</span>
+          <p class="pref-desc">Maintenance status and platform updates.</p>
+        </div>
+        <div class="pref-toggles">
+          <div class="toggle-group">
+            <span class="toggle-label">IN-APP</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.systemAnnouncements.inApp">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="toggle-group">
+            <span class="toggle-label">EMAIL</span>
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="preferences.systemAnnouncements.email">
+              <span class="slider"></span>
+            </label>
           </div>
         </div>
       </div>
     </div>
+
+    <div class="preferences-actions">
+      <button class="save-prefs-btn btn-primary" (click)="savePreferences()">SAVE PREFERENCES</button>
+    </div>
   </div>
 
-  <!-- EMPTY STATE -->
-  <ng-template #emptyState>
-    <div class="text-center py-12" *ngIf="!isLoading && !errorMessage">
-      <div class="text-[48px] mb-4">📭</div>
-      <h3 class="font-bold text-[16px] text-[#0F172A] mb-2">
-        {{
-          filterType === "unread" ? "All caught up!" : "No notifications yet"
-        }}
-      </h3>
-      <p class="text-[13px] text-[#475569] mb-6">
-        {{
-          filterType === "unread"
-            ? "You have no unread notifications"
-            : "You'll see notifications here soon"
-        }}
-      </p>
-      <button
-        *ngIf="filterType === 'unread'"
-        (click)="filterType = 'all'"
-        class="text-[#2563EB] text-[13px] font-medium hover:underline"
-      >
-        View all notifications
-      </button>
-    </div>
-  </ng-template>
+  <!-- Overlay when preferences panel is open -->
+  <div class="drawer-overlay" *ngIf="isPreferencesOpen" (click)="closePreferences()"></div>
 </div>

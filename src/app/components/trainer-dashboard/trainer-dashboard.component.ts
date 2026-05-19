@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ToastService } from '../../services/toast.service';
 
 interface PTRequest {
   id: number;
@@ -100,7 +101,7 @@ export class TrainerDashboardComponent implements OnInit {
 
   chartData = [40, 70, 100, 30, 60, 0, 0];
 
-  constructor() {}
+  constructor(private toastService: ToastService) {}
 
   ngOnInit(): void {}
 
@@ -120,6 +121,11 @@ export class TrainerDashboardComponent implements OnInit {
     const request = this.ptRequests.find((r) => r.id === id);
     if (request) {
       request.status = action;
+      if (action === 'accepted') {
+        this.toastService.success(`PT SESSION REQUEST ACCEPTED FOR ${request.name.toUpperCase()}`);
+      } else {
+        this.toastService.warning(`PT SESSION REQUEST DECLINED FOR ${request.name.toUpperCase()}`);
+      }
     }
   }
 
@@ -139,6 +145,7 @@ export class TrainerDashboardComponent implements OnInit {
 
   saveNotes(sessionId: number): void {
     this.activeNotes = null;
+    this.toastService.success('TRAINING SESSION NOTES UPDATED SUCCESSFULLY.');
   }
 
   cancelNotes(): void {

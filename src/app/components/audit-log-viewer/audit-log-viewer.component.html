@@ -1,89 +1,226 @@
-<div class="max-w-[1000px] mx-auto pb-10">
-  <div class="mb-8">
-    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Audit Logs</h1>
-    <p class="text-[#475569] text-[14px]">
-      Track all system activities and user actions
-    </p>
-  </div>
+<div class="audit-viewer-container">
+  <!-- STICKY SUMMARY BAR -->
+  <section class="sticky-summary-bar">
+    <div class="summary-text">
+      SHOWING {{ filteredLogs.length }} RESULTS · FILTERED: {{ getFormattedDateRange() }} · ENTITY: {{ selectedEntity }}
+    </div>
+    <button class="btn-secondary btn-sm" (click)="exportCsv()">
+      EXPORT CSV ↓
+    </button>
+  </section>
 
-  <!-- FILTERS -->
-  <div
-    class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 mb-6 flex gap-4"
-  >
-    <input
-      type="text"
-      [(ngModel)]="searchText"
-      placeholder="Search logs..."
-      class="flex-1 h-11 px-4 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
-    />
-    <select
-      [(ngModel)]="filterType"
-      class="h-11 px-4 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] text-[13px]"
-    >
-      <option value="all">All Actions</option>
-      <option value="create">Create</option>
-      <option value="update">Update</option>
-      <option value="delete">Delete</option>
-      <option value="login">Login</option>
-      <option value="export">Export</option>
-    </select>
-  </div>
+  <!-- FILTER BAR -->
+  <section class="filter-bar">
+    <div class="filter-group">
+      <label class="filter-label">PERFORMED BY</label>
+      <input 
+        type="text" 
+        [(ngModel)]="performedBySearch" 
+        placeholder="SEARCH USER OR ROLE..." 
+        class="filter-input input-username"
+      >
+    </div>
 
-  <!-- LOGS TABLE -->
-  <div
-    class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm"
-  >
-    <table class="w-full">
-      <thead>
-        <tr class="bg-[#F8F9FC] border-b border-[#E8ECF4]">
-          <th
-            class="px-6 py-3 text-left text-[11px] font-bold text-[#94A3B8] uppercase"
+    <div class="filter-group">
+      <label class="filter-label">ENTITY</label>
+      <select [(ngModel)]="selectedEntity" class="filter-select select-entity">
+        <option value="ALL">ALL ENTITIES</option>
+        <option value="MEMBER">MEMBER</option>
+        <option value="PLAN">PLAN</option>
+        <option value="PAYMENT">PAYMENT</option>
+        <option value="CLASS">CLASS</option>
+        <option value="BOOKING">BOOKING</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">ACTION</label>
+      <select [(ngModel)]="selectedAction" class="filter-select select-action">
+        <option value="ALL">ALL ACTIONS</option>
+        <option value="CREATE">CREATE</option>
+        <option value="UPDATE">UPDATE</option>
+        <option value="DELETE">DELETE</option>
+        <option value="LOGIN">LOGIN</option>
+        <option value="OVERRIDE">OVERRIDE</option>
+      </select>
+    </div>
+
+    <div class="filter-group date-range-group">
+      <label class="filter-label">FROM</label>
+      <input type="date" [(ngModel)]="dateFrom" class="filter-date input-from">
+    </div>
+
+    <div class="filter-group date-range-group">
+      <label class="filter-label">TO</label>
+      <input type="date" [(ngModel)]="dateTo" class="filter-date input-to">
+    </div>
+
+    <div class="filter-actions">
+      <button class="btn-primary" (click)="applyFilters()">SEARCH</button>
+      <button class="btn-secondary" (click)="resetFilters()">RESET</button>
+    </div>
+  </section>
+
+  <!-- AUDIT LOG TABLE -->
+  <section class="audit-table-card">
+    <div class="table-responsive">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th>TIMESTAMP</th>
+            <th>PERFORMED BY</th>
+            <th>ENTITY</th>
+            <th>ENTITY ID</th>
+            <th>ACTION</th>
+            <th>DETAILS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isLoading">
+            <td colspan="6" class="table-loading">
+              LOADING AUDIT LOGS...
+            </td>
+          </tr>
+          <tr *ngIf="errorMessage">
+            <td colspan="6" class="table-error">
+              {{ errorMessage }}
+            </td>
+          </tr>
+          <tr *ngIf="!isLoading && !errorMessage && filteredLogs.length === 0">
+            <td colspan="6" class="table-empty">
+              NO AUDIT RECORDS FOUND MATCHING THE FILTERS.
+            </td>
+          </tr>
+          
+          <tr 
+            *ngFor="let log of filteredLogs" 
+            (click)="openDetail(log)"
+            class="log-row"
           >
-            Action
-          </th>
-          <th
-            class="px-6 py-3 text-left text-[11px] font-bold text-[#94A3B8] uppercase"
-          >
-            User
-          </th>
-          <th
-            class="px-6 py-3 text-left text-[11px] font-bold text-[#94A3B8] uppercase"
-          >
-            Details
-          </th>
-          <th
-            class="px-6 py-3 text-left text-[11px] font-bold text-[#94A3B8] uppercase"
-          >
-            Timestamp
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          *ngFor="let log of filteredLogs"
-          class="border-b border-[#E8ECF4] hover:bg-[#F8F9FC] transition-colors"
+            <!-- TIMESTAMP -->
+            <td class="col-timestamp font-mono">
+              {{ log.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}
+            </td>
+
+            <!-- PERFORMED BY -->
+            <td class="col-user">
+              <div class="user-cell">
+                <span 
+                  class="user-avatar" 
+                  [style.background-color]="getRoleColor(log.performedByRole || 'MEMBER')"
+                ></span>
+                <span class="user-name">{{ log.username || 'SYSTEM' }}</span>
+                <span class="user-role-badge">{{ log.performedByRole || 'SYSTEM' }}</span>
+              </div>
+            </td>
+
+            <!-- ENTITY -->
+            <td class="col-entity">
+              <span class="entity-chip">{{ log.entityName || 'N/A' }}</span>
+            </td>
+
+            <!-- ENTITY ID -->
+            <td class="col-entity-id font-mono text-blue">
+              {{ log.entityId }}
+            </td>
+
+            <!-- ACTION -->
+            <td class="col-action">
+              <span 
+                class="action-badge"
+                [class.create]="log.action === 'CREATE'"
+                [class.update]="log.action === 'UPDATE'"
+                [class.delete]="log.action === 'DELETE'"
+                [class.override]="log.action === 'OVERRIDE'"
+                [class.login]="log.action === 'LOGIN'"
+              >
+                {{ log.action }}
+              </span>
+            </td>
+
+            <!-- DETAILS -->
+            <td class="col-details">
+              <span class="view-details-link">VIEW →</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- DETAIL DRAWER (Side drawer) -->
+  <aside class="detail-drawer" [class.open]="isDrawerOpen">
+    <div class="drawer-header">
+      <div class="header-titles">
+        <h2 class="drawer-title">AUDIT RECORD</h2>
+        <span class="record-id font-mono">AUD-{{ selectedRecord?.auditId }}</span>
+      </div>
+      <button class="close-drawer-btn" (click)="closeDetail()">✕</button>
+    </div>
+
+    <div class="drawer-content" *ngIf="selectedRecord">
+      <!-- META ROW -->
+      <div class="drawer-meta-row">
+        <span class="meta-chip font-mono">TIME: {{ selectedRecord.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</span>
+        <span class="meta-chip">BY: {{ selectedRecord.username }} ({{ selectedRecord.performedByRole }})</span>
+        <span class="meta-chip">ENTITY: {{ selectedRecord.entityName }}</span>
+        <span class="meta-chip font-mono">ID: {{ selectedRecord.entityId }}</span>
+        <span 
+          class="meta-chip action-badge inline-badge"
+          [class.create]="selectedRecord.action === 'CREATE'"
+          [class.update]="selectedRecord.action === 'UPDATE'"
+          [class.delete]="selectedRecord.action === 'DELETE'"
+          [class.override]="selectedRecord.action === 'OVERRIDE'"
+          [class.login]="selectedRecord.action === 'LOGIN'"
         >
-          <td class="px-6 py-4">
-            <span
-              [class]="
-                'inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold ' +
-                getTypeColor(log.type)
-              "
-            >
-              {{ getTypeIcon(log.type) }} {{ log.action }}
-            </span>
-          </td>
-          <td class="px-6 py-4 text-[13px] font-medium text-[#0F172A]">
-            {{ log.user }}
-          </td>
-          <td class="px-6 py-4 text-[13px] text-[#475569]">
-            {{ log.details }}
-          </td>
-          <td class="px-6 py-4 text-[13px] text-[#94A3B8]">
-            {{ log.timestamp }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+          {{ selectedRecord.action }}
+        </span>
+      </div>
+
+      <!-- DIFF VIEW -->
+      <div class="diff-container">
+        <div class="diff-header-row">
+          <div class="diff-header-col before-header">
+            <span class="dot-red">●</span> BEFORE
+          </div>
+          <div class="diff-header-col after-header">
+            <span class="dot-green">●</span> AFTER
+          </div>
+        </div>
+
+        <div class="diff-body">
+          <!-- When it is a simple string override reason or log message -->
+          <div 
+            *ngIf="(!parsedOldValue || (parsedOldValue && parsedOldValue.value)) && (!parsedNewValue || (parsedNewValue && parsedNewValue.value))"
+            class="diff-row"
+          >
+            <div class="diff-col before-val font-mono">
+              {{ parsedOldValue?.value || 'NULL' }}
+            </div>
+            <div class="diff-col after-val font-mono">
+              {{ parsedNewValue?.value || 'NULL' }}
+            </div>
+          </div>
+
+          <!-- When it is an object with multiple properties -->
+          <ng-container *ngIf="parsedOldValue && !parsedOldValue.value || parsedNewValue && !parsedNewValue.value">
+            <div *ngFor="let key of getDiffKeys()" class="diff-key-row">
+              <div class="diff-key-name">{{ key | uppercase }}</div>
+              <div class="diff-comparison">
+                <div class="diff-col before-val font-mono">
+                  {{ parsedOldValue ? parsedOldValue[key] : 'NULL' }}
+                </div>
+                <div class="diff-col after-val font-mono">
+                  {{ parsedNewValue ? parsedNewValue[key] : 'NULL' }}
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Drawer Overlay -->
+  <div class="drawer-overlay" *ngIf="isDrawerOpen" (click)="closeDetail()"></div>
 </div>

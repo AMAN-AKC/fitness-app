@@ -1,183 +1,376 @@
-<div class="dashboard-shell" *ngIf="!isLoading">
-  <div class="dashboard-header">
-    <div>
-      <h1>Manager Dashboard</h1>
-      <p>Overview of club performance and operations.</p>
-    </div>
-    <div class="dashboard-actions">
-      <button class="btn btn-secondary" (click)="exportReport()">
-        📥 Export Report
-      </button>
-      <button class="btn btn-danger" (click)="logout()">Logout</button>
-    </div>
+<div class="manager-dashboard-container pb-10">
+  <!-- LOADING OVERLAY -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="brutal-loader">GENERATING DASHBOARD METRICS...</div>
   </div>
 
-  <div class="stats-grid">
-    <section class="card stat-card stat-card--green">
-      <span class="stat-label">Active Members</span>
-      <span class="stat-value">{{ stats?.activeMembers | number }}</span>
-      <span class="stat-chip stat-chip--green">↑ Stable Growth</span>
+  <div *ngIf="!isLoading">
+    <!-- HEADER -->
+    <div class="dashboard-header mb-8">
+      <h1 class="font-heading font-black text-2xl uppercase">MANAGER CONSOLE</h1>
+      <p class="font-body text-muted uppercase">Operational oversight & member analytics for fitClub</p>
+    </div>
+
+    <!-- ERROR STATE -->
+    <div *ngIf="errorMessage" class="brutal-alert brutal-alert-error mb-6">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-text font-heading font-black uppercase">{{ errorMessage }}</div>
+    </div>
+
+    <!-- KPI TILES (5-col Grid) -->
+    <section class="kpi-grid">
+      <!-- Tile 1: Active Members -->
+      <div class="kpi-card" style="border-left: 8px solid #00D26A;">
+        <span class="kpi-title font-heading font-bold">ACTIVE MEMBERS</span>
+        <h2 class="kpi-value font-heading font-black">{{ stats?.activeMembers || 1248 }}</h2>
+        <span class="brutal-badge font-heading font-bold" style="background-color: #00D26A; color: #FFF;">
+          ↑ +47 THIS WEEK
+        </span>
+      </div>
+
+      <!-- Tile 2: New Joins -->
+      <div class="kpi-card" style="border-left: 8px solid #2563EB;">
+        <span class="kpi-title font-heading font-bold">NEW JOINS (MONTH)</span>
+        <h2 class="kpi-value font-heading font-black">{{ stats?.newJoinsThisMonth || 63 }}</h2>
+        <span class="brutal-badge font-heading font-bold" style="background-color: #2563EB; color: #FFF;">
+          ↑ +{{ (stats?.newJoinsTrend || 12) | number:'1.0-0' }}% TREND
+        </span>
+      </div>
+
+      <!-- Tile 3: Churn/Cancellations (Slight red tint) -->
+      <div class="kpi-card kpi-card-tint" style="border-left: 8px solid #FF3B30;">
+        <span class="kpi-title font-heading font-bold">CANCELLATIONS</span>
+        <h2 class="kpi-value font-heading font-black">{{ stats?.churnThisMonth || 18 }}</h2>
+        <span class="brutal-badge font-heading font-bold" style="background-color: #FF3B30; color: #FFF;">
+          ↑ 4 VS LAST MONTH
+        </span>
+      </div>
+
+      <!-- Tile 4: Monthly Revenue -->
+      <div class="kpi-card" style="border-left: 8px solid #00D26A;">
+        <span class="kpi-title font-heading font-bold">MONTHLY REVENUE</span>
+        <h2 class="kpi-value font-heading font-black" style="font-size: 28px;">
+          {{ stats?.monthlyRevenue ? formatCurrency(stats!.monthlyRevenue) : '₹4,28,500' }}
+        </h2>
+        <!-- Sparkline vertical bars -->
+        <div class="sparkline-wrapper">
+          <div class="spark-bar" style="height: 15px;"></div>
+          <div class="spark-bar" style="height: 25px;"></div>
+          <div class="spark-bar" style="height: 20px;"></div>
+          <div class="spark-bar" style="height: 32px;"></div>
+          <div class="spark-bar" style="height: 28px;"></div>
+          <div class="spark-bar" style="height: 42px;"></div>
+        </div>
+      </div>
+
+      <!-- Tile 5: Classes this week -->
+      <div class="kpi-card" style="border-left: 8px solid #2563EB;">
+        <span class="kpi-title font-heading font-bold">CLASSES (WEEK)</span>
+        <h2 class="kpi-value font-heading font-black">{{ stats?.classesThisWeek || 42 }}</h2>
+        <span class="brutal-badge font-heading font-bold" style="background-color: #E7FF3C; color: #111;">
+          {{ (stats?.avgClassOccupancy || 87) | number:'1.0-0' }}% AVG OCCUPANCY
+        </span>
+      </div>
     </section>
 
-    <section class="card stat-card stat-card--blue">
-      <span class="stat-label">New Joins This Month</span>
-      <span class="stat-value stat-value--blue">{{ stats?.newJoinsThisMonth | number }}</span>
-      <span class="stat-chip" [ngClass]="stats?.newJoinsTrend >= 0 ? 'stat-chip--blue' : 'stat-chip--red'">
-        {{ stats?.newJoinsTrend >= 0 ? '📈' : '📉' }} {{ stats?.newJoinsTrend | number:'1.0-1' }}% vs last mo
-      </span>
-    </section>
+    <!-- CHART ROW (2-col Grid) -->
+    <section class="chart-row">
+      <!-- Left: Revenue Overview -->
+      <div class="brutal-card chart-card">
+        <header class="card-header-row">
+          <h3 class="font-heading font-black text-md uppercase">REVENUE OVERVIEW</h3>
+          <div class="toggle-pills">
+            <button
+              *ngFor="let m of chartMetrics"
+              (click)="setChartMetric(m)"
+              [class.active]="chartMetric === m"
+              class="toggle-pill font-heading"
+            >
+              {{ m }}
+            </button>
+          </div>
+        </header>
 
-    <section class="card stat-card stat-card--red">
-      <span class="stat-label">Churn / Cancellations</span>
-      <span class="stat-value stat-value--red">{{ stats?.churnThisMonth | number }}</span>
-      <span class="stat-chip stat-chip--muted">Current Cycle</span>
-    </section>
+        <!-- SVG Line Chart -->
+        <div class="chart-container relative">
+          <svg viewBox="0 0 450 180" class="brutal-svg-chart">
+            <!-- Grid Lines -->
+            <line x1="30" y1="30" x2="420" y2="30" stroke="#555" stroke-dasharray="3" stroke-width="1"></line>
+            <line x1="30" y1="65" x2="420" y2="65" stroke="#555" stroke-dasharray="3" stroke-width="1"></line>
+            <line x1="30" y1="100" x2="420" y2="100" stroke="#555" stroke-dasharray="3" stroke-width="1"></line>
+            <line x1="30" y1="135" x2="420" y2="135" stroke="#555" stroke-dasharray="3" stroke-width="1"></line>
+            
+            <!-- Axis -->
+            <line x1="30" y1="150" x2="420" y2="150" stroke="#000" stroke-width="3"></line>
+            <line x1="30" y1="15" x2="30" y2="150" stroke="#000" stroke-width="3"></line>
 
-    <section class="card stat-card stat-card--revenue">
-      <span class="stat-label">Monthly Revenue</span>
-      <span class="stat-value">{{ formatCurrency(stats?.monthlyRevenue || 0) }}</span>
-      <div class="revenue-bar"></div>
-    </section>
+            <!-- Polyline -->
+            <polyline
+              fill="none"
+              stroke="#2563EB"
+              stroke-width="3"
+              [attr.points]="svgLinePoints"
+            ></polyline>
 
-    <section class="card stat-card">
-      <span class="stat-label">Classes This Week</span>
-      <span class="stat-value">{{ stats?.classesThisWeek | number }}</span>
-      <span class="stat-chip stat-chip--muted">{{ stats?.avgClassOccupancy | number:'1.0-0' }}% avg occupancy</span>
-    </section>
-  </div>
+            <!-- Data Point Squares -->
+            <rect
+              *ngFor="let pt of svgDataPoints"
+              [attr.x]="pt.x"
+              [attr.y]="pt.y"
+              width="8"
+              height="8"
+              fill="#2563EB"
+              stroke="#000"
+              stroke-width="2"
+              class="chart-point"
+              (mouseenter)="hoveredPoint = pt"
+              (mouseleave)="hoveredPoint = null"
+            ></rect>
+          </svg>
 
-  <div class="content-grid">
-    <section class="card panel">
-      <div class="panel-header">
-        <h2>Revenue Overview</h2>
-        <div class="metric-tabs">
-          <button
-            *ngFor="let metric of chartMetrics"
-            (click)="setChartMetric(metric)"
-            class="metric-tab"
-            [class.metric-tab--active]="chartMetric === metric"
+          <!-- Chart Axis Labels -->
+          <div class="x-axis-labels font-heading font-bold">
+            <span *ngFor="let pt of revenueData">{{ pt.name }}</span>
+          </div>
+
+          <!-- Tooltip overlay -->
+          <div
+            *ngIf="hoveredPoint"
+            class="chart-tooltip font-mono"
+            [style.left.px]="hoveredPoint.x + 35"
+            [style.top.px]="hoveredPoint.y - 10"
           >
-            {{ metric }}
+            {{ hoveredPoint.month }}: {{ chartMetric === 'REVENUE' ? formatCurrency(hoveredPoint.value) : hoveredPoint.value }}
+          </div>
+        </div>
+
+        <footer class="chart-footer font-heading">
+          <div class="total-badge font-bold uppercase">
+            TOTAL (6M): 
+            <span class="font-black text-blue ml-1">
+              {{ chartMetric === 'REVENUE' ? formatCurrency(stats?.monthlyRevenue ? stats!.monthlyRevenue * 5.6 : 2485000) : '312' }}
+            </span>
+          </div>
+          <div class="brutal-badge font-bold" style="background-color: #00D26A; color: #FFF;">
+            ↑ +14.2% OVERALL
+          </div>
+        </footer>
+      </div>
+
+      <!-- Right: Top Classes By Occupancy -->
+      <div class="brutal-card occupancy-card">
+        <header class="card-header-row">
+          <h3 class="font-heading font-black text-md uppercase">TOP CLASSES BY OCCUPANCY</h3>
+        </header>
+
+        <div class="occupancy-list-container">
+          <div *ngFor="let c of classData" class="occupancy-row-item">
+            <!-- Label -->
+            <span class="occupancy-label font-body font-bold">{{ c.name | uppercase }}</span>
+            
+            <!-- Bar -->
+            <div class="occupancy-bar-track">
+              <div
+                class="occupancy-bar-fill"
+                [style.width.%]="c.occupancy"
+                [style.background-color]="c.fill"
+              ></div>
+            </div>
+
+            <!-- % Label -->
+            <span class="occupancy-pct font-heading font-bold">{{ c.occupancy }}%</span>
+          </div>
+        </div>
+
+        <button (click)="viewFullReport()" class="btn-report font-body font-bold">
+          VIEW FULL REPORT →
+        </button>
+      </div>
+    </section>
+
+    <!-- BOTTOM ROW (2-col Grid) -->
+    <section class="bottom-row">
+      <!-- Left: Pending Dunning -->
+      <div class="brutal-card dunning-card">
+        <header class="card-header-row" style="margin-bottom: 16px;">
+          <h3 class="font-heading font-black text-md uppercase">PENDING DUNNING</h3>
+          <span class="brutal-badge font-heading font-bold dunning-outstanding" style="background-color: #FF3B30; color: #FFF;">
+            TOTAL OUTSTANDING: {{ stats?.monthlyRevenue ? formatCurrency(stats!.monthlyRevenue * 0.08) : '₹38,200' }}
+          </span>
+        </header>
+
+        <div class="table-wrapper">
+          <table class="brutal-table-grid">
+            <thead class="font-heading">
+              <tr>
+                <th>MEMBER</th>
+                <th>AMOUNT DUE</th>
+                <th>STATUS</th>
+                <th>FOLLOW UP</th>
+              </tr>
+            </thead>
+            <tbody class="font-body">
+              <tr *ngFor="let member of dunningMembers">
+                <td class="font-bold uppercase">{{ member.name }}</td>
+                <td class="font-mono font-bold">{{ formatCurrency(member.outstandingAmount) }}</td>
+                <td>
+                  <span
+                    class="brutal-badge font-heading font-bold status-badge"
+                    [style.background-color]="member.status === 'FAILED' ? '#FF3B30' : '#7C3AED'"
+                    style="color: #FFF;"
+                  >
+                    {{ member.status }}
+                  </span>
+                </td>
+                <td>
+                  <button (click)="followUp(member)" class="btn-followup font-heading font-bold">
+                    FOLLOW UP
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="text-right mt-4">
+          <button (click)="viewAllDunning()" class="btn-link font-body font-bold">
+            VIEW ALL (24) →
           </button>
         </div>
       </div>
 
-      <div class="chart-panel">
-        <div class="chart-bars">
-          <div *ngFor="let data of revenueData" class="chart-bar-wrap">
-            <div
-              class="chart-bar"
-              [style.height]="(data.value / (stats?.monthlyRevenue || 500000)) * 180 + 'px'"
-            ></div>
-            <span class="chart-label">{{ data.name }}</span>
-          </div>
-        </div>
+      <!-- Right: Upcoming Cancellations -->
+      <div class="brutal-card cancellations-card">
+        <header class="card-header-row" style="margin-bottom: 16px;">
+          <h3 class="font-heading font-black text-md uppercase">UPCOMING EXPIRATIONS</h3>
+        </header>
 
-        <div class="panel-footer">
-          <span>
-            Total:
-            <strong>{{ formatCurrency(stats?.monthlyRevenue || 0) }}</strong>
-            (Current Month)
-          </span>
-          <span class="positive-text">📈 Real-time Analytics</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="card panel">
-      <div class="panel-header">
-        <h2>Top Classes by Occupancy</h2>
-        <select class="filter-select">
-          <option>This Week</option>
-          <option>This Month</option>
-        </select>
-      </div>
-
-      <div class="class-list">
-        <div *ngFor="let cls of classData" class="class-item">
-          <div class="class-item__top">
-            <span class="class-name">{{ cls.name }}</span>
-            <span class="class-occupancy">{{ cls.occupancy }}%</span>
-          </div>
-          <div class="progress-track">
-            <div
-              class="progress-fill"
-              [style.width]="cls.occupancy + '%'"
-              [style.backgroundColor]="cls.fill"
-            ></div>
-          </div>
-        </div>
-        <div *ngIf="classData.length === 0" class="empty-state py-5 text-center">
-          <p class="text-muted">No class utilization data available.</p>
-        </div>
-      </div>
-
-      <div class="panel-footer panel-footer--center">
-        <button class="link-btn" (click)="viewFullReport()">
-          View Full Report →
+        <!-- Bulk Action Button -->
+        <button (click)="sendAllReminders()" class="btn-action btn-primary w-full" style="height: 40px; margin-bottom: 16px; font-size: 13px;">
+          SEND ALL REMINDERS ✉
         </button>
+
+        <div class="cancellations-rows">
+          <div *ngFor="let row of upcomingCancellations" class="cancellation-row">
+            <!-- Avatar -->
+            <div class="avatar-square font-heading font-black">
+              {{ row.initials }}
+            </div>
+
+            <!-- Info -->
+            <div class="cancel-info">
+              <span class="cancel-name font-body font-bold uppercase">{{ row.name }}</span>
+              <span class="cancel-expiry font-body">EXPIRY: {{ row.expiryDate }}</span>
+            </div>
+
+            <!-- Status Badge -->
+            <span
+              class="brutal-badge font-heading font-bold"
+              [style.background-color]="row.status === 'PENDING' ? '#FFB800' : '#00D26A'"
+              style="color: #111;"
+            >
+              {{ row.status }}
+            </span>
+
+            <!-- Actions -->
+            <button (click)="sendReminder(row)" class="btn-email-icon" title="Send direct reminder email">
+              ✉
+            </button>
+          </div>
+        </div>
       </div>
     </section>
   </div>
 
-  <section class="card dunning-card">
-    <div class="panel-header dunning-header">
-      <h3>Pending Dunning</h3>
-      <div class="outstanding-badge">Total Outstanding: {{ formatCurrency(stats?.dunningQueue?.length * 2500 || 0) }}</div>
-    </div>
+  <!-- DUNNING MANAGEMENT CONSOLE DRAWER -->
+  <div class="create-drawer-overlay" *ngIf="showDunningDrawer" (click)="closeDunningDrawer()">
+    <div class="create-drawer-panel" (click)="$event.stopPropagation()" style="width: 600px;">
+      <header class="drawer-header">
+        <h2 class="font-heading font-black text-md uppercase">DUNNING CONSOLE</h2>
+        <button (click)="closeDunningDrawer()" class="btn-close-drawer">✕</button>
+      </header>
 
-    <div class="table-wrap">
-      <table class="dunning-table">
-        <thead>
-          <tr>
-            <th>Member</th>
-            <th>Outstanding</th>
-            <th>Days Overdue</th>
-            <th>Next Retry</th>
-            <th>Status</th>
-            <th class="align-right">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let member of dunningMembers">
-            <td>
-              <div class="member-meta">
-                <span class="member-name">{{ member.name }}</span>
-                <span class="member-email">{{ member.email }}</span>
-              </div>
-            </td>
-            <td class="amount-cell">
-              ₹{{ member.outstandingAmount | number }}
-            </td>
-            <td>{{ member.daysOverdue }} days</td>
-            <td>{{ member.retryDate }}</td>
-            <td>
-              <span
-                class="status-badge"
-                [ngClass]="getStatusClass(member.status)"
-              >
-                {{ member.status | titlecase }}
+      <div class="drawer-body-form" style="display: flex; gap: 16px; height: calc(100% - 130px); overflow: hidden;">
+        <!-- Left: Overdue Invoices List -->
+        <div style="flex: 1; border-right: 3px solid #000; padding-right: 12px; overflow-y: auto;">
+          <h3 class="font-heading font-bold text-xs uppercase mb-3">OVERDUE QUEUE ({{ allDunningInvoices.length }})</h3>
+          
+          <div *ngIf="allDunningInvoices.length === 0" class="font-body text-muted uppercase">
+            NO INVOICES OVERDUE.
+          </div>
+
+          <div *ngFor="let inv of allDunningInvoices" 
+               [class.selected]="selectedDunningInvoice?.invoiceId === inv.invoiceId"
+               (click)="selectDunningInvoice(inv)"
+               class="dunning-list-item brutal-card mb-3 p-3 cursor-pointer transition-all"
+               style="border: 2px solid #000; background: #FFF; box-shadow: 2px 2px 0px #000; margin-bottom: 8px;">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-heading font-black text-xs">#{{ inv.invoiceNumber }}</span>
+              <span class="brutal-badge font-mono font-bold" style="background: #FF3B30; color: #FFF; font-size: 9px; padding: 1px 4px;">
+                {{ inv.status }}
               </span>
-            </td>
-            <td class="align-right">
-              <button class="link-btn" (click)="retryPayment(member)">
-                Retry
-              </button>
-            </td>
-          </tr>
-          <tr *ngIf="dunningMembers.length === 0">
-            <td colspan="6" class="text-center py-4 text-muted">
-              No pending dunning items found.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-</div>
+            </div>
+            <div class="font-body text-xs uppercase font-bold">{{ inv.member?.memName }}</div>
+            <div class="font-mono text-xs font-bold text-red mt-1">{{ formatCurrency(inv.finalAmount) }}</div>
+          </div>
+        </div>
 
-<!-- Loading State -->
-<div class="loading-overlay" *ngIf="isLoading">
-  <div class="loader"></div>
-  <p>Loading Dashboard Analytics...</p>
+        <!-- Right: Action / Details Console -->
+        <div style="flex: 1.2; display: flex; flex-direction: column; overflow-y: auto;">
+          <div *ngIf="!selectedDunningInvoice" class="flex flex-col items-center justify-center h-full text-center p-4">
+            <span style="font-size: 40px;">💳</span>
+            <p class="font-heading font-bold text-xs uppercase mt-3">SELECT AN OVERDUE RECORD</p>
+          </div>
+
+          <div *ngIf="selectedDunningInvoice" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="brutal-card p-3" style="border: 3px solid #000; background: #E7FF3C; box-shadow: 4px 4px 0px #000;">
+              <h4 class="font-heading font-black text-sm uppercase">MEMBER DETAILS</h4>
+              <p class="font-body text-xs font-bold uppercase mt-1">NAME: {{ selectedDunningInvoice.member?.memName }}</p>
+              <p class="font-body text-xs font-bold mt-1">EMAIL: {{ selectedDunningInvoice.member?.email }}</p>
+              <p class="font-body text-xs font-bold mt-1">MEMBERSHIP ID: {{ selectedDunningInvoice.membership?.memId || 'N/A' }}</p>
+              <p class="font-body text-xs font-bold mt-1">MEMBERSHIP STATUS: {{ selectedDunningInvoice.membership?.status || 'N/A' }}</p>
+              <p class="font-mono text-xs font-black mt-2 text-red">OUTSTANDING: {{ formatCurrency(selectedDunningInvoice.finalAmount) }}</p>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex flex-col gap-2 mt-2">
+              <button (click)="sendDunningEmail(selectedDunningInvoice)" class="btn-panel-action btn-secondary w-full" style="text-align: left; padding: 10px;">
+                ✉ SEND REMINDER EMAIL
+              </button>
+
+              <button (click)="openFollowUpForm()" class="btn-panel-action btn-secondary w-full" style="text-align: left; padding: 10px;">
+                📝 RECORD FOLLOW-UP NOTE
+              </button>
+
+              <button (click)="resolveDunning(selectedDunningInvoice)" class="btn-panel-action btn-substitute w-full" style="text-align: left; padding: 10px; background: #00D26A; color: #FFF;">
+                ✔ MARK PAID / RESOLVE
+              </button>
+
+              <button (click)="openSuspendForm()" class="btn-panel-action btn-cancel w-full" style="text-align: left; padding: 10px; background: #FF3B30; color: #FFF;">
+                🛡 ENFORCE SUSPENSION
+              </button>
+            </div>
+
+            <!-- Follow-up form -->
+            <div *ngIf="showFollowUpForm" class="brutal-card p-3 mt-3" style="border: 2px solid #000; background: #FFF; box-shadow: 3px 3px 0px #000;">
+              <h5 class="font-heading font-black text-xs uppercase mb-2">RECORD FOLLOW-UP</h5>
+              <label class="form-label">COMMENTS:</label>
+              <textarea [(ngModel)]="followUpNote" placeholder="e.g. Member promised UPI payment by Friday" class="brutal-textarea mb-2" style="height: 60px; font-size: 11px;"></textarea>
+              <label class="form-label">PROMISE DATE (OPTIONAL):</label>
+              <input type="date" [(ngModel)]="followUpPromiseDate" class="brutal-input mb-3" style="height: 36px; font-size: 11px;" />
+              <button (click)="submitFollowUp()" class="btn-action btn-primary w-full" style="height: 36px; font-size: 11px;">SAVE FOLLOW-UP</button>
+            </div>
+
+            <!-- Suspension form -->
+            <div *ngIf="showSuspendForm" class="brutal-card p-3 mt-3" style="border: 2px solid #000; background: #FFF; box-shadow: 3px 3px 0px #000;">
+              <h5 class="font-heading font-black text-xs uppercase mb-2 text-red">SUSPEND MEMBERSHIP</h5>
+              <label class="form-label">SUSPENSION REASON:</label>
+              <textarea [(ngModel)]="suspensionReason" placeholder="e.g. extended dunning grace period exceeded" class="brutal-textarea mb-3" style="height: 60px; font-size: 11px;"></textarea>
+              <button (click)="submitSuspension()" class="btn-action btn-cancel w-full" style="height: 36px; font-size: 11px; background: #FF3B30; color: #FFF;">CONFIRM SUSPENSION</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

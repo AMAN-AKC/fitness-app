@@ -19,6 +19,11 @@ import { NotificationsCenterComponent } from './components/notifications-center/
 import { PlansCatalogComponent } from './components/plans-catalog/plans-catalog.component';
 import { CheckoutComponent } from './components/checkout/checkout.component';
 import { ManagerScheduleComponent } from './components/manager-schedule/manager-schedule.component';
+import { ClassBookingComponent } from './components/class-booking/class-booking.component';
+import { AuditLogViewerComponent } from './components/audit-log-viewer/audit-log-viewer.component';
+import { DataImportExportComponent } from './components/data-import-export/data-import-export.component';
+import { ErrorStatesViewComponent } from './components/error-states-view/error-states-view.component';
+import { TrainerProfileComponent } from './components/trainer-profile/trainer-profile.component';
 import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
@@ -37,6 +42,9 @@ const routes: Routes = [
       { path: 'branches', component: AdminBranchManagementComponent },
       { path: 'plans', component: AdminPlancatalogComponent },
       { path: 'notifications', component: NotificationsCenterComponent },
+      { path: 'audit-logs', component: AuditLogViewerComponent },
+      { path: 'import-export', component: DataImportExportComponent },
+      { path: 'error-states', component: ErrorStatesViewComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
@@ -48,6 +56,7 @@ const routes: Routes = [
     children: [
       { path: 'dashboard', component: FrontdeskDashboardComponent, data: { roles: ['frontdesk', 'admin'] } },
       { path: 'registration', component: MemberRegistrationComponent, data: { roles: ['frontdesk', 'admin'] } },
+      { path: 'notifications', component: NotificationsCenterComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
@@ -59,6 +68,9 @@ const routes: Routes = [
     children: [
       { path: 'dashboard', component: ManagerDashboardComponent },
       { path: 'schedule', component: ManagerScheduleComponent },
+      { path: 'notifications', component: NotificationsCenterComponent },
+      { path: 'audit-logs', component: AuditLogViewerComponent },
+      { path: 'import-export', component: DataImportExportComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
@@ -69,6 +81,7 @@ const routes: Routes = [
     data: { roles: ['trainer'] },
     children: [
       { path: 'dashboard', component: TrainerDashboardComponent },
+      { path: 'notifications', component: NotificationsCenterComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
@@ -79,9 +92,12 @@ const routes: Routes = [
     data: { roles: ['member'] },
     children: [
       { path: 'dashboard', component: MemberDashboardComponent },
+      { path: 'class-booking', component: ClassBookingComponent },
       { path: 'health-forms', component: HealthFormsComponent },
       { path: 'plans', component: PlansCatalogComponent },
       { path: 'checkout', component: CheckoutComponent },
+      { path: 'notifications', component: NotificationsCenterComponent },
+      { path: 'trainers', component: TrainerProfileComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
@@ -94,8 +110,13 @@ const routes: Routes = [
   { path: 'manager-dashboard', redirectTo: 'manager/dashboard' },
   { path: 'trainer-dashboard', redirectTo: 'trainer/dashboard' },
   
+  { path: 'unauthorized', component: ErrorPageComponent, data: { code: '401' } },
+  { path: 'forbidden', component: ErrorPageComponent, data: { code: '403' } },
+  { path: 'server-error', component: ErrorPageComponent, data: { code: '500' } },
+  { path: 'not-found', component: ErrorPageComponent, data: { code: '404' } },
   { path: 'error-showcase', component: ErrorPageComponent },
-  { path: '**', redirectTo: '' },
+  { path: 'error-states', component: ErrorStatesViewComponent },
+  { path: '**', redirectTo: 'not-found' },
 ];
 
 @NgModule({

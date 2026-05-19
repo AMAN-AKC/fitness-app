@@ -1,8 +1,102 @@
-/* Neo-Brutalist Error Page */
-.error-page { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background-color: var(--bg); padding: 32px; text-align: center; }
-.error-icon { width: 80px; height: 80px; background-color: var(--red); border: 3px solid var(--black); box-shadow: 6px 6px 0 var(--black); display: flex; align-items: center; justify-content: center; font-size: 36px; color: white; margin-bottom: 24px; }
-.error-code { font-family: var(--font-heading); font-weight: 800; font-size: 64px; color: var(--black); text-transform: uppercase; margin-bottom: 8px; }
-.error-title { font-family: var(--font-heading); font-weight: 800; font-size: 24px; text-transform: uppercase; color: var(--black); margin-bottom: 16px; }
-.error-description { font-size: 16px; color: var(--muted); max-width: 500px; margin-bottom: 32px; }
-.error-action { background-color: var(--pink); color: white; border: 3px solid var(--black); box-shadow: 6px 6px 0 var(--black); padding: 14px 28px; font-family: var(--font-heading); font-weight: 800; text-transform: uppercase; cursor: pointer; text-decoration: none; transition: var(--transition-fast); }
-.error-action:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--black); }
+.error-page-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  background-color: var(--bg);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.error-box {
+  background-color: var(--surface);
+  border: 3px solid var(--black);
+  box-shadow: 8px 8px 0 var(--black);
+  padding: 40px;
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.error-icon-circle {
+  font-size: 36px;
+  background-color: var(--yellow);
+  border: 3px solid var(--black);
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.error-code-badge {
+  background-color: var(--purple);
+  color: white;
+  border: 3px solid var(--black);
+  font-family: Inter, "Arial Black", Arial, sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 4px 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.error-main-title {
+  font-family: Inter, "Arial Black", Arial, sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  text-transform: uppercase;
+  color: var(--black);
+  margin: 0;
+}
+
+.error-main-body {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+}
+
+.error-action-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.btn-error-primary {
+  background-color: var(--green);
+  color: var(--black);
+  border: 3px solid var(--black);
+  box-shadow: 4px 4px 0 var(--black);
+  font-family: Inter, "Arial Black", Arial, sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 12px 24px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  width: max-content;
+}
+
+.btn-error-primary:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--black);
+}
+
+.retry-countdown-label {
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--red);
+  letter-spacing: 0.05em;
+}

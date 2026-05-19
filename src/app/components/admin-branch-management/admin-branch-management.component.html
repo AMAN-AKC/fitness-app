@@ -1,810 +1,482 @@
-<div
-  class="flex h-[calc(100vh-64px)] text-[#0F172A] w-full max-w-[1600px] mx-auto bg-white rounded-[12px] border border-[#E8ECF4] shadow-sm overflow-hidden page-transition"
->
-  <!-- LEFT PANEL -->
-  <div
-    class="w-[300px] shrink-0 border-r border-[#E8ECF4] flex flex-col bg-white h-full"
-  >
-    <div class="p-4 border-b border-[#E8ECF4]">
-      <div class="relative mb-2">
-        <span
-          class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] text-sm"
-          >🔍</span
-        >
+<div class="branch-management-page-container">
+  <!-- SPLIT PANEL LAYOUT -->
+  <div class="split-pane-layout">
+    
+    <!-- LEFT PANEL: BRANCHES LIST -->
+    <aside class="left-split-panel">
+      <div class="left-panel-top">
         <input
           type="text"
-          placeholder="Search branches..."
+          placeholder="SEARCH BRANCHES..."
           [(ngModel)]="searchQuery"
           (ngModelChange)="onSearchChange()"
-          class="w-full h-9 pl-9 pr-3 text-[13px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-[#F8F9FC]"
+          class="brutal-input w-full search-branches"
         />
+        <button (click)="onAddBranch()" class="btn-brutal btn-primary w-full mt-2 font-heading font-black">
+          + ADD BRANCH
+        </button>
       </div>
-      <button
-        (click)="onAddBranch()"
-        class="w-full h-9 rounded-[8px] text-[13px] font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors shadow-sm flex items-center justify-center gap-1.5"
-      >
-        ➕ Add Branch
-      </button>
-    </div>
 
-    <div class="flex-1 overflow-y-auto custom-scrollbar">
-      <div
-        *ngIf="isLoading || errorMessage"
-        class="m-3 rounded-[8px] border px-3 py-2 text-[12px] font-medium"
-        [class]="
-          errorMessage
-            ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]'
-            : 'bg-[#EFF5FF] text-[#2563EB] border-[#BFDBFE]'
-        "
-      >
-        {{ errorMessage || "Loading branches..." }}
-      </div>
-      <div
-        *ngFor="let branch of filteredBranches"
-        (click)="selectBranch(branch.id)"
-        [class]="
-          'p-3.5 border-b border-[#E8ECF4] cursor-pointer transition-colors border-l-[3px] ' +
-          (selectedBranchId === branch.id
-            ? 'bg-[#EFF5FF] border-l-[#2563EB]'
-            : 'bg-white border-l-transparent hover:bg-[#F8F9FC]')
-        "
-      >
-        <div class="flex items-center justify-between mb-1.5">
-          <div
-            [class]="
-              'font-bold text-[14px] ' +
-              (selectedBranchId === branch.id
-                ? 'text-[#2563EB]'
-                : 'text-[#0F172A]')
-            "
-          >
-            {{ branch.name }}
+      <div class="branches-list-scroll">
+        <div
+          *ngFor="let b of filteredBranches"
+          (click)="selectBranch(b.id)"
+          class="branch-list-item"
+          [class.selected]="b.id === selectedBranchId"
+        >
+          <div class="branch-item-main">
+            <span class="branch-item-name font-heading font-bold">{{ b.name }}</span>
+            <div
+              class="status-square-dot"
+              [style.background-color]="b.active ? '#00D26A' : '#555'"
+            ></div>
           </div>
-          <div
-            [class]="
-              'w-2 h-2 rounded-full ' +
-              (branch.active ? 'bg-[#16A34A]' : 'bg-[#94A3B8]')
-            "
-          ></div>
+          <div class="branch-item-sub">
+            <span class="branch-item-city font-body">{{ b.city }}</span>
+            <span class="brutal-chip font-heading font-bold bg-blue">
+              {{ b.membersCount }} MEMBERS
+            </span>
+          </div>
         </div>
-        <div class="flex items-center justify-between">
-          <div class="text-[12px] font-light text-[#94A3B8]">
-            {{ branch.city }}
-          </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT PANEL: BRANCH DETAILS & TABS -->
+    <main class="right-split-panel" *ngIf="selectedBranch">
+      <header class="right-panel-header mb-6">
+        <div class="header-left">
+          <h2 class="font-heading font-black uppercase text-xl">{{ selectedBranch.name }}</h2>
           <span
-            [class]="
-              'text-[10px] font-bold px-2 py-0.5 rounded-full ' +
-              (selectedBranchId === branch.id
-                ? 'bg-[#2563EB] text-white'
-                : 'bg-[#EFF5FF] text-[#2563EB]')
-            "
+            class="brutal-badge font-heading font-bold"
+            [style.background-color]="selectedBranch.active ? '#00D26A' : '#555'"
+            style="color: #FFF;"
           >
-            {{ formatNumber(branch.membersCount) }}
+            {{ selectedBranch.active ? 'ACTIVE' : 'INACTIVE' }}
           </span>
         </div>
-      </div>
-      <div
-        *ngIf="filteredBranches.length === 0"
-        class="p-6 text-center text-[13px] text-[#94A3B8]"
-      >
-        No branches found.
-      </div>
-    </div>
-  </div>
+        <button (click)="saveChanges()" class="btn-brutal btn-secondary font-heading font-bold">
+          SAVE CHANGES
+        </button>
+      </header>
 
-  <!-- RIGHT PANEL -->
-  <div class="flex-1 flex flex-col h-full bg-white relative">
-    <!-- Header -->
-    <div class="px-7 pt-7 pb-4">
-      <div class="flex items-center gap-3 mb-6">
-        <h1 class="font-bold text-[22px] text-[#0F172A]">
-          {{ selectedBranch.name }}
-        </h1>
-        <span
-          [class]="
-            'px-2.5 py-1 text-[11px] font-bold rounded-md border ' +
-            (selectedBranch.active
-              ? 'bg-[#F0FDF4] text-[#16A34A] border-[#16A34A]/20'
-              : 'bg-[#F8F9FC] text-[#94A3B8] border-[#E8ECF4]')
-          "
-        >
-          {{ selectedBranch.active ? "Active" : "Inactive" }}
-        </span>
-      </div>
-
-      <!-- Tabs -->
-      <div class="flex border-b border-[#E8ECF4]">
+      <!-- TAB BAR -->
+      <nav class="brutal-tab-bar mb-6">
         <button
           *ngFor="let tab of tabs"
           (click)="activeTab = tab"
-          [class]="
-            'px-5 py-3 text-[14px] font-medium transition-colors border-b-2 -mb-[1px] ' +
-            (activeTab === tab
-              ? 'text-[#2563EB] border-[#2563EB]'
-              : 'text-[#475569] border-transparent hover:text-[#0F172A] hover:bg-[#F8F9FC] rounded-t-lg')
-          "
+          class="tab-btn font-heading font-bold"
+          [class.active]="activeTab === tab"
         >
-          {{ tab }}
+          {{ tab | uppercase }}
         </button>
-      </div>
-    </div>
+      </nav>
 
-    <!-- Content Area -->
-    <div class="flex-1 overflow-y-auto px-7 pb-7 custom-scrollbar">
-      <!-- DETAILS TAB -->
-      <div
-        *ngIf="activeTab === 'Details'"
-        class="max-w-[800px] flex flex-col gap-6 animate-in fade-in duration-200"
-      >
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-              >Branch Name</label
-            >
-            <input
-              type="text"
-              [(ngModel)]="selectedBranch.name"
-              class="w-full h-11 px-3 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
-            />
+      <!-- TAB 1: DETAILS TAB -->
+      <section *ngIf="activeTab === 'Details'" class="tab-content-panel">
+        <form (submit)="$event.preventDefault()" class="details-form font-body">
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="form-label">BRANCH NAME</label>
+              <input
+                type="text"
+                [(ngModel)]="selectedBranch.name"
+                name="name"
+                class="brutal-input"
+              />
+            </div>
+            <div class="form-field">
+              <label class="form-label">CITY</label>
+              <input
+                type="text"
+                [(ngModel)]="selectedBranch.city"
+                name="city"
+                class="brutal-input"
+              />
+            </div>
           </div>
-          <div>
-            <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-              >City</label
-            >
-            <input
-              type="text"
-              [(ngModel)]="selectedBranch.city"
-              class="w-full h-11 px-3 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
-            />
+
+          <div class="form-field mt-4">
+            <label class="form-label">ADDRESS</label>
+            <textarea
+              [(ngModel)]="selectedBranch.address"
+              name="address"
+              class="brutal-textarea"
+            ></textarea>
           </div>
-        </div>
 
-        <div>
-          <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-            >Address</label
-          >
-          <textarea
-            rows="2"
-            [(ngModel)]="selectedBranch.address"
-            class="w-full p-3 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm resize-none"
-          ></textarea>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-              >Contact Phone</label
-            >
-            <div class="relative">
-              <span
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
-                >📞</span
-              >
+          <div class="form-grid-2 mt-4">
+            <div class="form-field">
+              <label class="form-label">CONTACT PHONE</label>
               <input
                 type="text"
                 [(ngModel)]="selectedBranch.phone"
-                class="w-full h-11 pl-9 pr-3 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
+                name="phone"
+                class="brutal-input"
               />
             </div>
-          </div>
-          <div>
-            <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-              >Contact Email</label
-            >
-            <div class="relative">
-              <span
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
-                >✉️</span
-              >
+            <div class="form-field">
+              <label class="form-label">CONTACT EMAIL</label>
               <input
                 type="email"
                 [(ngModel)]="selectedBranch.email"
-                class="w-full h-11 pl-9 pr-3 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
+                name="email"
+                class="brutal-input"
               />
             </div>
           </div>
-        </div>
 
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-              >Operating Hours</label
-            >
-            <div class="flex items-center gap-2">
-              <div class="relative flex-1">
-                <span
-                  class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
-                  >🕐</span
-                >
+          <div class="form-grid-2 mt-4">
+            <div class="form-field">
+              <label class="form-label">OPERATING HOURS (OPEN/CLOSE)</label>
+              <div class="time-pickers-row">
                 <input
                   type="time"
                   [(ngModel)]="selectedBranch.openTime"
-                  class="w-full h-11 pl-9 pr-2 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
+                  name="openTime"
+                  class="brutal-input"
                 />
-              </div>
-              <span class="text-[#94A3B8]">to</span>
-              <div class="relative flex-1">
-                <span
-                  class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
-                  >🕐</span
-                >
+                <span class="time-sep font-heading font-black">TO</span>
                 <input
                   type="time"
                   [(ngModel)]="selectedBranch.closeTime"
-                  class="w-full h-11 pl-9 pr-2 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
+                  name="closeTime"
+                  class="brutal-input"
                 />
               </div>
             </div>
+            <div class="form-field">
+              <label class="form-label">TIMEZONE</label>
+              <div class="select-wrapper">
+                <select
+                  [(ngModel)]="selectedBranch.timezone"
+                  name="timezone"
+                  class="brutal-select w-full"
+                >
+                  <option value="Asia/Kolkata">ASIA/KOLKATA (IST)</option>
+                  <option value="Asia/Dubai">ASIA/DUBAI (GST)</option>
+                  <option value="UTC">UTC (GMT)</option>
+                </select>
+                <span class="select-arrow">▼</span>
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-              >Timezone</label
+
+          <div class="form-field mt-6 brutal-active-toggle-row">
+            <div class="toggle-info">
+              <span class="toggle-title font-heading font-bold">BRANCH IS ACTIVE</span>
+              <span class="toggle-desc font-body">ENABLES CLASS BOOKING AND CHECK-IN</span>
+            </div>
+            <button
+              (click)="toggleSelectedBranchActive()"
+              class="brutal-toggle-switch"
+              [class.active]="selectedBranch.active"
             >
-            <div class="relative">
-              <span
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none"
-                >🌍</span
-              >
-              <select
-                [(ngModel)]="selectedBranch.timezone"
-                class="w-full h-11 pl-9 pr-8 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm appearance-none bg-white"
-              >
-                <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                <option value="America/New_York">America/New_York (EST)</option>
-                <option value="Europe/London">Europe/London (GMT)</option>
-              </select>
-            </div>
+              <div class="toggle-thumb"></div>
+            </button>
           </div>
-        </div>
+        </form>
+      </section>
 
-        <div
-          class="flex items-center justify-between p-4 bg-[#F8F9FC] border border-[#E8ECF4] rounded-[8px] mt-2"
-        >
-          <div>
-            <div class="font-bold text-[14px] text-[#0F172A]">
-              Branch is active
-            </div>
-            <div class="text-[12px] text-[#475569]">
-              Available for member bookings and new signups
-            </div>
-          </div>
-          <button
-            (click)="toggleSelectedBranchActive()"
-            [class]="
-              'w-11 h-6 rounded-full relative transition-colors ' +
-              (selectedBranch.active ? 'bg-[#16A34A]' : 'bg-[#CBD5E1]')
-            "
-          >
-            <div
-              [class]="
-                'absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
-                (selectedBranch.active ? 'translate-x-5' : 'translate-x-0')
-              "
-            ></div>
+      <!-- TAB 2: STAFF TAB -->
+      <section *ngIf="activeTab === 'Staff'" class="tab-content-panel">
+        <header class="tab-section-header mb-4">
+          <h3 class="font-heading font-black text-md">ASSIGNED STAFF ACCOUNTS</h3>
+          <button (click)="onAssignStaff()" class="btn-brutal btn-primary font-heading font-bold">
+            ASSIGN STAFF +
           </button>
-        </div>
+        </header>
 
-        <div class="flex justify-end pt-4">
-          <button
-            (click)="saveChanges()"
-            class="px-6 h-11 rounded-[8px] text-[14px] font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors shadow-sm"
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
-
-      <!-- STAFF TAB -->
-      <div
-        *ngIf="activeTab === 'Staff'"
-        class="animate-in fade-in duration-200"
-      >
-        <div class="flex justify-end mb-4">
-          <button
-            (click)="onAssignStaff()"
-            class="px-4 h-10 rounded-[8px] text-[13px] font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors shadow-sm flex items-center gap-1.5"
-          >
-            Assign Staff ➕
-          </button>
-        </div>
-
-        <div
-          class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm overflow-hidden"
-        >
-          <table class="w-full text-left border-collapse">
+        <div class="table-scroll-wrapper">
+          <table class="brutal-data-table">
             <thead>
-              <tr class="bg-[#F8F9FC] border-b border-[#E8ECF4]">
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-                >
-                  Staff Member
-                </th>
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-                >
-                  Role
-                </th>
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-                >
-                  Email
-                </th>
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-                >
-                  Branch Since
-                </th>
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider text-right"
-                >
-                  Actions
-                </th>
+              <tr class="font-heading">
+                <th>AVATAR</th>
+                <th>NAME</th>
+                <th>ROLE BADGE</th>
+                <th>EMAIL</th>
+                <th>BRANCH SINCE</th>
+                <th>ACTION</th>
               </tr>
             </thead>
-            <tbody>
-              <tr
-                *ngFor="let member of selectedBranch.staff"
-                class="border-b border-[#E8ECF4] last:border-0 hover:bg-[#F8F9FC] transition-colors"
-              >
-                <td class="px-5 py-3 flex items-center gap-3">
-                  <div
-                    class="w-8 h-8 rounded-full bg-[#EFF5FF] text-[#2563EB] flex items-center justify-center text-[11px] font-bold shrink-0"
-                  >
-                    {{ member.initials }}
+            <tbody class="font-body">
+              <tr *ngFor="let s of selectedBranch.staff">
+                <td>
+                  <div class="avatar-square font-heading font-bold">
+                    {{ s.initials }}
                   </div>
-                  <span class="text-[14px] font-bold text-[#0F172A]">{{
-                    member.name
-                  }}</span>
                 </td>
-                <td class="px-5 py-3">
-                  <span
-                    class="inline-block px-2.5 py-1 bg-[#F1F5F9] text-[#475569] text-[11px] font-bold rounded-md border border-[#E8ECF4]"
-                    >{{ member.role }}</span
-                  >
+                <td class="font-bold uppercase">{{ s.name }}</td>
+                <td>
+                  <span class="staff-role-badge font-heading font-bold">
+                    {{ s.role }}
+                  </span>
                 </td>
-                <td class="px-5 py-3 text-[13px] text-[#475569]">
-                  {{ member.email }}
-                </td>
-                <td class="px-5 py-3 text-[13px] text-[#94A3B8]">
-                  {{ member.since }}
-                </td>
-                <td class="px-5 py-3 text-right">
-                  <button
-                    (click)="unassignStaff(member.id)"
-                    class="text-[12px] font-bold text-[#DC2626] hover:bg-[#FEF2F2] px-3 py-1.5 rounded-md transition-colors border border-transparent hover:border-[#DC2626]/20"
-                  >
-                    Unassign
+                <td class="font-mono text-muted">{{ s.email }}</td>
+                <td class="font-bold text-muted">{{ s.since }}</td>
+                <td>
+                  <button (click)="unassignStaff(s.id)" class="btn-action-unassign font-heading font-bold">
+                    UNASSIGN
                   </button>
                 </td>
               </tr>
               <tr *ngIf="selectedBranch.staff.length === 0">
-                <td
-                  colSpan="5"
-                  class="px-5 py-8 text-center text-[#94A3B8] text-[14px]"
-                >
-                  No staff assigned to this branch.
+                <td colspan="6" class="empty-table-cell font-body font-bold text-muted uppercase">
+                  NO STAFF ACCOUNTS ASSIGNED TO THIS BRANCH.
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      <!-- MEMBERS TAB -->
-      <div
-        *ngIf="activeTab === 'Members'"
-        class="animate-in fade-in duration-200 flex flex-col gap-4"
-      >
-        <div
-          class="flex justify-between items-center bg-[#F8F9FC] p-4 rounded-[12px] border border-[#E8ECF4]"
-        >
-          <div>
-            <div
-              class="text-[12px] font-bold text-[#475569] uppercase tracking-wider mb-1"
-            >
-              Total Active Members
-            </div>
-            <div class="font-bold text-[24px] text-[#0F172A] leading-none">
-              {{ formatNumber(selectedBranch.membersCount) }}
-            </div>
-          </div>
-          <button
-            (click)="onTransferMember()"
-            class="px-4 h-10 rounded-[8px] text-[13px] font-bold text-[#0F172A] bg-white border border-[#E8ECF4] hover:bg-[#F8F9FC] transition-colors shadow-sm flex items-center gap-2"
-          >
-            ↔️ Transfer Member
+      <!-- TAB 3: MEMBERS TAB -->
+      <section *ngIf="activeTab === 'Members'" class="tab-content-panel">
+        <header class="tab-section-header mb-4">
+          <h3 class="font-heading font-black text-md">ENROLLED MEMBERS</h3>
+          <button (click)="onTransferMember()" class="btn-brutal btn-secondary font-heading font-bold">
+            TRANSFER MEMBER ⇄
           </button>
-        </div>
+        </header>
 
-        <div
-          class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm overflow-hidden mt-2"
-        >
-          <table class="w-full text-left border-collapse">
+        <div class="table-scroll-wrapper">
+          <table class="brutal-data-table">
             <thead>
-              <tr class="bg-[#F8F9FC] border-b border-[#E8ECF4]">
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-                >
-                  Member Name
-                </th>
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-                >
-                  Current Plan
-                </th>
+              <tr class="font-heading">
+                <th>AVATAR</th>
+                <th>MEMBER ID</th>
+                <th>NAME</th>
+                <th>PLAN</th>
               </tr>
             </thead>
-            <tbody>
-              <tr
-                *ngFor="let m of selectedBranch.members"
-                class="border-b border-[#E8ECF4] last:border-0 hover:bg-[#F8F9FC] transition-colors"
-              >
-                <td class="px-5 py-3 flex items-center gap-3">
-                  <div
-                    class="w-8 h-8 rounded-full bg-[#F0FDF4] text-[#16A34A] flex items-center justify-center text-[11px] font-bold shrink-0"
-                  >
+            <tbody class="font-body">
+              <tr *ngFor="let m of selectedBranch.members">
+                <td>
+                  <div class="avatar-square font-heading font-bold bg-blue" style="color: #FFF;">
                     {{ m.initials }}
                   </div>
-                  <span
-                    class="text-[14px] font-bold text-[#2563EB] hover:underline cursor-pointer"
-                    >{{ m.name }}</span
-                  >
                 </td>
-                <td class="px-5 py-3">
-                  <span
-                    class="text-[12px] font-medium text-[#475569] bg-white border border-[#E8ECF4] px-2 py-1 rounded-md"
-                    >{{ m.plan }}</span
-                  >
+                <td class="font-mono">#MEM-00{{ m.id }}</td>
+                <td class="font-bold uppercase">{{ m.name }}</td>
+                <td>
+                  <span class="flat-chip font-bold">{{ m.plan }}</span>
                 </td>
               </tr>
               <tr *ngIf="selectedBranch.members.length === 0">
-                <td
-                  colSpan="2"
-                  class="px-5 py-8 text-center text-[#94A3B8] text-[14px]"
-                >
-                  No members to display in this list view.
+                <td colspan="4" class="empty-table-cell font-body font-bold text-muted uppercase">
+                  NO MEMBERS REGISTERED AT THIS BRANCH.
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      <!-- CLASSES TAB -->
-      <div
-        *ngIf="activeTab === 'Classes'"
-        class="animate-in fade-in duration-200"
-      >
-        <div class="flex justify-between items-center mb-4">
-          <div
-            class="flex bg-[#F8F9FC] p-1 rounded-[8px] border border-[#E8ECF4]"
-          >
-            <button
-              *ngFor="let f of ['All', 'Active', 'Inactive']"
-              [class]="
-                'px-4 py-1.5 text-[13px] font-bold rounded-[6px] transition-all ' +
-                (f === 'All'
-                  ? 'bg-white text-[#0F172A] shadow-sm'
-                  : 'text-[#475569] hover:text-[#0F172A]')
-              "
-            >
-              {{ f }}
-            </button>
-          </div>
-        </div>
+      <!-- TAB 4: CLASSES TAB -->
+      <section *ngIf="activeTab === 'Classes'" class="tab-content-panel">
+        <header class="tab-section-header mb-4">
+          <h3 class="font-heading font-black text-md">CLASS SCHEDULES</h3>
+        </header>
 
-        <div
-          class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm overflow-hidden"
-        >
-          <table class="w-full text-left border-collapse">
+        <div class="table-scroll-wrapper">
+          <table class="brutal-data-table">
             <thead>
-              <tr class="bg-[#F8F9FC] border-b border-[#E8ECF4]">
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-                >
-                  Class Name
-                </th>
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-                >
-                  Category
-                </th>
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-                >
-                  Trainer
-                </th>
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-                >
-                  Schedule
-                </th>
-                <th
-                  class="px-5 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-                >
-                  Status
-                </th>
+              <tr class="font-heading">
+                <th>CLASS NAME</th>
+                <th>CATEGORY</th>
+                <th>TRAINER</th>
+                <th>SCHEDULE</th>
+                <th>STATUS</th>
               </tr>
             </thead>
-            <tbody>
-              <tr
-                *ngFor="let c of selectedBranch.classes"
-                class="border-b border-[#E8ECF4] last:border-0 hover:bg-[#F8F9FC] transition-colors"
-              >
-                <td class="px-5 py-3 font-bold text-[14px] text-[#0F172A]">
-                  {{ c.name }}
+            <tbody class="font-body">
+              <tr *ngFor="let c of selectedBranch.classes">
+                <td class="font-bold uppercase">{{ c.name }}</td>
+                <td>
+                  <span class="flat-chip font-bold bg-yellow">{{ c.category }}</span>
                 </td>
-                <td class="px-5 py-3">
+                <td class="font-bold text-muted uppercase">{{ c.trainer }}</td>
+                <td class="font-mono text-muted">{{ c.schedule }}</td>
+                <td>
                   <span
-                    class="inline-block px-2 py-0.5 bg-[#EFF5FF] text-[#2563EB] text-[11px] font-bold rounded border border-[#2563EB]/20"
-                    >{{ c.category }}</span
+                    class="brutal-badge font-heading font-bold"
+                    [style.background-color]="c.status ? '#00D26A' : '#555'"
+                    style="color: #FFF; font-size: 10px;"
                   >
-                </td>
-                <td class="px-5 py-3 text-[13px] text-[#475569] font-medium">
-                  {{ c.trainer }}
-                </td>
-                <td class="px-5 py-3 text-[13px] text-[#475569]">
-                  {{ c.schedule }}
-                </td>
-                <td class="px-5 py-3">
-                  <span
-                    [class]="
-                      'px-2.5 py-1 text-[10px] font-bold rounded border ' +
-                      (c.status
-                        ? 'bg-[#F0FDF4] text-[#16A34A] border-[#16A34A]/20'
-                        : 'bg-[#F8F9FC] text-[#94A3B8] border-[#E8ECF4]')
-                    "
-                  >
-                    {{ c.status ? "ACTIVE" : "INACTIVE" }}
+                    {{ c.status ? 'ACTIVE' : 'INACTIVE' }}
                   </span>
                 </td>
               </tr>
               <tr *ngIf="selectedBranch.classes.length === 0">
-                <td
-                  colSpan="5"
-                  class="px-5 py-8 text-center text-[#94A3B8] text-[14px]"
-                >
-                  No classes scheduled.
+                <td colspan="5" class="empty-table-cell font-body font-bold text-muted uppercase">
+                  NO CLASSES REGISTERED AT THIS BRANCH.
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      <!-- SETTINGS TAB -->
-      <div
-        *ngIf="activeTab === 'Settings'"
-        class="max-w-[800px] flex flex-col gap-8 animate-in fade-in duration-200"
-      >
-        <div>
-          <h3
-            class="font-bold text-[16px] text-[#0F172A] mb-4 border-b border-[#E8ECF4] pb-2"
-          >
-            Plan Visibility
-          </h3>
-          <div class="grid grid-cols-2 gap-3">
-            <label
-              *ngFor="let p of selectedBranch.plans"
-              [class]="
-                'flex items-center gap-3 p-3 rounded-[8px] border cursor-pointer transition-all ' +
-                (p.visible
-                  ? 'bg-[#EFF5FF] border-[#2563EB]/30'
-                  : 'bg-white border-[#E8ECF4] hover:bg-[#F8F9FC]')
-              "
-            >
-              <input
-                type="checkbox"
-                [checked]="p.visible"
-                (change)="togglePlanVisibility(p.id)"
-                class="w-4 h-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
-              />
-              <span
-                [class]="
-                  'text-[14px] font-bold ' +
-                  (p.visible ? 'text-[#2563EB]' : 'text-[#475569]')
-                "
-                >{{ p.name }}</span
-              >
-            </label>
-            <div
-              *ngIf="selectedBranch.plans.length === 0"
-              class="col-span-2 text-[13px] text-[#94A3B8]"
-            >
-              No plans configured for this branch.
+      <!-- TAB 5: SETTINGS TAB -->
+      <section *ngIf="activeTab === 'Settings'" class="tab-content-panel">
+        <div class="settings-sections-wrapper font-body">
+          
+          <!-- PLAN VISIBILITY checklist -->
+          <div class="settings-group">
+            <h4 class="settings-title font-heading font-black">PLAN VISIBILITY</h4>
+            <p class="settings-subtitle">CHOOSE WHICH MEMBERSHIP PLANS ARE PURCHASEABLE AT THIS BRANCH.</p>
+            <div class="visibility-checklist-grid mt-3">
+              <label *ngFor="let p of selectedBranch.plans" class="checkbox-container">
+                <input type="checkbox" [(ngModel)]="p.visible" (change)="togglePlanVisibility(p.id)" />
+                <span class="custom-checkbox"></span>
+                {{ p.name }}
+              </label>
             </div>
           </div>
-        </div>
 
-        <div>
-          <div
-            class="flex items-center justify-between border-b border-[#E8ECF4] pb-2 mb-4"
-          >
-            <h3 class="font-bold text-[16px] text-[#0F172A]">
-              Rooms & Facilities
-            </h3>
-            <button
-              (click)="onAddRoom()"
-              class="text-[13px] font-bold text-[#2563EB] flex items-center gap-1 hover:text-[#1D4ED8]"
-            >
-              ➕ Add Room
-            </button>
-          </div>
-          <div class="flex flex-col gap-3">
-            <div
-              *ngFor="let r of selectedBranch.rooms"
-              class="flex items-center justify-between p-4 bg-white border border-[#E8ECF4] rounded-[8px] shadow-sm"
-            >
+          <!-- ROOMS SECTION -->
+          <div class="settings-group mt-6">
+            <div class="settings-section-header mb-4">
               <div>
-                <div class="font-bold text-[14px] text-[#0F172A]">
-                  {{ r.name }}
-                </div>
-                <div class="text-[12px] text-[#94A3B8]">
-                  Capacity: {{ r.capacity }} people
-                </div>
+                <h4 class="settings-title font-heading font-black">ROOMS & STUDIOS</h4>
+                <p class="settings-subtitle">MANAGE INDIVIDUAL SPACES WITHIN THE FACILITY.</p>
               </div>
-              <button
-                (click)="toggleRoomStatus(r.id)"
-                [class]="
-                  'w-9 h-5 rounded-full relative transition-colors ' +
-                  (r.active ? 'bg-[#16A34A]' : 'bg-[#CBD5E1]')
-                "
-              >
-                <div
-                  [class]="
-                    'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
-                    (r.active ? 'translate-x-4' : 'translate-x-0')
-                  "
-                ></div>
+              <button (click)="onAddRoom()" class="btn-brutal btn-secondary font-heading font-bold">
+                + ADD ROOM
               </button>
             </div>
-            <div
-              *ngIf="selectedBranch.rooms.length === 0"
-              class="text-[13px] text-[#94A3B8]"
-            >
-              No rooms added.
+
+            <div class="table-scroll-wrapper">
+              <table class="brutal-data-table">
+                <thead>
+                  <tr class="font-heading">
+                    <th>ROOM NAME</th>
+                    <th>CAPACITY</th>
+                    <th>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody class="font-body">
+                  <tr *ngFor="let r of selectedBranch.rooms">
+                    <td class="font-bold uppercase">{{ r.name }}</td>
+                    <td class="font-heading font-black">{{ r.capacity }} SPOTS</td>
+                    <td>
+                      <div class="toggle-switch-wrapper">
+                        <button
+                          (click)="toggleRoomStatus(r.id)"
+                          class="brutal-toggle-switch"
+                          [class.active]="r.active"
+                        >
+                          <div class="toggle-thumb"></div>
+                        </button>
+                        <span class="toggle-text font-heading font-bold" [style.color]="r.active ? '#00D26A' : '#555'">
+                          {{ r.active ? 'ACTIVE' : 'INACTIVE' }}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr *ngIf="selectedBranch.rooms.length === 0">
+                    <td colspan="3" class="empty-table-cell font-body font-bold text-muted uppercase">
+                      NO ROOMS ASSIGNED TO THIS BRANCH.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
+
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   </div>
 
   <!-- ASSIGN STAFF MODAL -->
-  <div
-    *ngIf="isAssignStaffOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center"
-  >
-    <div
-      class="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-[2px]"
-      (click)="closeAssignStaffModal()"
-    ></div>
-    <div
-      class="relative bg-white rounded-[16px] shadow-2xl w-[480px] p-7 animate-in zoom-in-95 fade-in duration-200"
-    >
-      <div class="flex justify-between items-start mb-5">
-        <h3 class="font-bold text-[20px] text-[#0F172A]">
-          Assign Staff to Branch
-        </h3>
-        <button
-          (click)="closeAssignStaffModal()"
-          class="text-[#94A3B8] hover:text-[#0F172A] p-1 rounded-md hover:bg-[#F8F9FC] transition-colors"
-        >
-          ✕
-        </button>
-      </div>
+  <div *ngIf="isAssignStaffOpen" class="modal-overlay" (click)="closeAssignStaffModal()"></div>
+  <div *ngIf="isAssignStaffOpen" class="assign-staff-modal">
+    <h3 class="modal-title font-heading font-black uppercase">ASSIGN STAFF TO BRANCH</h3>
+    
+    <div class="form-field mb-4">
+      <label class="form-label">SEARCH STAFF ACCOUNTS</label>
+      <input
+        type="text"
+        placeholder="SEARCH BY NAME OR EMAIL..."
+        [(ngModel)]="staffSearchQuery"
+        class="brutal-input"
+      />
+    </div>
 
-      <div class="relative mb-4">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
-          >🔍</span
-        >
-        <input
-          type="text"
-          placeholder="Search staff members by name or email..."
-          autofocus
-          class="w-full h-11 pl-9 pr-3 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
-        />
+    <!-- Live results box -->
+    <div class="modal-search-results">
+      <div class="search-result-row">
+        <span class="result-name font-body font-bold">TINA SEN (TRAINER)</span>
+        <button (click)="executeAssignStaff()" class="btn-brutal btn-primary font-heading font-bold">ASSIGN</button>
       </div>
-
-      <div
-        class="max-h-[240px] overflow-y-auto border border-[#E8ECF4] rounded-[8px] custom-scrollbar mb-6"
-      >
-        <div
-          *ngFor="
-            let s of [
-              {
-                name: 'John Smith',
-                role: 'Trainer',
-                email: 'john@fitclub.com',
-              },
-              {
-                name: 'Aisha Khan',
-                role: 'Manager',
-                email: 'aisha@fitclub.com',
-              },
-            ];
-            let i = index
-          "
-          [class]="
-            'flex items-center justify-between p-3 ' +
-            (i > 0 ? 'border-t border-[#E8ECF4]' : '') +
-            ' last:border-0 hover:bg-[#F8F9FC] cursor-pointer'
-          "
-        >
-          <div>
-            <div class="font-bold text-[14px] text-[#0F172A]">{{ s.name }}</div>
-            <div class="text-[12px] text-[#94A3B8]">
-              {{ s.role }} • {{ s.email }}
-            </div>
-          </div>
-          <button
-            class="px-3 py-1.5 text-[12px] font-bold text-[#2563EB] bg-[#EFF5FF] rounded border border-[#2563EB]/20 hover:bg-[#2563EB] hover:text-white transition-colors"
-          >
-            Assign
-          </button>
-        </div>
-      </div>
-
-      <div class="flex justify-end pt-4 border-t border-[#E8ECF4]">
-        <button
-          (click)="closeAssignStaffModal()"
-          class="px-5 h-11 rounded-[8px] text-[14px] font-bold text-[#475569] bg-white border border-[#E8ECF4] hover:bg-[#F8F9FC] transition-all"
-        >
-          Done
-        </button>
+      <div class="search-result-row">
+        <span class="result-name font-body font-bold">RAGHAV ROY (MANAGER)</span>
+        <button (click)="executeAssignStaff()" class="btn-brutal btn-primary font-heading font-bold">ASSIGN</button>
       </div>
     </div>
+
+    <button (click)="closeAssignStaffModal()" class="btn-brutal btn-secondary w-full mt-4 font-heading font-bold uppercase">
+      CLOSE
+    </button>
   </div>
 
   <!-- TRANSFER MEMBER MODAL -->
-  <div
-    *ngIf="isTransferMemberOpen"
-    class="fixed inset-0 z-50 flex items-center justify-center"
-  >
-    <div
-      class="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-[2px]"
-      (click)="closeTransferMemberModal()"
-    ></div>
-    <div
-      class="relative bg-white rounded-[16px] shadow-2xl w-[480px] p-7 animate-in zoom-in-95 fade-in duration-200"
-    >
-      <div class="flex justify-between items-start mb-5">
-        <h3 class="font-bold text-[20px] text-[#0F172A]">Transfer Member</h3>
-        <button
-          (click)="closeTransferMemberModal()"
-          class="text-[#94A3B8] hover:text-[#0F172A] p-1 rounded-md hover:bg-[#F8F9FC] transition-colors"
-        >
-          ✕
-        </button>
+  <div *ngIf="isTransferMemberOpen" class="modal-overlay" (click)="closeTransferMemberModal()"></div>
+  <div *ngIf="isTransferMemberOpen" class="transfer-member-modal">
+    <h3 class="modal-title font-heading font-black uppercase">TRANSFER MEMBER</h3>
+
+    <form (submit)="$event.preventDefault()" class="font-body">
+      <div class="form-field mb-4">
+        <label class="form-label">SEARCH MEMBER TO TRANSFER</label>
+        <input
+          type="text"
+          placeholder="SEARCH BY NAME OR ID..."
+          [(ngModel)]="memberSearchQuery"
+          class="brutal-input"
+        />
       </div>
 
-      <div class="flex flex-col gap-4">
-        <div>
-          <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-            >Member Search</label
-          >
-          <div class="relative">
-            <span
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
-              >🔍</span
-            >
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              class="w-full h-11 pl-9 pr-3 text-[14px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
-            />
-          </div>
+      <div class="form-field mb-4">
+        <label class="form-label">SOURCE BRANCH</label>
+        <div class="read-only-box font-mono uppercase">
+          {{ transferSourceBranch }}
         </div>
       </div>
 
-      <div class="flex justify-end pt-4 border-t border-[#E8ECF4] mt-6">
-        <button
-          (click)="closeTransferMemberModal()"
-          class="px-5 h-11 rounded-[8px] text-[14px] font-bold text-[#475569] bg-white border border-[#E8ECF4] hover:bg-[#F8F9FC] transition-all"
-        >
-          Close
+      <div class="form-field mb-4">
+        <label class="form-label">TARGET BRANCH</label>
+        <div class="select-wrapper">
+          <select
+            [(ngModel)]="transferTargetBranchId"
+            name="targetBranch"
+            class="brutal-select w-full"
+          >
+            <option *ngFor="let b of branches" [value]="b.id" [disabled]="b.id === selectedBranchId">
+              {{ b.name }}
+            </option>
+          </select>
+          <span class="select-arrow">▼</span>
+        </div>
+      </div>
+
+      <div class="form-field mb-4">
+        <label class="form-label">REASON FOR TRANSFER</label>
+        <textarea
+          [(ngModel)]="transferReason"
+          name="reason"
+          class="brutal-textarea"
+          placeholder="ENTER OPERATIONAL REASON..."
+        ></textarea>
+      </div>
+
+      <div class="modal-actions mt-6">
+        <button (click)="closeTransferMemberModal()" class="btn-brutal btn-secondary font-heading font-bold uppercase">
+          CANCEL
+        </button>
+        <button (click)="executeTransferMember()" class="btn-brutal btn-primary font-heading font-bold uppercase">
+          TRANSFER MEMBER
         </button>
       </div>
-    </div>
+    </form>
   </div>
 </div>

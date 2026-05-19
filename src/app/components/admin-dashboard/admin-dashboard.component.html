@@ -1,365 +1,262 @@
-<div
-  class="flex flex-col gap-6 text-[#0F172A] w-full max-w-[1600px] mx-auto pb-10 page-transition"
->
-  <!-- HEADER -->
-  <div class="flex items-center justify-between">
-    <div>
-       <h1 class="font-bold text-[28px] tracking-tight mb-1">Admin Dashboard</h1>
-       <p class="text-[14px] text-muted">Centralized control for systems, branches, and logs.</p>
-    </div>
-    <div
-      class="flex items-center gap-3 text-[13px] text-[#475569] font-semibold bg-white px-4 py-2 rounded-lg border border-[#E8ECF4] shadow-sm"
-    >
-      <div class="w-2.5 h-2.5 rounded-full bg-green animate-pulse"></div>
-      All Systems Operational
-    </div>
+<div class="admin-dashboard-container pb-10">
+  <!-- LOADING OVERLAY -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="brutal-loader">FETCHING SYSTEM METRICS...</div>
   </div>
 
-  <!-- KPI TILES (6) -->
-  <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-5">
-    <!-- Total Members -->
-    <div
-      class="bg-white rounded-xl p-5 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:shadow-md transition-all"
-    >
-      <div class="flex justify-between items-start mb-3">
-        <div
-          class="w-10 h-10 rounded-lg bg-blue/10 flex items-center justify-center text-blue"
-        >
-          <span class="text-xl">👥</span>
-        </div>
-      </div>
-      <div>
-        <div
-          class="text-[12px] font-bold text-muted uppercase tracking-widest mb-1"
-        >
-          Total Members
-        </div>
-        <div class="font-bold text-[32px] leading-none">
-          {{ totalMembers }}
-        </div>
-      </div>
-    </div>
+  <div *ngIf="!isLoading">
+    <!-- HEADER -->
+    <header class="dashboard-header mb-8">
+      <h1 class="font-heading font-black text-2xl uppercase">SYSTEM ADMINISTRATION</h1>
+      <p class="font-body text-muted uppercase">Global oversight, systems toggles, and compliance logs</p>
+    </header>
 
-    <!-- Active Memberships -->
-    <div
-      class="bg-white rounded-xl p-5 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:shadow-md transition-all"
-    >
-      <div class="flex justify-between items-start mb-3">
-        <div
-          class="w-10 h-10 rounded-lg bg-green/10 flex items-center justify-center text-green"
-        >
-          <span class="text-xl">⚡</span>
-        </div>
+    <!-- KPI TILES (6-column layout) -->
+    <section class="kpi-grid mb-8">
+      <!-- Tile 1: Total Members -->
+      <div class="kpi-card" style="border-left: 8px solid #2563EB;">
+        <span class="kpi-title font-heading font-bold">TOTAL MEMBERS</span>
+        <h2 class="kpi-value font-heading font-black">{{ formatNumber(totalMembers) }}</h2>
+        <span class="kpi-subtitle font-heading font-bold" style="color: #2563EB;">REGISTERED ACCOUNTS</span>
       </div>
-      <div>
-        <div
-          class="text-[12px] font-bold text-muted uppercase tracking-widest mb-1"
-        >
-          Active Plans
-        </div>
-        <div
-          class="font-bold text-[32px] text-green leading-none flex items-baseline gap-2"
-        >
-          {{ activePlansCount }}
-          <span class="text-[12px] font-bold text-muted tracking-normal">{{
-            totalPlansCount
-              ? Math.round((activePlansCount / totalPlansCount) * 100) +
-                "% of total"
-              : ""
-          }}</span>
-        </div>
-      </div>
-    </div>
 
-    <!-- Revenue MTD -->
-    <div
-      class="bg-white rounded-xl p-5 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:shadow-md transition-all"
-    >
-      <div class="flex justify-between items-start mb-3">
-        <div
-          class="w-10 h-10 rounded-lg bg-pink/10 flex items-center justify-center text-pink"
-        >
-          <span class="text-xl">₹</span>
-        </div>
+      <!-- Tile 2: Active Memberships -->
+      <div class="kpi-card" style="border-left: 8px solid #00D26A;">
+        <span class="kpi-title font-heading font-bold">ACTIVE PLANS</span>
+        <h2 class="kpi-value font-heading font-black">{{ activePlansCount }}</h2>
+        <span class="kpi-subtitle font-heading font-bold" style="color: #555;">
+          {{ totalPlansCount ? Math.round((activePlansCount / totalPlansCount) * 100) : 83 }}% OF TOTAL
+        </span>
       </div>
-      <div>
-        <div
-          class="text-[12px] font-bold text-muted uppercase tracking-widest mb-1"
-        >
-          Revenue MTD
-        </div>
-        <div
-          class="font-bold text-[32px] leading-none flex items-baseline gap-2"
-        >
-          {{ formatCurrency(revenueMTD) }}
-          <span class="text-[12px] font-bold text-green">↗ +12%</span>
-        </div>
-      </div>
-    </div>
 
-    <!-- Branches -->
-    <div
-      class="bg-white rounded-xl p-5 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:border-blue transition-all cursor-pointer group"
-    >
-      <div class="flex justify-between items-start mb-3">
-        <div
-          class="w-10 h-10 rounded-lg bg-yellow/10 flex items-center justify-center text-yellow group-hover:bg-yellow transition-colors"
-        >
-          <span class="text-xl">📍</span>
-        </div>
-        <span
-          class="text-muted group-hover:text-blue opacity-0 group-hover:opacity-100 transition-all"
-          >→</span
-        >
-      </div>
-      <div>
-        <div
-          class="text-[12px] font-bold text-muted uppercase tracking-widest mb-1 group-hover:text-blue transition-colors"
-        >
-          Branches
-        </div>
-        <div class="font-bold text-[32px] leading-none">
-          {{ branches.length }}
+      <!-- Tile 3: Revenue MTD (Sparkline) -->
+      <div class="kpi-card" style="border-left: 8px solid #00D26A;">
+        <span class="kpi-title font-heading font-bold">REVENUE MTD</span>
+        <h2 class="kpi-value font-heading font-black" style="font-size: 26px;">{{ formatCurrency(revenueMTD) }}</h2>
+        <div class="sparkline-wrapper">
+          <div class="spark-bar" style="height: 12px;"></div>
+          <div class="spark-bar" style="height: 18px;"></div>
+          <div class="spark-bar" style="height: 15px;"></div>
+          <div class="spark-bar" style="height: 24px;"></div>
+          <div class="spark-bar" style="height: 28px;"></div>
+          <div class="spark-bar" style="height: 38px;"></div>
         </div>
       </div>
-    </div>
 
-    <!-- Staff Accounts -->
-    <div
-      class="bg-white rounded-xl p-5 border border-[#E8ECF4] shadow-sm flex flex-col justify-between hover:shadow-md transition-all"
-    >
-      <div class="flex justify-between items-start mb-3">
-        <div
-          class="w-10 h-10 rounded-lg bg-purple/10 flex items-center justify-center text-purple"
-        >
-          <span class="text-xl">🛡️</span>
-        </div>
-        <div
-          class="px-2 py-0.5 rounded bg-yellow text-black text-[10px] font-bold border border-black/10"
-        >
-          {{ lockedStaffCount }} locked
-        </div>
-      </div>
-      <div>
-        <div
-          class="text-[12px] font-bold text-muted uppercase tracking-widest mb-1"
-        >
-          Staff Accounts
-        </div>
-        <div class="font-bold text-[32px] leading-none">{{ staffCount }}</div>
-      </div>
-    </div>
-
-    <!-- Pending Audit Items -->
-    <div
-      class="bg-yellow rounded-xl p-5 border border-black shadow-hard flex flex-col justify-between hover:shadow-hover transition-all"
-    >
-      <div class="flex justify-between items-start mb-3">
-        <div
-          class="w-10 h-10 rounded-lg bg-white flex items-center justify-center text-black shadow-sm border border-black"
-        >
-          <span class="text-xl">⚠️</span>
-        </div>
-      </div>
-      <div>
-        <div
-          class="text-[12px] font-bold text-black uppercase tracking-widest mb-1"
-        >
-          Pending Audits
-        </div>
-        <div class="font-bold text-[32px] text-black leading-none">
-          {{ auditLogs.length }}
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- THREE-COLUMN MIDDLE ROW -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- LEFT: System Health / Feature Flags -->
-    <div
-      class="bg-white border border-[#E8ECF4] rounded-xl shadow-sm flex flex-col h-[520px]"
-    >
-      <div
-        class="px-6 py-5 border-b border-[#E8ECF4] flex items-center justify-between bg-gray-50 rounded-t-xl"
-      >
-        <h2 class="font-bold text-[16px] tracking-tight">
-          Feature Flags
-        </h2>
-        <div
-          class="flex items-center gap-1.5 text-[12px] font-bold text-green"
-        >
-          <span class="w-2 h-2 rounded-full bg-green"></span> Healthy
-        </div>
-      </div>
-      <div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
-        <div
-          *ngFor="let flag of flags"
-          class="flex items-center justify-between p-4 border-b border-[#E8ECF4] last:border-b-0 hover:bg-gray-50 transition-colors rounded-lg"
-        >
-          <div>
-            <div class="font-bold text-[15px] text-[#0F172A] mb-0.5">
-              {{ flag.name }}
-            </div>
-            <div class="text-[11px] text-muted">
-              Modified by {{ flag.by }} · {{ flag.lastModified }}
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <span
-              [class]="
-                'text-[10px] font-bold tracking-widest w-8 text-right ' +
-                (flag.enabled ? 'text-green' : 'text-muted')
-              "
-            >
-              {{ flag.enabled ? "ON" : "OFF" }}
-            </span>
-            <button
-              (click)="toggleFlag(flag.id)"
-              [class]="
-                'w-10 h-6 rounded-full relative transition-colors border border-black/10 ' +
-                (flag.enabled ? 'bg-blue' : 'bg-gray-200')
-              "
-            >
-              <div
-                [class]="
-                  'absolute top-0.5 left-0.5 w-4.5 h-4.5 rounded-full bg-white transition-transform shadow-sm ' +
-                  (flag.enabled ? 'translate-x-4' : 'translate-x-0')
-                "
-              ></div>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- CENTER: Recent Audit Log -->
-    <div
-      class="bg-white border border-[#E8ECF4] rounded-xl shadow-sm flex flex-col h-[520px]"
-    >
-      <div
-        class="px-6 py-5 border-b border-[#E8ECF4] flex flex-col gap-4 bg-gray-50 rounded-t-xl"
-      >
-        <div class="flex items-center justify-between">
-           <h2 class="font-bold text-[16px] tracking-tight">Audit Log</h2>
-           <button class="text-[12px] font-bold text-blue hover:underline">View All →</button>
-        </div>
-        <div class="flex gap-2">
-            <button (click)="setFilter('ALL')" [class.bg-yellow]="selectedFilter === 'ALL'" class="px-4 h-9 rounded-lg text-[12px] font-bold border border-black shadow-sm transition-all" [class.bg-white]="selectedFilter !== 'ALL'">All</button>
-            <button (click)="setFilter('SECURITY')" [class.bg-yellow]="selectedFilter === 'SECURITY'" class="px-4 h-9 rounded-lg text-[12px] font-bold border border-[#E8ECF4] text-muted hover:bg-white hover:border-black transition-all" [class.bg-white]="selectedFilter !== 'SECURITY'">Security</button>
-            <button (click)="setFilter('BILLING')" [class.bg-yellow]="selectedFilter === 'BILLING'" class="px-4 h-9 rounded-lg text-[12px] font-bold border border-[#E8ECF4] text-muted hover:bg-white hover:border-black transition-all" [class.bg-white]="selectedFilter !== 'BILLING'">Billing</button>
-        </div>
-      </div>
-      <div class="flex-1 overflow-y-auto p-2">
-        <table class="w-full text-left border-collapse">
-          <tbody>
-            <tr
-              *ngFor="let log of filteredLogs; let i = index"
-              [class]="
-                'border-b border-[#E8ECF4]/50 last:border-0 hover:bg-gray-50 transition-colors rounded-lg'
-              "
-            >
-              <td class="px-4 py-4">
-                <div class="text-[14px] font-bold text-[#0F172A]">
-                  {{ log.user }}
-                </div>
-                <div class="text-[11px] text-muted">{{ log.time }}</div>
-              </td>
-              <td class="px-4 py-4 text-[13px] text-muted font-medium">
-                {{ log.entity }}
-              </td>
-              <td class="px-4 py-4 text-right">
-                <span
-                  class="inline-flex px-3 py-1 rounded bg-white border border-black/10 text-[10px] font-bold tracking-widest shadow-sm"
-                  [style.color]="log.color"
-                >
-                  {{ log.action }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- RIGHT: Branch Overview -->
-    <div
-      class="bg-white border border-[#E8ECF4] rounded-xl shadow-sm flex flex-col h-[520px]"
-    >
-      <div
-        class="px-6 py-5 border-b border-[#E8ECF4] flex items-center justify-between bg-gray-50 rounded-t-xl"
-      >
-        <h2 class="font-bold text-[16px] tracking-tight">Branch Overview</h2>
-        <span
-          class="bg-blue/10 text-blue text-[11px] font-bold px-2 py-0.5 rounded-lg border border-blue/20"
-          >{{ branches.length }} Total</span
-        >
-      </div>
-      <div class="flex-1 overflow-y-auto p-3 custom-scrollbar">
-        <div
-          *ngFor="let branch of branches"
-          class="p-4 mb-3 border border-[#E8ECF4] hover:border-blue hover:shadow-sm transition-all rounded-xl"
-        >
-          <div class="flex items-center justify-between mb-3">
-            <div>
-              <div class="font-bold text-[15px] text-[#0F172A]">
-                {{ branch.name }}
-              </div>
-              <div class="text-[12px] text-muted">{{ branch.city }}</div>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <span
-                class="px-2 py-0.5 rounded text-[10px] font-bold tracking-widest"
-                [class]="branch.active ? 'bg-green/10 text-green' : 'bg-gray-100 text-muted'"
-              >
-                {{ branch.active ? "ACTIVE" : "INACTIVE" }}
-              </span>
-            </div>
-          </div>
-          <div class="flex gap-2">
-            <span
-              class="px-2.5 py-1.5 bg-gray-50 text-muted rounded-lg text-[11px] font-bold border border-[#E8ECF4] flex-1 text-center"
-            >
-              👥 {{ formatNumber(branch.members) }}
-            </span>
-            <span
-              class="px-2.5 py-1.5 bg-gray-50 text-muted rounded-lg text-[11px] font-bold border border-[#E8ECF4] flex-1 text-center"
-            >
-              ⚡ {{ branch.classes }}
-            </span>
-          </div>
-        </div>
-      </div>
-      <div class="p-4 border-t border-[#E8ECF4]">
-        <button
-          (click)="onAddBranch()"
-          class="w-full h-12 bg-white hover:bg-yellow text-black font-bold text-[14px] rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm border border-black"
-        >
-          <span>➕</span> Add Branch
+      <!-- Tile 4: Branches -->
+      <div class="kpi-card" style="border-left: 8px solid #00D9FF;">
+        <span class="kpi-title font-heading font-bold">BRANCHES</span>
+        <h2 class="kpi-value font-heading font-black">{{ branches.length }}</h2>
+        <button (click)="onAddBranch()" class="kpi-action-link font-heading font-bold text-blue">
+          VIEW ALL →
         </button>
       </div>
-    </div>
-  </div>
 
-  <!-- BOTTOM: Quality Strip -->
-  <div
-    class="bg-white border border-[#E8ECF4] rounded-xl shadow-sm p-8 w-full"
-  >
-    <div class="flex items-center justify-between mb-6">
-       <h2 class="font-bold text-[14px] text-muted uppercase tracking-[0.2em]">System Quality Health</h2>
-       <div class="text-[12px] font-bold text-green">SCAN: CLEAN</div>
-    </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-      <div *ngFor="let metric of ['Security', 'Reliability', 'Issues', 'Coverage', 'Duplications', 'Hotspots']" class="flex flex-col gap-3">
-         <div class="w-14 h-14 rounded-xl bg-gray-50 border border-[#E8ECF4] flex items-center justify-center font-bold text-xl text-[#0F172A] shadow-sm">
-            {{ metric === 'Issues' ? '3' : metric === 'Coverage' ? '84%' : metric === 'Duplications' ? '1.2%' : 'A' }}
-         </div>
-         <div>
-            <div class="text-[11px] font-bold text-muted uppercase tracking-widest mb-1">{{ metric }}</div>
-            <div class="text-[13px] font-bold text-[#0F172A]">PASSING</div>
-         </div>
+      <!-- Tile 5: Staff Accounts -->
+      <div class="kpi-card" style="border-left: 8px solid #7C3AED;">
+        <span class="kpi-title font-heading font-bold">STAFF ACCOUNTS</span>
+        <h2 class="kpi-value font-heading font-black">{{ staffCount }}</h2>
+        <span class="brutal-badge font-heading font-bold staff-badge" style="background-color: #FFB800; color: #111;">
+          {{ lockedStaffCount }} LOCKED
+        </span>
       </div>
-    </div>
+
+      <!-- Tile 6: Pending Audit Items (#FFFBEB card bg) -->
+      <div class="kpi-card kpi-card-tint" style="border-left: 8px solid #FFB800;">
+        <span class="kpi-title font-heading font-bold" style="color: #FFB800;">PENDING AUDITS</span>
+        <h2 class="kpi-value font-heading font-black" style="color: #111;">6</h2>
+        <span class="kpi-subtitle font-heading font-bold" style="color: #FFB800;">REVIEWS REQUIRED</span>
+      </div>
+    </section>
+
+    <!-- THREE-COLUMN MIDDLE ROW -->
+    <section class="middle-row-grid mb-8">
+      <!-- LEFT: Feature Flags -->
+      <div class="brutal-card system-flags-card">
+        <header class="card-header-row">
+          <h3 class="font-heading font-black text-md uppercase">FEATURE FLAGS</h3>
+          <span class="status-indicator font-heading font-bold text-green">
+            ● ALL SYSTEMS OPERATIONAL
+          </span>
+        </header>
+
+        <div class="flags-list-container">
+          <div *ngFor="let flag of flags" class="flag-row">
+            <div class="flag-info">
+              <span class="flag-label font-body font-bold uppercase">{{ flag.name }}</span>
+              <span class="flag-modified font-body">MODIFIED {{ flag.lastModified }} BY {{ flag.by }}</span>
+            </div>
+            
+            <div class="toggle-switch-wrapper">
+              <span
+                class="toggle-label font-heading font-bold"
+                [style.color]="flag.enabled ? '#00D26A' : '#555'"
+              >
+                {{ flag.enabled ? 'ON' : 'OFF' }}
+              </span>
+              <button
+                (click)="toggleFlag(flag.id)"
+                class="brutal-toggle-switch"
+                [class.active]="flag.enabled"
+              >
+                <div class="toggle-thumb"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER: Recent Audit Log -->
+      <div class="brutal-card recent-audit-card">
+        <header class="card-header-row">
+          <h3 class="font-heading font-black text-md uppercase">RECENT AUDIT LOG</h3>
+          <button class="btn-link font-body font-bold">VIEW ALL →</button>
+        </header>
+
+        <!-- Filters -->
+        <div class="audit-filters-bar mb-4">
+          <button
+            (click)="setFilter('ALL')"
+            [class.active]="selectedFilter === 'ALL'"
+            class="filter-pill font-heading"
+          >
+            ALL
+          </button>
+          <button
+            (click)="setFilter('SECURITY')"
+            [class.active]="selectedFilter === 'SECURITY'"
+            class="filter-pill font-heading"
+          >
+            SECURITY
+          </button>
+          <button
+            (click)="setFilter('BILLING')"
+            [class.active]="selectedFilter === 'BILLING'"
+            class="filter-pill font-heading"
+          >
+            BILLING
+          </button>
+        </div>
+
+        <!-- Audit Table -->
+        <div class="table-wrapper">
+          <table class="brutal-table-grid">
+            <thead class="font-heading">
+              <tr>
+                <th>USER</th>
+                <th>ENTITY</th>
+                <th>ACTION</th>
+                <th>TIMESTAMP</th>
+              </tr>
+            </thead>
+            <tbody class="font-body">
+              <tr *ngFor="let log of filteredLogs">
+                <td class="font-bold uppercase">{{ log.user }}</td>
+                <td class="uppercase">{{ log.entity }}</td>
+                <td>
+                  <span
+                    class="brutal-badge font-heading font-bold action-badge"
+                    [style.background-color]="log.color"
+                    style="color: #FFF;"
+                  >
+                    {{ log.action }}
+                  </span>
+                </td>
+                <td class="font-mono text-muted">{{ log.time }}</td>
+              </tr>
+              <!-- Last row implying more entries -->
+              <tr class="table-more-row">
+                <td colspan="4" class="text-center font-body text-muted uppercase">
+                  ... VISIT AUDIT LOG CONSOLE FOR COMPLETE AUDIT HISTORY ...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT: Branch Overview -->
+      <div class="brutal-card branch-overview-card">
+        <header class="card-header-row">
+          <h3 class="font-heading font-black text-md uppercase">BRANCH OVERVIEW</h3>
+          <span class="brutal-badge font-heading font-bold" style="background-color: #2563EB; color: #FFF;">
+            {{ branches.length }} TOTAL
+          </span>
+        </header>
+
+        <div class="branches-list">
+          <div *ngFor="let b of branches" class="branch-row-item">
+            <div class="branch-meta">
+              <span class="branch-name font-heading font-bold uppercase">{{ b.name }}</span>
+              <span class="branch-city font-body text-muted uppercase">{{ b.city }}</span>
+            </div>
+
+            <!-- Chips -->
+            <div class="branch-chips">
+              <span class="brutal-chip font-heading font-bold" style="background-color: #2563EB; color: #FFF;">
+                {{ b.members }} MEMBERS
+              </span>
+              <span class="brutal-chip font-heading font-bold" style="background-color: #00D9FF; color: #111;">
+                {{ b.classes }} CLASSES TODAY
+              </span>
+            </div>
+
+            <!-- Status Dot -->
+            <div
+              class="status-square-dot"
+              [style.background-color]="b.active ? '#00D26A' : '#555'"
+              [title]="b.active ? 'ACTIVE' : 'INACTIVE'"
+            ></div>
+          </div>
+        </div>
+
+        <button (click)="onAddBranch()" class="btn-action btn-secondary mt-auto w-full">
+          + ADD BRANCH
+        </button>
+      </div>
+    </section>
+
+    <!-- BOTTOM: Code Quality Strip -->
+    <section class="brutal-card quality-strip-card">
+      <h3 class="quality-title font-heading font-bold">CODE QUALITY METRICS</h3>
+      
+      <div class="quality-grid">
+        <!-- Metric 1: Security -->
+        <div class="quality-metric-item">
+          <span class="metric-value font-heading font-black text-green">A</span>
+          <span class="metric-label font-body font-bold">SECURITY</span>
+        </div>
+
+        <!-- Metric 2: Reliability -->
+        <div class="quality-metric-item">
+          <span class="metric-value font-heading font-black text-green">A</span>
+          <span class="metric-label font-body font-bold">RELIABILITY</span>
+        </div>
+
+        <!-- Metric 3: Issues -->
+        <div class="quality-metric-item">
+          <span class="metric-value font-heading font-black text-red">3</span>
+          <span class="metric-label font-body font-bold">ISSUES</span>
+        </div>
+
+        <!-- Metric 4: Coverage -->
+        <div class="quality-metric-item">
+          <span class="metric-value font-heading font-black text-green">84%</span>
+          <span class="metric-label font-body font-bold">COVERAGE</span>
+        </div>
+
+        <!-- Metric 5: Duplications -->
+        <div class="quality-metric-item">
+          <span class="metric-value font-heading font-black text-green">1.2%</span>
+          <span class="metric-label font-body font-bold">DUPLICATIONS</span>
+        </div>
+
+        <!-- Metric 6: Security Hotspots -->
+        <div class="quality-metric-item">
+          <span class="metric-value font-heading font-black text-green">A</span>
+          <span class="metric-label font-body font-bold">SECURITY HOTSPOTS</span>
+        </div>
+      </div>
+    </section>
   </div>
 </div>

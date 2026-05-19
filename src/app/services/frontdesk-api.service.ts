@@ -108,7 +108,7 @@ export interface ClassBookingDto {
   bookingId?: number;
   classId: number;
   memberId: number;
-  bookingStatus?: 'CONFIRMED' | 'WAITLISTED' | 'CANCELLED';
+  bookingStatus?: 'CONFIRMED' | 'WAITLISTED' | 'CANCELLED' | 'NO_SHOW';
   waitlistPosition?: number;
   cancelledAt?: string;
   overrideBy?: number;

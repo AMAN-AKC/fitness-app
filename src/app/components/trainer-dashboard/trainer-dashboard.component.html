@@ -1,399 +1,216 @@
 <div class="trainer-dashboard-container">
-  <!-- HEADER -->
-  <div class="header-section">
-    <div>
-      <h1 class="header-title">Trainer Dashboard</h1>
-      <p class="header-subtitle">Manage your schedule and clients.</p>
+  <!-- SUBSTITUTION ALERT BANNER -->
+  <div *ngIf="subAlertOpen" class="sub-alert-banner">
+    <div class="sub-alert-left">
+      <span class="sub-alert-text">
+        ℹ YOU'VE BEEN ASSIGNED AS SUBSTITUTE FOR YOGA BASICS — FRIDAY 6:00 PM. MEMBERS HAVE BEEN NOTIFIED.
+      </span>
     </div>
-  </div>
-
-  <!-- ALERT BANNER -->
-  <div *ngIf="subAlertOpen" class="alert-banner">
-    <div class="alert-content">
-      <svg
-        width="18"
-        height="18"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-      >
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="16" x2="12" y2="12"></line>
-        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-      </svg>
-      <span
-        >You've been assigned as substitute for Yoga Basics — Friday 6:00 PM.
-        Members have been notified.</span
-      >
-    </div>
-    <div class="alert-actions">
-      <button class="alert-link">
-        View Class <span class="arrow">→</span>
-      </button>
-      <button (click)="closeSubAlert()" class="alert-close">×</button>
+    <div class="sub-alert-right">
+      <a href="#" class="view-class-link" (click)="$event.preventDefault()">VIEW CLASS →</a>
+      <button (click)="closeSubAlert()" class="close-alert-btn" aria-label="Close Alert">×</button>
     </div>
   </div>
 
   <!-- KPI CARDS -->
   <div class="kpi-grid">
-    <!-- Classes This Week -->
+    <!-- Card 1: Classes This Week -->
     <div class="kpi-card">
-      <div class="kpi-header">
-        <span class="kpi-label">Classes This Week</span>
-      </div>
-      <div class="kpi-content">
-        <div class="kpi-value">{{ classesThisWeek }}</div>
-        <div class="mini-chart">
-          <div
-            *ngFor="let height of chartData"
-            class="chart-bar"
-            [style.height.%]="height"
-          ></div>
+      <div class="kpi-label">CLASSES THIS WEEK</div>
+      <div class="kpi-value-row">
+        <div class="kpi-number">{{ classesThisWeek }}</div>
+        <!-- Mini bar chart (7 bars, flat #2563EB, 3px solid #000, no radius) -->
+        <div class="mini-bar-chart">
+          <div *ngFor="let height of chartData" class="chart-bar" [style.height.px]="height"></div>
         </div>
       </div>
     </div>
 
-    <!-- PT Sessions Today -->
+    <!-- Card 2: PT Sessions Today -->
     <div class="kpi-card">
-      <div class="kpi-header">
-        <span class="kpi-label">PT Sessions Today</span>
-      </div>
-      <div class="kpi-content">
-        <div class="kpi-value">{{ ptSessionsToday }}</div>
-        <div class="session-badges">
-          <ng-container *ngFor="let time of sessionTimes">
-            <span class="session-badge">
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              {{ time }}
-            </span>
-          </ng-container>
+      <div class="kpi-label">PT SESSIONS TODAY</div>
+      <div class="kpi-value-row">
+        <div class="kpi-number">{{ ptSessionsToday }}</div>
+        <!-- Time chips -->
+        <div class="time-chips">
+          <span class="time-chip chip-blue">10:00 AM</span>
+          <span class="time-chip">2:00 PM</span>
+          <span class="time-chip">5:00 PM</span>
         </div>
       </div>
     </div>
 
-    <!-- Pending Requests -->
-    <div class="kpi-card kpi-card--warning">
-      <div class="kpi-header">
-        <span class="kpi-label">Pending Requests</span>
-      </div>
-      <div class="kpi-content">
-        <div class="kpi-value kpi-value--warning">
-          {{ getPendingRequests() }}
-        </div>
-        <button class="review-btn">Review Now →</button>
+    <!-- Card 3: Pending Requests -->
+    <div class="kpi-card kpi-yellow-tint">
+      <div class="kpi-label">PENDING REQUESTS</div>
+      <div class="kpi-value-row">
+        <div class="kpi-number">{{ getPendingRequests() }}</div>
+        <button class="review-link-btn" (click)="$event.preventDefault()">REVIEW NOW →</button>
       </div>
     </div>
   </div>
 
-  <!-- MAIN CONTENT GRID -->
-  <div class="content-grid">
-    <!-- MY CLASSES THIS WEEK -->
-    <div class="card card--classes">
-      <div class="card-header">
-        <h3 class="card-title">My Classes This Week</h3>
+  <!-- TWO-COLUMN MIDDLE ROW -->
+  <div class="middle-row-grid">
+    <!-- LEFT COLUMN: MY CLASSES THIS WEEK -->
+    <section class="trainer-card classes-card">
+      <div class="card-header-row">
+        <h2 class="card-heading">MY CLASSES THIS WEEK</h2>
         <div class="week-nav">
-          <button class="nav-btn">←</button>
-          <span class="week-label">Apr 22–28</span>
-          <button class="nav-btn">→</button>
+          <button class="nav-arrow-btn">←</button>
+          <span class="week-title-text">WEEK OF APR 22</span>
+          <button class="nav-arrow-btn">→</button>
         </div>
       </div>
 
-      <div class="week-calendar">
-        <div *ngFor="let day of weekDays; let i = index" class="day-column">
-          <div [ngClass]="{ 'day-header': true, today: i === 3 }">
-            {{ day }} {{ 22 - 3 + i }}
+      <!-- 7-column CSS Grid calendar -->
+      <div class="calendar-grid-container">
+        <div *ngFor="let day of ['MON 22', 'TUE 23', 'WED 24', 'THU 25', 'FRI 26', 'SAT 27', 'SUN 28']; let i = index" class="calendar-col">
+          <div class="col-day-header">{{ day }}</div>
+          
+          <div class="col-body-slots">
+            <!-- Thursday Classes -->
+            <ng-container *ngIf="i === 3">
+              <div class="class-block block-yoga" (click)="toggleClassExpanded(1)">
+                <span class="block-title">YOGA</span>
+                <span class="block-time">7:00 AM</span>
+              </div>
+            </ng-container>
+
+            <!-- Friday Classes -->
+            <ng-container *ngIf="i === 4">
+              <div class="class-block block-strength" (click)="toggleClassExpanded(2)">
+                <span class="block-title">STRENGTH</span>
+                <span class="block-time">2:00 PM</span>
+              </div>
+              <div class="class-block block-yoga block-substitute" (click)="toggleClassExpanded(1)">
+                <span class="block-title">YOGA (SUB)</span>
+                <span class="block-time">6:00 PM</span>
+              </div>
+            </ng-container>
+
+            <!-- Saturday Classes -->
+            <ng-container *ngIf="i === 5">
+              <div class="class-block block-cardio" (click)="toggleClassExpanded(3)">
+                <span class="block-title">CARDIO</span>
+                <span class="block-time">10:00 AM</span>
+              </div>
+            </ng-container>
           </div>
-
-          <!-- Thursday Classes -->
-          <ng-container *ngIf="i === 3">
-            <div
-              class="class-block class-block--teal"
-              (click)="toggleClassExpanded(1)"
-            >
-              <div class="class-name">Yoga Basics</div>
-              <div class="class-time">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                07:00 AM
-              </div>
-            </div>
-          </ng-container>
-
-          <!-- Friday Classes -->
-          <ng-container *ngIf="i === 4">
-            <div
-              class="class-block class-block--orange"
-              (click)="toggleClassExpanded(2)"
-            >
-              <div class="class-name">Strength Core</div>
-              <div class="class-time">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                14:00 PM
-              </div>
-            </div>
-            <div class="class-block class-block--substitute">
-              <div class="class-name">Yoga Basics (Sub)</div>
-              <div class="class-time">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                18:00 PM
-              </div>
-            </div>
-          </ng-container>
-
-          <!-- Saturday Classes -->
-          <ng-container *ngIf="i === 5">
-            <div class="class-block class-block--purple">
-              <div class="class-name">HIIT Int.</div>
-              <div class="class-time">
-                <svg
-                  width="10"
-                  height="10"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                10:00 AM
-              </div>
-            </div>
-          </ng-container>
         </div>
       </div>
 
-      <!-- Expanded Class Details -->
-      <div *ngIf="expandedClass" class="card-footer expanded-footer">
-        <div class="expanded-content">
-          <div>
-            <h4 class="expanded-title">
-              {{ expandedClass === 1 ? "Morning Yoga Flow" : "Core Strength" }}
-            </h4>
-            <div class="expanded-meta">
-              <span>Room A</span>
-              <span>·</span>
-              <span class="enrolled">18/20 Enrolled</span>
-            </div>
-          </div>
-          <button class="materials-btn">Materials</button>
+      <!-- Expanded Details Panel (below calendar, not modal) -->
+      <div class="details-pane-container" *ngIf="expandedClass">
+        <h3 class="pane-title">
+          {{ expandedClass === 1 ? 'YOGA BASICS' : expandedClass === 2 ? 'STRENGTH CORE' : 'CARDIO BLAST' }}
+        </h3>
+        <div class="pane-meta">
+          <span class="meta-label">ROOM:</span>
+          <span class="meta-val font-mono">{{ expandedClass === 1 ? 'ROOM A' : expandedClass === 2 ? 'ROOM B' : 'ROOM C' }}</span>
+          <span class="meta-divider">|</span>
+          <span class="meta-label">ENROLLED:</span>
+          <span class="meta-val font-mono">18/20</span>
+          <span class="meta-divider">|</span>
+          <a href="#" class="materials-link" (click)="$event.preventDefault()">MATERIALS LINK →</a>
         </div>
       </div>
 
-      <div class="card-footer">
-        <button class="view-full-btn">View Full Schedule</button>
+      <div class="card-footer-row">
+        <button class="view-schedule-btn">VIEW FULL SCHEDULE →</button>
       </div>
-    </div>
+    </section>
 
-    <!-- PT SESSION REQUESTS -->
-    <div class="card card--requests">
-      <div class="card-header">
-        <h3 class="card-title">PT Session Requests</h3>
+    <!-- RIGHT COLUMN: PT SESSION REQUESTS -->
+    <section class="trainer-card requests-card">
+      <div class="card-header-row border-bottom">
+        <h2 class="card-heading">PT SESSION REQUESTS</h2>
       </div>
 
-      <div class="requests-list">
-        <div *ngFor="let request of ptRequests" class="request-card">
-          <div class="request-header">
-            <div class="member-info">
-              <div class="member-avatar">{{ request.avatar }}</div>
-              <div>
-                <h4 class="member-name">{{ request.name }}</h4>
-                <span class="package-badge">{{ request.pkg }}</span>
+      <div class="requests-scroller">
+        <div *ngFor="let req of ptRequests" class="request-item-card">
+          <!-- Left side: Avatar + Info -->
+          <div class="request-item-main">
+            <div class="avatar-square">{{ req.avatar }}</div>
+            <div class="request-item-details">
+              <div class="name-badge-row">
+                <span class="member-name">{{ req.name }}</span>
+                <span class="package-badge">{{ req.pkg }}</span>
               </div>
+              <div class="slot-text">REQUESTED SLOT: {{ req.date }} &#64; {{ req.time }}</div>
+              <p class="note-text" *ngIf="req.note">Note: <i>"{{ req.note }}"</i></p>
             </div>
           </div>
 
-          <div class="request-datetime">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="16" y1="2" x2="16" y2="6"></line>
-              <line x1="8" y1="2" x2="8" y2="6"></line>
-              <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
-            {{ request.date }}
-            <span>·</span>
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            {{ request.time }}
-          </div>
-
-          <p *ngIf="request.note" class="request-note">{{ request.note }}</p>
-
-          <div *ngIf="request.status === 'pending'" class="request-actions">
-            <button
-              (click)="handleRequestAction(request.id, 'accepted')"
-              class="action-btn accept-btn"
-            >
-              <span>✓</span> Accept
-            </button>
-            <button
-              (click)="handleRequestAction(request.id, 'declined')"
-              class="action-btn decline-btn"
-            >
-              <span>✕</span> Decline
-            </button>
-          </div>
-
-          <div
-            *ngIf="request.status !== 'pending'"
-            [ngClass]="'status-badge status-badge--' + request.status"
-          >
-            {{ request.status }}
+          <!-- Bottom: Action row -->
+          <div class="request-actions-row">
+            <ng-container *ngIf="req.status === 'pending'; else resolvedState">
+              <button class="btn-accept" (click)="handleRequestAction(req.id, 'accepted')">✔ ACCEPT</button>
+              <button class="btn-decline" (click)="handleRequestAction(req.id, 'declined')">✗ DECLINE</button>
+            </ng-container>
+            <ng-template #resolvedState>
+              <span class="resolved-badge" [class.accepted]="req.status === 'accepted'">
+                {{ req.status | uppercase }}
+              </span>
+            </ng-template>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   </div>
 
-  <!-- COMPLETED SESSIONS -->
-  <div class="card card--sessions">
-    <div class="card-header">
-      <h3 class="card-title">Completed Sessions</h3>
-      <button class="export-btn">
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-        Export This Month
-      </button>
+  <!-- BOTTOM: COMPLETED SESSIONS TABLE -->
+  <section class="trainer-card completed-sessions-card">
+    <div class="card-header-row">
+      <h2 class="card-heading">COMPLETED SESSIONS</h2>
+      <button class="btn-secondary btn-sm">EXPORT THIS MONTH ↓</button>
     </div>
 
-    <div class="sessions-table">
-      <table>
+    <div class="table-responsive">
+      <table class="completed-table">
         <thead>
           <tr>
-            <th>Member</th>
-            <th>Date</th>
-            <th>Duration</th>
-            <th>Rating</th>
-            <th>Notes</th>
-            <th>Action</th>
+            <th>MEMBER</th>
+            <th>DATE</th>
+            <th>DURATION</th>
+            <th>RATING</th>
+            <th>NOTES</th>
+            <th>ACTION</th>
           </tr>
         </thead>
         <tbody>
-          <ng-container *ngFor="let session of completedSessions">
-            <tr class="session-row">
-              <td class="member-cell">{{ session.name }}</td>
-              <td class="date-cell">{{ session.date }}</td>
-              <td class="duration-cell">{{ session.duration }}</td>
-              <td class="rating-cell">
-                <div *ngIf="session.rating" class="stars">
-                  <span
-                    *ngFor="let _ of getRatingStars(session.rating)"
-                    class="star filled"
-                    >★</span
-                  >
-                  <span
-                    *ngFor="let _ of getEmptyStars(session.rating)"
-                    class="star empty"
-                    >★</span
-                  >
+          <ng-container *ngFor="let s of completedSessions">
+            <tr class="completed-row">
+              <td class="font-bold">{{ s.name }}</td>
+              <td class="font-mono">{{ s.date }}</td>
+              <td class="font-mono">{{ s.duration }}</td>
+              <td>
+                <div class="star-rating">
+                  <span class="star filled" *ngFor="let _ of getRatingStars(s.rating)">★</span><!--
+               --><span class="star empty" *ngFor="let _ of getEmptyStars(s.rating)">★</span>
                 </div>
-                <span *ngIf="!session.rating" class="pending">Pending</span>
               </td>
-              <td class="notes-cell" [title]="session.notes">
-                {{ session.notes || "No notes" }}
-              </td>
-              <td class="action-cell">
-                <button (click)="toggleNotes(session.id)" class="notes-btn">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path
-                      d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
-                    ></path>
-                  </svg>
-                  {{ session.notes ? "Edit Notes" : "Add Notes" }}
+              <td class="notes-text-cell">{{ s.notes || 'NO NOTES' }}</td>
+              <td>
+                <button class="add-notes-btn" (click)="toggleNotes(s.id)">
+                  {{ s.notes ? 'EDIT NOTES' : 'ADD NOTES' }}
                 </button>
               </td>
             </tr>
 
-            <!-- Notes Editor Row -->
-            <tr *ngIf="activeNotes === session.id" class="notes-editor-row">
+            <!-- Inline Notes Editor Drawer (Slides in below row) -->
+            <tr class="notes-editor-drawer-row" *ngIf="activeNotes === s.id">
               <td colspan="6">
-                <div class="notes-editor">
-                  <textarea
-                    [value]="session.notes"
-                    placeholder="Add private training notes for this session..."
-                    rows="2"
-                    class="notes-textarea"
+                <div class="inline-notes-editor">
+                  <textarea 
+                    #notesTextarea
+                    [value]="s.notes" 
+                    placeholder="ENTER TRAINING NOTES HERE..." 
+                    class="editor-textarea"
                   ></textarea>
-                  <div class="notes-actions">
-                    <button (click)="cancelNotes()" class="btn-secondary">
-                      Cancel
-                    </button>
-                    <button (click)="saveNotes(session.id)" class="btn-primary">
-                      Save Notes
-                    </button>
+                  <div class="editor-actions">
+                    <button class="btn-primary btn-sm" (click)="s.notes = notesTextarea.value; saveNotes(s.id)">SAVE</button>
+                    <button class="btn-secondary btn-sm" (click)="cancelNotes()">CANCEL</button>
                   </div>
                 </div>
               </td>
@@ -402,5 +219,5 @@
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
 </div>

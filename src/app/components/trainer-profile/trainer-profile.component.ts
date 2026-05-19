@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ToastService } from '../../services/toast.service';
 
 export interface Trainer {
   id: string;
@@ -44,7 +45,7 @@ export class TrainerProfileComponent implements OnInit {
     '07:00 PM',
   ];
 
-  constructor() {}
+  constructor(private toastService: ToastService) {}
 
   ngOnInit(): void {
     this.initializeTrainers();
@@ -136,10 +137,10 @@ export class TrainerProfileComponent implements OnInit {
 
   bookSession(): void {
     if (this.selectedDate && this.selectedSlot && this.selectedTrainer) {
-      console.log(
-        `Booked session with ${this.selectedTrainer.name} on ${this.selectedDate} at ${this.selectedSlot}`,
-      );
+      this.toastService.success(`PT SESSION BOOKED WITH ${this.selectedTrainer.name.toUpperCase()} ON ${this.selectedDate} AT ${this.selectedSlot}`);
       this.closeBookingDrawer();
+    } else {
+      this.toastService.warning('PLEASE SELECT BOTH DATE AND TIME SLOT.');
     }
   }
 

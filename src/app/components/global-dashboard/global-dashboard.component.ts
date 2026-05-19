@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ToastService, Toast } from '../../services/toast.service';
 
 interface NavItem {
   label: string;
@@ -25,10 +26,12 @@ export class GlobalDashboardComponent implements OnInit {
   userRole: string = '';
   userName: string = 'User';
   navData: NavGroup[] = [];
+  toasts: Toast[] = [];
 
   constructor(
     private authService: AuthService,
     private router: Router,
+    private toastService: ToastService,
   ) {}
 
   ngOnInit(): void {
@@ -38,6 +41,19 @@ export class GlobalDashboardComponent implements OnInit {
       this.userName = session.fullName || session.username;
       this.initNavData();
     }
+
+    this.toastService.toasts$.subscribe((toast) => {
+      this.toasts.push(toast);
+      if (toast.duration && toast.duration > 0) {
+        setTimeout(() => {
+          this.dismissToast(toast.id);
+        }, toast.duration);
+      }
+    });
+  }
+
+  dismissToast(id: string): void {
+    this.toasts = this.toasts.filter((t) => t.id !== id);
   }
 
   private initNavData(): void {
@@ -49,6 +65,9 @@ export class GlobalDashboardComponent implements OnInit {
           { label: 'Users', icon: '👥', route: '/admin/users' },
           { label: 'Plans', icon: '📋', route: '/admin/plans' },
           { label: 'Branches', icon: '📍', route: '/admin/branches' },
+          { label: 'Audit Logs', icon: '📜', route: '/admin/audit-logs' },
+          { label: 'Bulk Data', icon: '📦', route: '/admin/import-export' },
+          { label: 'Error States', icon: '⚠️', route: '/admin/error-states' },
         ],
       },
     ];
@@ -59,6 +78,7 @@ export class GlobalDashboardComponent implements OnInit {
         items: [
           { label: 'Check-In', icon: '⚡', route: '/frontdesk/dashboard' },
           { label: 'Registration', icon: '📝', route: '/frontdesk/registration' },
+          { label: 'Notifications', icon: '🔔', route: '/frontdesk/notifications' },
         ],
       },
     ];
@@ -68,6 +88,10 @@ export class GlobalDashboardComponent implements OnInit {
         label: 'MANAGEMENT',
         items: [
           { label: 'Branch Stats', icon: '📊', route: '/manager/dashboard' },
+          { label: 'Class Schedule', icon: '📅', route: '/manager/schedule' },
+          { label: 'Audit Logs', icon: '📜', route: '/manager/audit-logs' },
+          { label: 'Bulk Data', icon: '📦', route: '/manager/import-export' },
+          { label: 'Notifications', icon: '🔔', route: '/manager/notifications' },
         ],
       },
     ];
@@ -77,6 +101,7 @@ export class GlobalDashboardComponent implements OnInit {
         label: 'TRAINING',
         items: [
           { label: 'My Classes', icon: '🏋️', route: '/trainer/dashboard' },
+          { label: 'Notifications', icon: '🔔', route: '/trainer/notifications' },
         ],
       },
     ];
@@ -86,8 +111,11 @@ export class GlobalDashboardComponent implements OnInit {
         label: 'MEMBER PORTAL',
         items: [
           { label: 'Home', icon: '🏠', route: '/member/dashboard' },
+          { label: 'Book Classes', icon: '📅', route: '/member/class-booking' },
+          { label: 'Find Trainer', icon: '🏋️', route: '/member/trainers' },
           { label: 'Buy Membership', icon: '💳', route: '/member/plans' },
           { label: 'Health & Consent', icon: '📝', route: '/member/health-forms' },
+          { label: 'Notifications', icon: '🔔', route: '/member/notifications' },
         ],
       },
     ];
@@ -123,7 +151,8 @@ export class GlobalDashboardComponent implements OnInit {
   }
 
   onNotificationsClick(): void {
-    this.router.navigate(['/admin/notifications']);
+    const rolePrefix = this.userRole === 'front_desk' || this.userRole === 'frontdesk' ? 'frontdesk' : this.userRole;
+    this.router.navigate([`/${rolePrefix}/notifications`]);
   }
 
   onProfileClick(): void {
@@ -140,11 +169,18 @@ export class GlobalDashboardComponent implements OnInit {
     if (url.includes('/frontdesk/dashboard')) return 'Check-In';
     if (url.includes('/frontdesk/registration')) return 'Member Registration';
     if (url.includes('/manager/dashboard')) return 'Branch Statistics';
+    if (url.includes('/manager/schedule')) return 'Class Schedule';
     if (url.includes('/trainer/dashboard')) return 'My Classes';
     if (url.includes('/member/dashboard')) return 'Member Home';
+    if (url.includes('/member/class-booking')) return 'Book Classes';
+    if (url.includes('/member/trainers')) return 'Find Trainer';
     if (url.includes('/member/health-forms')) return 'Health & Consent';
     if (url.includes('/member/plans')) return 'Membership Plans';
     if (url.includes('/member/checkout')) return 'Billing & Checkout';
+    if (url.includes('notifications')) return 'Notifications Center';
+    if (url.includes('audit-logs')) return 'System Audit Logs';
+    if (url.includes('import-export')) return 'Bulk Data Operations';
+    if (url.includes('error-states')) return 'Error States Showcase';
     return 'Dashboard';
   }
 

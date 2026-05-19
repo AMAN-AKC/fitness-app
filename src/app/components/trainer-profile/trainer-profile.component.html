@@ -1,261 +1,168 @@
-<div class="flex flex-col gap-6 max-w-[1400px] mx-auto pb-10">
+<div class="trainer-profiles-container">
   <!-- HEADER -->
-  <div class="flex justify-between items-center">
-    <div>
-      <h1 class="font-bold text-[28px] text-[#0F172A]">Find Your Trainer</h1>
-      <p class="text-[#475569] text-[14px] mt-1">
-        Book certified personal trainers for 1-on-1 sessions
-      </p>
+  <header class="profiles-header">
+    <div class="header-text-block">
+      <h1 class="page-title">FIND YOUR TRAINER</h1>
+      <p class="page-subtitle">BOOK CERTIFIED PERSONAL TRAINERS FOR 1-ON-1 COACHING & STRENGTH SESSIONS</p>
     </div>
-  </div>
+  </header>
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- TRAINER LIST -->
-    <div class="lg:col-span-1 flex flex-col gap-3">
-      <h2 class="font-bold text-[16px] text-[#0F172A] px-2">
-        Available Trainers
-      </h2>
-      <div
-        *ngFor="let trainer of trainers"
-        (click)="selectTrainer(trainer)"
-        [class]="
-          'p-4 rounded-[12px] border cursor-pointer transition-all ' +
-          (selectedTrainer?.id === trainer.id
-            ? 'bg-[#EFF5FF] border-[#2563EB]'
-            : 'bg-white border-[#E8ECF4] hover:border-[#2563EB]/50')
-        "
-      >
-        <div class="flex items-start gap-3">
-          <span class="text-[32px]">{{ trainer.image }}</span>
-          <div class="flex-1">
-            <h3 class="font-bold text-[14px] text-[#0F172A]">
-              {{ trainer.name }}
-            </h3>
-            <p class="text-[12px] text-[#475569]">{{ trainer.specialty }}</p>
-            <div class="flex items-center gap-1 mt-2">
-              <span class="text-[12px] font-bold text-[#D97706]">★</span>
-              <span
-                class="text-[12px] font-bold"
-                [class]="getRatingColor(trainer.rating)"
-                >{{ trainer.rating }}</span
-              >
-              <span class="text-[11px] text-[#94A3B8]"
-                >({{ trainer.reviews }} reviews)</span
-              >
+  <div class="profiles-layout-grid">
+    <!-- LEFT SIDEBAR: TRAINER LIST -->
+    <aside class="trainers-list-panel">
+      <h2 class="section-title">AVAILABLE COACHES</h2>
+      
+      <div class="trainers-scroll-box">
+        <div 
+          *ngFor="let trainer of trainers" 
+          (click)="selectTrainer(trainer)"
+          class="trainer-list-card"
+          [class.active-card]="selectedTrainer?.id === trainer.id"
+        >
+          <div class="list-card-inner">
+            <span class="trainer-avatar-emoji">{{ trainer.image }}</span>
+            <div class="trainer-basic-info">
+              <h3 class="trainer-name-label">{{ trainer.name }}</h3>
+              <p class="trainer-specialty-text">{{ trainer.specialty }}</p>
+              
+              <div class="rating-info-row">
+                <span class="star-rating-icon">★</span>
+                <span class="rating-value-number">{{ trainer.rating }}</span>
+                <span class="rating-count-label">({{ trainer.reviews }} REVIEWS)</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </aside>
 
-    <!-- TRAINER DETAIL -->
-    <div
-      *ngIf="selectedTrainer"
-      class="lg:col-span-2 bg-white border border-[#E8ECF4] rounded-[14px] p-8 shadow-sm"
-    >
-      <!-- HEADER -->
-      <div class="flex gap-6 mb-8 pb-8 border-b border-[#E8ECF4]">
-        <div class="text-[64px]">{{ selectedTrainer.image }}</div>
-        <div class="flex-1">
-          <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">
-            {{ selectedTrainer.name }}
-          </h1>
-          <p class="text-[14px] text-[#475569] mb-4">
-            {{ selectedTrainer.specialty }}
-          </p>
+    <!-- RIGHT PANEL: DETAILED TRAINER VIEW -->
+    <main class="trainer-detail-panel" *ngIf="selectedTrainer">
+      <!-- Top Profile Overview -->
+      <section class="detail-header-card">
+        <div class="avatar-large-box">{{ selectedTrainer.image }}</div>
+        <div class="header-details-info">
+          <h2 class="detail-fullname">{{ selectedTrainer.name }}</h2>
+          <span class="detail-specialty-badge">{{ selectedTrainer.specialty }}</span>
 
-          <div class="flex flex-wrap gap-4 mb-4">
-            <div>
-              <span class="text-[11px] text-[#94A3B8] uppercase font-bold"
-                >Rating</span
-              >
-              <p
-                class="font-bold text-[18px]"
-                [class]="getRatingColor(selectedTrainer.rating)"
-              >
-                {{ selectedTrainer.rating }} ⭐
-              </p>
+          <div class="stats-row-grid">
+            <div class="stat-box-cell">
+              <span class="stat-cell-title">RATING</span>
+              <p class="stat-cell-value text-orange">{{ selectedTrainer.rating }} ⭐</p>
             </div>
-            <div>
-              <span class="text-[11px] text-[#94A3B8] uppercase font-bold"
-                >Experience</span
-              >
-              <p class="font-bold text-[18px] text-[#0F172A]">
-                {{ selectedTrainer.experience }}+ Years
-              </p>
+            <div class="stat-box-cell">
+              <span class="stat-cell-title">EXPERIENCE</span>
+              <p class="stat-cell-value">{{ selectedTrainer.experience }}+ YEARS</p>
             </div>
-            <div>
-              <span class="text-[11px] text-[#94A3B8] uppercase font-bold"
-                >Session Price</span
-              >
-              <p class="font-bold text-[18px] text-[#2563EB]">
-                ₹{{ selectedTrainer.price }}
-              </p>
+            <div class="stat-box-cell">
+              <span class="stat-cell-title">SESSION RATE</span>
+              <p class="stat-cell-value text-blue">₹{{ selectedTrainer.price }}</p>
             </div>
           </div>
 
-          <button
-            (click)="openBookingDrawer()"
-            class="px-6 h-11 rounded-[8px] bg-[#2563EB] text-white font-bold text-[14px] hover:bg-[#1D4ED8] transition-colors"
-          >
-            Book Session ➕
+          <button (click)="openBookingDrawer()" class="btn-primary-action">
+            BOOK 1-ON-1 SESSION 📅
           </button>
         </div>
-      </div>
+      </section>
 
-      <!-- BIO -->
-      <div class="mb-8">
-        <h3 class="font-bold text-[16px] text-[#0F172A] mb-3">About</h3>
-        <p class="text-[14px] text-[#475569] leading-relaxed">
-          {{ selectedTrainer.bio }}
-        </p>
-      </div>
+      <!-- About bio -->
+      <section class="detail-section-card">
+        <h3 class="section-card-title">BIO & TRAINING PHILOSOPHY</h3>
+        <p class="section-card-body">{{ selectedTrainer.bio }}</p>
+      </section>
 
-      <!-- CERTIFICATIONS -->
-      <div class="mb-8">
-        <h3 class="font-bold text-[16px] text-[#0F172A] mb-3">
-          Certifications
-        </h3>
-        <div class="flex flex-wrap gap-2">
-          <span
-            *ngFor="let cert of selectedTrainer.certifications"
-            class="px-3 py-1.5 bg-[#EFF5FF] text-[#2563EB] rounded-full text-[12px] font-bold border border-[#2563EB]/20"
-          >
+      <!-- Certifications -->
+      <section class="detail-section-card">
+        <h3 class="section-card-title">CERTIFICATIONS & TRAINING SCHEMES</h3>
+        <div class="certifications-flex-container">
+          <span *ngFor="let cert of selectedTrainer.certifications" class="cert-item-chip">
             {{ cert }}
           </span>
         </div>
-      </div>
+      </section>
 
-      <!-- REVIEWS -->
-      <div>
-        <h3 class="font-bold text-[16px] text-[#0F172A] mb-4">
-          Recent Reviews
-        </h3>
-        <div class="space-y-4">
-          <div
-            *ngFor="let review of reviews"
-            class="p-4 bg-[#F8F9FC] rounded-[10px] border border-[#E8ECF4]"
-          >
-            <div class="flex justify-between items-start mb-2">
-              <span class="font-bold text-[14px] text-[#0F172A]">{{
-                review.memberName
-              }}</span>
-              <span class="text-[12px] text-[#94A3B8]">{{ review.date }}</span>
+      <!-- Reviews -->
+      <section class="detail-section-card reviews-card">
+        <h3 class="section-card-title">RECENT CLIENT REVIEWS</h3>
+        <div class="reviews-vertical-stack">
+          <div *ngFor="let review of reviews" class="review-item-board">
+            <div class="review-board-header">
+              <span class="review-client-name">{{ review.memberName }}</span>
+              <span class="review-date-label">{{ review.date }}</span>
             </div>
-            <div class="flex items-center gap-1 mb-2">
-              <span *ngFor="let i of [1, 2, 3, 4, 5]" class="text-[13px]">{{
-                i <= review.rating ? "⭐" : "☆"
-              }}</span>
+            <div class="review-stars-row">
+              <span class="star filled" *ngFor="let i of [1,2,3,4,5]">
+                {{ i <= review.rating ? '★' : '☆' }}
+              </span>
             </div>
-            <p class="text-[13px] text-[#475569]">{{ review.comment }}</p>
+            <p class="review-comment-text">"{{ review.comment }}"</p>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   </div>
 
-  <!-- BOOKING DRAWER -->
-  <div
-    *ngIf="isBookingDrawerOpen"
-    class="fixed inset-0 z-40 backdrop-blur-[1px]"
-  >
-    <div
-      class="fixed inset-0 bg-[#0F172A]/20 z-40"
-      (click)="closeBookingDrawer()"
-    ></div>
-    <div
-      class="fixed top-0 right-0 bottom-0 w-[480px] bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300"
-    >
-      <div
-        class="p-6 border-b border-[#E8ECF4] flex justify-between items-center"
-      >
-        <h2 class="font-bold text-[18px] text-[#0F172A]">Book a Session</h2>
-        <button
-          (click)="closeBookingDrawer()"
-          class="text-[#94A3B8] hover:text-[#0F172A] p-1"
-        >
-          ✕
-        </button>
+  <!-- BOOKING SLIDE-IN DRAWER -->
+  <div *ngIf="isBookingDrawerOpen" class="booking-drawer-wrapper">
+    <div class="booking-drawer-backdrop" (click)="closeBookingDrawer()"></div>
+    <div class="booking-drawer-content-pane">
+      <div class="drawer-header-row">
+        <h2 class="drawer-panel-title">BOOK PT SESSION</h2>
+        <button (click)="closeBookingDrawer()" class="drawer-dismiss-btn">✕</button>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-        <div>
-          <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
-            >Select Date</label
-          >
-          <input
-            type="date"
-            [(ngModel)]="selectedDate"
-            class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB]"
+      <div class="drawer-scroll-body">
+        <!-- Date Selector -->
+        <div class="drawer-input-group">
+          <label class="drawer-field-label">SELECT DATE</label>
+          <input 
+            type="date" 
+            [(ngModel)]="selectedDate" 
+            class="drawer-date-picker"
           />
         </div>
 
-        <div>
-          <label class="block text-[13px] font-bold text-[#0F172A] mb-3"
-            >Available Time Slots</label
-          >
-          <div class="grid grid-cols-2 gap-2">
-            <button
-              *ngFor="let slot of availableSlots"
+        <!-- Available time slots -->
+        <div class="drawer-input-group">
+          <label class="drawer-field-label">AVAILABLE TIMINGS</label>
+          <div class="drawer-slots-grid">
+            <button 
+              *ngFor="let slot of availableSlots" 
               (click)="selectedSlot = slot"
-              [class]="
-                'h-11 rounded-[8px] border font-medium text-[13px] transition-all ' +
-                (selectedSlot === slot
-                  ? 'bg-[#2563EB] text-white border-[#2563EB]'
-                  : 'bg-white border-[#E8ECF4] text-[#0F172A] hover:border-[#2563EB]')
-              "
+              class="drawer-slot-btn"
+              [class.active-slot]="selectedSlot === slot"
             >
               {{ slot }}
             </button>
           </div>
         </div>
 
-        <div class="bg-[#F8F9FC] rounded-[8px] p-4 border border-[#E8ECF4]">
-          <div class="text-[13px] font-medium text-[#0F172A] mb-3">
-            Booking Summary
+        <!-- Summary panel -->
+        <div class="drawer-summary-box">
+          <h3 class="summary-box-heading">SESSION RECEIPT</h3>
+          <div class="receipt-row">
+            <span>TRAINER:</span>
+            <span class="receipt-val font-mono">{{ selectedTrainer?.name }}</span>
           </div>
-          <div class="space-y-2 text-[12px] text-[#475569]">
-            <div class="flex justify-between">
-              <span>Trainer:</span>
-              <span class="font-bold text-[#0F172A]">{{
-                selectedTrainer?.name
-              }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>Date:</span>
-              <span class="font-bold text-[#0F172A]">{{
-                selectedDate || "-"
-              }}</span>
-            </div>
-            <div class="flex justify-between">
-              <span>Time:</span>
-              <span class="font-bold text-[#0F172A]">{{
-                selectedSlot || "-"
-              }}</span>
-            </div>
-            <div
-              class="border-t border-[#E8ECF4] pt-2 mt-2 flex justify-between text-[13px] font-bold"
-            >
-              <span>Total:</span>
-              <span class="text-[#2563EB]">₹{{ selectedTrainer?.price }}</span>
-            </div>
+          <div class="receipt-row">
+            <span>DATE:</span>
+            <span class="receipt-val font-mono">{{ selectedDate || 'SELECT DATE' }}</span>
+          </div>
+          <div class="receipt-row">
+            <span>TIMING:</span>
+            <span class="receipt-val font-mono">{{ selectedSlot || 'SELECT SLOT' }}</span>
+          </div>
+          <div class="receipt-row total-row">
+            <span>TOTAL COST:</span>
+            <span class="receipt-val price-bold">₹{{ selectedTrainer?.price }}</span>
           </div>
         </div>
       </div>
 
-      <div class="p-6 border-t border-[#E8ECF4] flex gap-3">
-        <button
-          (click)="closeBookingDrawer()"
-          class="flex-1 bg-white border border-[#E8ECF4] text-[#475569] font-bold h-12 rounded-[8px] hover:bg-[#F8F9FC]"
-        >
-          Cancel
-        </button>
-        <button
-          (click)="bookSession()"
-          class="flex-[2] bg-[#2563EB] text-white font-bold h-12 rounded-[8px] hover:bg-[#1D4ED8]"
-        >
-          Confirm Booking
-        </button>
+      <div class="drawer-actions-footer">
+        <button (click)="closeBookingDrawer()" class="btn-cancel">CANCEL</button>
+        <button (click)="bookSession()" class="btn-submit">CONFIRM BOOKING</button>
       </div>
     </div>
   </div>

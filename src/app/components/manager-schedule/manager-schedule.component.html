@@ -1,191 +1,444 @@
-<div class="schedule-container">
-  <!-- Header -->
-  <div class="brutal-card header-card">
-    <div class="header-content">
-      <h1 class="title">Class Scheduling</h1>
-      <p class="subtitle">Manage recurring sessions, assign trainers, and optimize room usage.</p>
-    </div>
-    <button class="brutal-btn primary-btn" (click)="openCreateModal()">
-      Schedule New Class ➕
-    </button>
+<div class="schedule-page-container pb-10">
+  <!-- SUCCESS ALERT -->
+  <div *ngIf="successMessage" class="brutal-alert brutal-alert-success mb-6">
+    <div class="alert-icon">✔</div>
+    <div class="alert-text font-heading font-black uppercase">{{ successMessage }}</div>
   </div>
 
-  <!-- Filter & Actions Bar -->
-  <div class="brutal-card filter-bar">
-    <div class="filter-group">
-      <button class="brutal-btn small" [class.active]="viewFilter === 'ALL'" (click)="setFilter('ALL')">All View</button>
-      <button class="brutal-btn small" [class.active]="viewFilter === 'TODAY'" (click)="setFilter('TODAY')">Today</button>
-      <button class="brutal-btn small" [class.active]="viewFilter === 'WEEK'" (click)="setFilter('WEEK')">This Week</button>
+  <!-- STICKY TOP BAR -->
+  <header class="schedule-top-bar">
+    <div class="top-bar-left">
+      <div class="view-toggle-pills">
+        <button
+          (click)="viewMode = 'DAY'"
+          [class.active]="viewMode === 'DAY'"
+          class="toggle-pill font-heading"
+        >
+          DAY
+        </button>
+        <button
+          (click)="viewMode = 'WEEK'"
+          [class.active]="viewMode === 'WEEK'"
+          class="toggle-pill font-heading"
+        >
+          WEEK
+        </button>
+        <button
+          (click)="viewMode = 'MONTH'"
+          [class.active]="viewMode === 'MONTH'"
+          class="toggle-pill font-heading"
+        >
+          MONTH
+        </button>
+      </div>
     </div>
-    
-    <div class="action-group">
-      <input type="file" #fileInput (change)="onFileSelected($event)" style="display: none">
-      <button class="brutal-btn small secondary" (click)="fileInput.click()">📤 Import CSV</button>
-      <button class="brutal-btn small info" (click)="exportCsv()">📥 Export CSV</button>
+
+    <!-- Center Navigation -->
+    <div class="top-bar-center">
+      <button (click)="navigateWeek(-1)" class="nav-arrow-btn">←</button>
+      <span class="week-label font-heading font-black">{{ currentWeekRangeLabel }}</span>
+      <button (click)="navigateWeek(1)" class="nav-arrow-btn">→</button>
+      <button (click)="resetToToday()" class="today-pill font-heading">TODAY</button>
+    </div>
+
+    <!-- Right Filters & Actions -->
+    <div class="top-bar-right">
+      <select
+        [(ngModel)]="selectedBranchId"
+        (change)="applyFilters()"
+        class="brutal-select-filter"
+      >
+        <option *ngFor="let b of branches" [value]="b.id">{{ b.name }}</option>
+      </select>
+
+      <select
+        [(ngModel)]="selectedTrainerFilter"
+        (change)="applyFilters()"
+        class="brutal-select-filter"
+      >
+        <option value="">ALL TRAINERS</option>
+        <option *ngFor="let t of trainers" [value]="t.trainerId">{{ t.trainerName | uppercase }}</option>
+      </select>
+
+      <select
+        [(ngModel)]="selectedRoomFilter"
+        (change)="applyFilters()"
+        class="brutal-select-filter"
+      >
+        <option value="">ALL ROOMS</option>
+        <option *ngFor="let r of rooms" [value]="r.facilityId">{{ r.facilityName | uppercase }}</option>
+      </select>
+
+      <button (click)="openCreateDrawer()" class="btn-create-class font-heading font-black">
+        CREATE CLASS +
+      </button>
+
+      <!-- CSV Export -->
+      <button (click)="exportCalendarReport()" class="btn-export-csv" title="Export schedule to CSV">
+        📥 CSV
+      </button>
+    </div>
+  </header>
+
+  <!-- CALENDAR GRID -->
+  <main class="calendar-wrapper mt-6">
+    <div class="calendar-card brutal-card">
+      <div class="calendar-grid-container">
+        <!-- Day Headers (8 Columns: col 1 is time labels) -->
+        <div class="grid-header-cell empty-cell"></div>
+        <div class="grid-header-cell font-heading font-bold">MON</div>
+        <div class="grid-header-cell font-heading font-bold">TUE</div>
+        <div class="grid-header-cell font-heading font-bold">WED</div>
+        <div class="grid-header-cell font-heading font-bold">THU</div>
+        <div class="grid-header-cell font-heading font-bold">FRI</div>
+        <div class="grid-header-cell font-heading font-bold">SAT</div>
+        <div class="grid-header-cell font-heading font-bold">SUN</div>
+
+        <!-- Grid Body Columns -->
+        <!-- Column 1: Time Labels Column -->
+        <div class="time-labels-col">
+          <div *ngFor="let label of timeSlotLabels" class="time-label font-mono">
+            {{ label }}
+          </div>
+        </div>
+
+        <!-- Day Columns (Background Slots) -->
+        <div
+          *ngFor="let day of ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']; let idx = index"
+          class="day-column-bg"
+          [style.grid-column]="idx + 2"
+          [style.grid-row]="'2 / span 26'"
+        >
+          <div *ngFor="let label of timeSlotLabels" class="time-slot-border"></div>
+        </div>
+
+        <!-- Positioned Class Blocks (Direct children of grid container) -->
+        <div
+          *ngFor="let block of getCalendarBlocks()"
+          class="class-block"
+          [style.grid-column]="block.colIndex"
+          [style.grid-row]="block.rowStart + ' / span ' + block.rowSpan"
+          [style.background-color]="block.categoryColor"
+          [style.color]="block.textColor"
+          (click)="selectClass(block.class)"
+        >
+          <span class="class-block-name font-heading font-black">{{ block.class.className | uppercase }}</span>
+          <div class="class-block-meta">
+            <span class="trainer-initials-badge font-heading">{{ block.trainerInitials }}</span>
+            <span class="spots-chip font-heading font-bold">20/{{ block.class.capacity }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- DETAIL SIDE PANEL (Slide out fixed right) -->
+  <div class="detail-panel" *ngIf="selectedClass">
+    <button (click)="closeDetailPanel()" class="btn-close-panel">✕</button>
+
+    <div class="detail-panel-header">
+      <span
+        class="brutal-badge font-heading"
+        [style.background-color]="getCategoryColor(selectedClass.className)"
+        [style.color]="getCategoryTextColor(selectedClass.className)"
+      >
+        {{ selectedClass.className | uppercase }}
+      </span>
+      <h2 class="panel-class-name font-heading font-black mt-3">{{ selectedClass.className | uppercase }}</h2>
+    </div>
+
+    <div class="detail-panel-body">
+      <!-- Info Rows -->
+      <div class="panel-info-row font-body uppercase">
+        <span class="info-label font-bold">TRAINER:</span>
+        <span class="info-value">{{ selectedClass.trainerName }}</span>
+      </div>
+      <div class="panel-info-row font-body uppercase">
+        <span class="info-label font-bold">ROOM:</span>
+        <span class="info-value">{{ selectedClass.roomName }}</span>
+      </div>
+      <div class="panel-info-row font-body uppercase">
+        <span class="info-label font-bold">DATE RANGE:</span>
+        <span class="info-value">{{ selectedClass.startDate }} TO {{ selectedClass.endDate }}</span>
+      </div>
+      <div class="panel-info-row font-body uppercase">
+        <span class="info-label font-bold">TIME & DURATION:</span>
+        <span class="info-value">{{ selectedClass.classTime.substring(0,5) }} ({{ selectedClass.durationMins }} MIN)</span>
+      </div>
+      <div class="panel-info-row font-body uppercase">
+        <span class="info-label font-bold">CAPACITY:</span>
+        <span class="info-value">{{ selectedClass.capacity }} MEMBERS</span>
+      </div>
+
+      <!-- Enrolled Members Section -->
+      <div class="enrolled-section mt-4">
+        <h3 class="font-heading font-bold text-xs uppercase mb-2">ENROLLED MEMBERS ({{ enrolledBookings.length }})</h3>
+        
+        <div class="enrolled-list-box" *ngIf="enrolledBookings.length > 0">
+          <div *ngFor="let b of enrolledBookings" class="enrolled-row">
+            <div class="enrolled-avatar font-heading font-black">
+              {{ b.memberId }}
+            </div>
+            <span class="enrolled-name font-body uppercase">MEMBER #{{ b.memberId }}</span>
+            <span
+              class="brutal-badge font-heading font-bold status-badge"
+              [style.background-color]="b.bookingStatus === 'CONFIRMED' ? '#00D26A' : '#7C3AED'"
+              style="color: #FFF; font-size: 8px; padding: 2px 4px;"
+            >
+              {{ b.bookingStatus }}
+            </span>
+          </div>
+        </div>
+
+        <div class="enrolled-empty font-body uppercase text-muted" *ngIf="enrolledBookings.length === 0">
+          NO CONFIRMED BOOKINGS YET.
+        </div>
+      </div>
+
+      <!-- ACTIONS PANEL -->
+      <div class="panel-actions-wrapper mt-6">
+        <button (click)="openEditDrawer()" class="btn-panel-action btn-secondary w-full">
+          EDIT CLASS
+        </button>
+
+        <button (click)="openSubstitutePanel()" class="btn-panel-action btn-substitute w-full">
+          SUBSTITUTE TRAINER
+        </button>
+
+        <button (click)="openCancelPanel()" class="btn-panel-action btn-cancel w-full">
+          CANCEL CLASS
+        </button>
+      </div>
+
+      <!-- Live Substitute Form panel overlay -->
+      <div class="sub-panel-overlay font-heading" *ngIf="isSubstitutePanelOpen">
+        <h4 class="font-bold text-xs mb-2">SUBSTITUTE TRAINER</h4>
+        
+        <label class="form-label">NEW TRAINER:</label>
+        <select [(ngModel)]="substituteTrainerId" class="brutal-input mb-3" style="height: 40px; font-size: 12px;">
+          <option *ngFor="let t of trainers" [value]="t.trainerId">{{ t.trainerName }}</option>
+        </select>
+
+        <label class="form-label">JUSTIFICATION REASON:</label>
+        <input
+          type="text"
+          [(ngModel)]="substituteReason"
+          placeholder="REASON FOR SUBSTITUTION..."
+          class="brutal-input mb-3"
+          style="height: 40px; font-size: 11px;"
+        />
+
+        <div class="flex gap-2">
+          <button (click)="confirmSubstitute()" class="btn-substitute w-full" style="height: 36px; font-size: 11px;" [disabled]="isSubmittingSubstitute">
+            SUBSTITUTE
+          </button>
+          <button (click)="isSubstitutePanelOpen = false" class="btn-secondary w-full" style="height: 36px; font-size: 11px;">
+            CANCEL
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Cancellation Form panel overlay -->
+      <div class="sub-panel-overlay font-heading" *ngIf="isCancelPanelOpen">
+        <h4 class="font-bold text-xs mb-2" style="color: var(--red);">CANCEL RECURRING CLASS</h4>
+        
+        <label class="form-label">MANDATORY CANCELLATION REASON:</label>
+        <textarea
+          [(ngModel)]="cancelReason"
+          placeholder="ENTER JUSTIFICATION REASON..."
+          class="brutal-textarea mb-3"
+          style="height: 60px; font-size: 11px;"
+        ></textarea>
+
+        <div class="flex gap-2">
+          <button (click)="confirmCancelClass()" class="btn-cancel w-full" style="height: 36px; font-size: 11px;" [disabled]="isSubmittingCancellation">
+            CANCEL CLASS
+          </button>
+          <button (click)="isCancelPanelOpen = false" class="btn-secondary w-full" style="height: 36px; font-size: 11px;">
+            CLOSE
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Status Messages -->
-  <div *ngIf="successMessage" class="status-banner success">{{ successMessage }}</div>
-  <div *ngIf="errorMessage" class="status-banner error">{{ errorMessage }}</div>
+  <!-- CREATE CLASS DRAWER (Fixed right, 480px, full height) -->
+  <div class="create-drawer-overlay" *ngIf="isCreateDrawerOpen" (click)="closeCreateDrawer()">
+    <div class="create-drawer-panel" (click)="$event.stopPropagation()">
+      <header class="drawer-header">
+        <h2 class="font-heading font-black text-md uppercase">
+          {{ isEditMode ? 'EDIT CLASS SCHEDULE' : 'CREATE RECURRING CLASS' }}
+        </h2>
+        <button (click)="closeCreateDrawer()" class="btn-close-drawer">✕</button>
+      </header>
 
-  <!-- Class Grid -->
-  <div class="class-grid" *ngIf="!isLoading">
-    <div *ngFor="let cls of filteredClasses" class="brutal-card class-card" [class.cancelled]="cls.status === 'CANCELLED'">
-      <div class="card-badge" [class.cancelled-badge]="cls.status === 'CANCELLED'">
-        {{ cls.status }}
-      </div>
-      <h3 class="class-name">{{ cls.className }}</h3>
-      
-      <div class="info-row">
-        <span class="icon">👤</span>
-        <span class="text">Trainer ID: {{ cls.trainerId }}</span>
-      </div>
-      <div class="info-row">
-        <span class="icon">🏠</span>
-        <span class="text">Room ID: {{ cls.roomId }}</span>
-      </div>
-      <div class="info-row">
-        <span class="icon">🕒</span>
-        <span class="text">{{ cls.classTime }} ({{ cls.durationMins }} mins)</span>
-      </div>
-      <div class="info-row">
-        <span class="icon">📅</span>
-        <span class="text">{{ cls.weekdays }}</span>
-      </div>
-      <div class="info-row">
-        <span class="icon">👥</span>
-        <span class="text">Capacity: {{ cls.capacity }}</span>
-      </div>
-
-      <div class="card-actions">
-        <button class="brutal-btn small secondary" (click)="openEditModal(cls)">Edit</button>
-        <button class="brutal-btn small info" (click)="openSubModal(cls)">Sub</button>
-        <button *ngIf="cls.status !== 'CANCELLED'" class="brutal-btn small danger" (click)="openCancelModal(cls.classId!)">Cancel</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="loading-overlay">
-    <div class="spinner"></div>
-    <p>Processing Schedule...</p>
-  </div>
-
-  <!-- Create/Edit Modal -->
-  <div class="modal-backdrop" *ngIf="isModalOpen">
-    <div class="brutal-card modal-content">
-      <div class="modal-header">
-        <h2>{{ isEditMode ? 'Update Class' : 'Schedule New Class' }}</h2>
-        <button (click)="closeModal()" class="close-btn">×</button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Class Name</label>
-          <input type="text" [(ngModel)]="editingClass.className" placeholder="e.g. HIIT Morning" class="brutal-input">
+      <div class="drawer-body-form">
+        <!-- Class Name -->
+        <div class="form-field">
+          <label class="form-label">CLASS NAME</label>
+          <input
+            type="text"
+            [(ngModel)]="editingClass.className"
+            placeholder="CLASS NAME (E.G. MORNING YOGA FLOW)"
+            class="brutal-input"
+            (ngModelChange)="checkConflict()"
+          />
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Trainer</label>
-            <select [(ngModel)]="editingClass.trainerId" class="brutal-input">
-              <option *ngFor="let t of trainers" [value]="t.trainerId">{{ t.trainerName }}</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Room</label>
-            <select [(ngModel)]="editingClass.roomId" class="brutal-input">
-              <option *ngFor="let r of rooms" [value]="r.facilityId">{{ r.facilityName }}</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Start Date</label>
-            <input type="date" [(ngModel)]="editingClass.startDate" class="brutal-input">
-          </div>
-          <div class="form-group">
-            <label>End Date</label>
-            <input type="date" [(ngModel)]="editingClass.endDate" class="brutal-input">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Time</label>
-            <input type="time" [(ngModel)]="editingClass.classTime" class="brutal-input">
-          </div>
-          <div class="form-group">
-            <label>Duration (mins)</label>
-            <input type="number" [(ngModel)]="editingClass.durationMins" class="brutal-input">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Weekdays (e.g. Mon,Wed,Fri)</label>
-          <input type="text" [(ngModel)]="editingClass.weekdays" placeholder="Mon,Tue..." class="brutal-input">
-        </div>
-
-        <div class="form-group">
-          <label>Plan Eligibility</label>
-          <select [(ngModel)]="editingClass.planEligibility" class="brutal-input">
-            <option value="ALL">All Members</option>
-            <option value="GOLD">Gold Only</option>
-            <option value="PLATINUM">Platinum Only</option>
-            <option value="STUDENT">Student Only</option>
+        <!-- Trainer Selection -->
+        <div class="form-field">
+          <label class="form-label">ASSIGNED TRAINER</label>
+          <select
+            [(ngModel)]="editingClass.trainerId"
+            class="brutal-input"
+            (change)="checkConflict()"
+          >
+            <option value="0">CHOOSE TRAINER...</option>
+            <option *ngFor="let t of trainers" [value]="t.trainerId">{{ t.trainerName | uppercase }}</option>
           </select>
         </div>
 
-        <div class="form-group">
-          <label>Capacity</label>
-          <input type="number" [(ngModel)]="editingClass.capacity" class="brutal-input">
+        <!-- Room/Facility Selection -->
+        <div class="form-field">
+          <label class="form-label">ROOM/FACILITY</label>
+          <select
+            [(ngModel)]="editingClass.roomId"
+            class="brutal-input"
+            (change)="checkConflict()"
+          >
+            <option value="0">CHOOSE ROOM...</option>
+            <option *ngFor="let r of rooms" [value]="r.facilityId">
+              {{ r.facilityName | uppercase }} {{ r.underMaintenance ? '(UNDER MAINTENANCE)' : '' }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Date Range -->
+        <div class="form-row-2">
+          <div class="form-field">
+            <label class="form-label">START DATE</label>
+            <input
+              type="date"
+              [(ngModel)]="editingClass.startDate"
+              class="brutal-input"
+              (ngModelChange)="checkConflict()"
+            />
+          </div>
+          <div class="form-field">
+            <label class="form-label">END DATE</label>
+            <input
+              type="date"
+              [(ngModel)]="editingClass.endDate"
+              class="brutal-input"
+              (ngModelChange)="checkConflict()"
+            />
+          </div>
+        </div>
+
+        <!-- Repeat Days (Adjacent pills) -->
+        <div class="form-field">
+          <label class="form-label">REPEAT DAYS</label>
+          <div class="repeat-days-row">
+            <button
+              *ngFor="let day of repeatDays; let idx = index"
+              (click)="onDayToggle(idx)"
+              [class.active]="day.checked"
+              class="repeat-day-pill font-heading"
+            >
+              {{ day.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Start Time + Duration -->
+        <div class="form-row-2">
+          <div class="form-field">
+            <label class="form-label">START TIME</label>
+            <input
+              type="time"
+              [(ngModel)]="editingClass.classTime"
+              class="brutal-input"
+              (ngModelChange)="checkConflict()"
+            />
+          </div>
+          <div class="form-field">
+            <label class="form-label">DURATION (MINUTES)</label>
+            <input
+              type="number"
+              [(ngModel)]="editingClass.durationMins"
+              placeholder="60"
+              class="brutal-input"
+              (ngModelChange)="checkConflict()"
+            />
+          </div>
+        </div>
+
+        <!-- Capacity -->
+        <div class="form-field">
+          <label class="form-label">CAPACITY LIMIT</label>
+          <input
+            type="number"
+            [(ngModel)]="editingClass.capacity"
+            placeholder="20"
+            class="brutal-input"
+          />
+        </div>
+
+        <!-- Plan Eligibility -->
+        <div class="form-field">
+          <label class="form-label">PLAN ELIGIBILITY</label>
+          <div class="eligibility-checklist">
+            <label class="checkbox-container font-heading">
+              <input
+                type="checkbox"
+                [checked]="planEligAll"
+                (change)="toggleAllPlans()"
+              />
+              <span class="custom-checkbox"></span>
+              ALL PLANS INCLUDED
+            </label>
+
+            <label
+              *ngFor="let plan of membershipPlans; let idx = index"
+              class="checkbox-container font-heading"
+            >
+              <input
+                type="checkbox"
+                [checked]="plan.checked"
+                (change)="onPlanToggle(idx)"
+              />
+              <span class="custom-checkbox"></span>
+              {{ plan.label }}
+            </label>
+          </div>
+        </div>
+
+        <!-- Prerequisites (Optional) -->
+        <div class="form-field">
+          <label class="form-label">PREREQUISITES (OPTIONAL)</label>
+          <textarea
+            [(ngModel)]="editingClass.prerequisites"
+            placeholder="E.G. ADVANCED CARDIO FITNESS OR PRIOR YOGA EXPERIENCE REQUIRED..."
+            class="brutal-textarea"
+          ></textarea>
+        </div>
+
+        <!-- Conflict Warnings Banner -->
+        <div class="conflict-banner font-heading" *ngIf="hasConflict">
+          <span class="conflict-title">⚠ CONFLICT WARNING</span>
+          <p class="conflict-text uppercase">{{ conflictMessage }}</p>
         </div>
       </div>
 
-      <div class="modal-footer">
-        <button class="brutal-btn secondary" (click)="closeModal()">Discard</button>
-        <button class="brutal-btn primary-btn" (click)="saveClass()">Save Schedule</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cancel Modal -->
-  <div class="modal-backdrop" *ngIf="isCancelModalOpen">
-    <div class="brutal-card modal-content small">
-      <h2>Cancel Class</h2>
-      <p>This will notify all booked members. Please provide a reason.</p>
-      <textarea [(ngModel)]="cancelReason" placeholder="Reason for cancellation..." class="brutal-input"></textarea>
-      <div class="modal-footer">
-        <button class="brutal-btn secondary" (click)="isCancelModalOpen = false">No, Go Back</button>
-        <button class="brutal-btn danger" (click)="confirmCancel()">Confirm Cancellation</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Substitute Modal -->
-  <div class="modal-backdrop" *ngIf="isSubModalOpen">
-    <div class="brutal-card modal-content small">
-      <h2>Substitute Trainer</h2>
-      <p>Assign a temporary instructor. Members will be notified.</p>
-      
-      <div class="form-group">
-        <label>New Trainer</label>
-        <select [(ngModel)]="subTrainerId" class="brutal-input">
-          <option *ngFor="let t of trainers" [value]="t.trainerId">{{ t.trainerName }}</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Reason for Change</label>
-        <textarea [(ngModel)]="subReason" placeholder="e.g. Instructor sick leave..." class="brutal-input"></textarea>
-      </div>
-
-      <div class="modal-footer">
-        <button class="brutal-btn secondary" (click)="isSubModalOpen = false">Cancel</button>
-        <button class="brutal-btn primary-btn" (click)="confirmSubstitute()">Confirm Sub</button>
-      </div>
+      <footer class="drawer-footer">
+        <button
+          (click)="saveRecurringClass()"
+          class="btn-drawer-save btn-primary w-full"
+          [disabled]="isLoading"
+        >
+          {{ isEditMode ? 'UPDATE CLASS SCHEDULE' : 'SAVE RECURRING CLASS' }}
+        </button>
+      </footer>
     </div>
   </div>
 </div>

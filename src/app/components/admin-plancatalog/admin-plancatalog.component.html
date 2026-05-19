@@ -1,333 +1,207 @@
-<div
-  class="flex flex-col gap-4 text-[#0F172A] w-full max-w-[1600px] mx-auto pb-10 relative page-transition"
->
+<div class="plan-catalog-page-container pb-10">
   <!-- PAGE HEADER -->
-  <div
-    class="bg-white rounded-[12px] p-6 border border-[#E8ECF4] shadow-sm flex items-center justify-between"
-  >
-    <div class="flex items-center gap-4">
-      <h1 class="font-bold text-[22px] leading-none">Plan Catalog</h1>
-      <span
-        class="bg-[#F1F5F9] text-[#475569] text-[12px] font-bold px-2.5 py-1 rounded-full border border-[#E8ECF4]"
-      >
-        {{ plans.length }} plans
+  <header class="brutal-header-card mb-6">
+    <div class="header-left">
+      <h1 class="font-heading font-black text-xl uppercase">PLAN CATALOG</h1>
+      <span class="header-badge font-heading font-bold bg-yellow">
+        {{ plans.length }} PLANS
       </span>
     </div>
-    <div class="flex items-center gap-3">
-      <button
-        class="px-4 h-10 rounded-[8px] text-[13px] font-bold text-[#475569] bg-transparent hover:bg-[#F8F9FC] border border-transparent hover:border-[#E8ECF4] transition-all"
-      >
-        Add Add-On
+    <div class="header-actions">
+      <button class="btn-brutal btn-secondary font-heading font-bold uppercase">
+        ADD ADD-ON
       </button>
-      <button
-        (click)="handleCreate()"
-        class="px-4 h-10 rounded-[8px] text-[13px] font-bold text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors shadow-sm flex items-center gap-1.5"
-      >
-        Create New Plan ➕
+      <button (click)="handleCreate()" class="btn-brutal btn-primary font-heading font-bold uppercase">
+        CREATE NEW PLAN +
       </button>
     </div>
+  </header>
+
+  <!-- ERROR / WARNING ALERTS -->
+  <div *ngIf="errorMessage" class="brutal-alert brutal-alert-danger mb-4">
+    <span class="alert-icon">⚠️</span>
+    <span class="alert-text font-body font-bold uppercase">{{ errorMessage }}</span>
+    <button (click)="errorMessage = ''" class="btn-close-alert">✕</button>
   </div>
 
-  <div
-    *ngIf="isLoading || errorMessage"
-    class="rounded-[8px] border px-4 py-3 text-[13px] font-medium"
-    [class]="
-      errorMessage
-        ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]'
-        : 'bg-[#EFF5FF] text-[#2563EB] border-[#BFDBFE]'
-    "
-  >
-    {{ errorMessage || "Loading plans from backend..." }}
-  </div>
+  <!-- FILTER BAR -->
+  <section class="brutal-filter-bar mb-6">
+    <div class="filter-left">
+      <div class="search-input-wrapper">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          placeholder="SEARCH PLANS..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onSearchChange()"
+          class="brutal-input filter-search"
+        />
+      </div>
 
-  <!-- FILTER BAR & TABLE CONTAINER -->
-  <div
-    class="bg-white border border-[#E8ECF4] rounded-[12px] shadow-sm flex flex-col"
-  >
-    <!-- Filter Bar -->
-    <div
-      class="px-6 py-3 border-b border-[#E8ECF4] flex items-center justify-between bg-[#F8F9FC]/50 rounded-t-[12px]"
-    >
-      <div class="flex items-center gap-4">
-        <div class="relative">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]"
-            >🔍</span
-          >
-          <input
-            type="text"
-            placeholder="Search plans..."
-            [(ngModel)]="searchQuery"
-            (ngModelChange)="onSearchChange()"
-            class="w-[240px] h-9 pl-9 pr-3 text-[13px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white"
-          />
-        </div>
+      <div class="select-wrapper">
         <select
           [(ngModel)]="eligibilityFilter"
           (ngModelChange)="onEligibilityFilterChange()"
-          class="h-9 px-3 pr-8 text-[13px] border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white font-medium cursor-pointer appearance-none"
+          class="brutal-select"
         >
-          <option value="All">All Eligibility</option>
-          <option value="General">General</option>
-          <option value="Student">Student</option>
-          <option value="Senior">Senior</option>
-          <option value="Corporate">Corporate</option>
+          <option value="All">ALL ELIGIBILITY</option>
+          <option value="General">GENERAL</option>
+          <option value="Student">STUDENT</option>
+          <option value="Senior">SENIOR</option>
+          <option value="Corporate">CORPORATE</option>
         </select>
-        <div class="flex bg-[#E8ECF4] p-0.5 rounded-[8px]">
-          <button
-            *ngFor="let s of ['All', 'Active', 'Inactive']"
-            (click)="setStatusFilter(s)"
-            [class]="
-              'px-3 py-1.5 text-[12px] font-bold rounded-[6px] transition-all ' +
-              (statusFilter === s
-                ? 'bg-white text-[#0F172A] shadow-sm'
-                : 'text-[#475569] hover:text-[#0F172A]')
-            "
-          >
-            {{ s }}
-          </button>
-        </div>
+        <span class="select-arrow">▼</span>
       </div>
-      <button
-        class="w-9 h-9 flex items-center justify-center rounded-[8px] border border-[#E8ECF4] text-[#475569] hover:bg-[#F8F9FC] transition-colors"
-        title="Export Plans CSV"
-      >
-        📥
-      </button>
+
+      <div class="status-toggle-pills">
+        <button
+          (click)="setStatusFilter('All')"
+          [class.selected]="statusFilter === 'All'"
+          class="pill-btn font-heading"
+        >
+          ALL
+        </button>
+        <button
+          (click)="setStatusFilter('Active')"
+          [class.selected]="statusFilter === 'Active'"
+          class="pill-btn font-heading"
+        >
+          ACTIVE
+        </button>
+        <button
+          (click)="setStatusFilter('Inactive')"
+          [class.selected]="statusFilter === 'Inactive'"
+          class="pill-btn font-heading"
+        >
+          INACTIVE
+        </button>
+      </div>
     </div>
 
-    <!-- Plans Table -->
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse min-w-[1000px]">
+    <button class="btn-export-csv" title="EXPORT CSV ↓">
+      📥
+    </button>
+  </section>
+
+  <!-- PLANS TABLE -->
+  <section class="brutal-card table-card">
+    <div class="table-scroll-wrapper">
+      <table class="brutal-plans-table">
         <thead>
-          <tr class="bg-white border-b border-[#E8ECF4]">
-            <th class="w-10 px-2 py-3"></th>
-            <th
-              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-            >
-              Plan Name
-            </th>
-            <th
-              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-            >
-              Duration
-            </th>
-            <th
-              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-            >
-              Price
-            </th>
-            <th
-              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-            >
-              Eligibility
-            </th>
-            <th
-              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-            >
-              Version
-            </th>
-            <th
-              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-            >
-              Effective From
-            </th>
-            <th
-              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-            >
-              Branches
-            </th>
-            <th
-              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider"
-            >
-              Status
-            </th>
-            <th
-              class="px-4 py-3 text-[11px] uppercase text-[#94A3B8] font-bold tracking-wider text-right"
-            >
-              Actions
-            </th>
+          <tr class="font-heading">
+            <th class="w-12 text-center">EXP</th>
+            <th>PLAN NAME</th>
+            <th>DURATION</th>
+            <th>PRICE</th>
+            <th>ELIGIBILITY</th>
+            <th>VERSION</th>
+            <th>EFFECTIVE FROM</th>
+            <th>BRANCHES</th>
+            <th>STATUS</th>
+            <th class="text-right">ACTIONS</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="font-body">
           <ng-container *ngFor="let plan of filteredPlans">
-            <tr
-              [class]="
-                'border-b border-[#E8ECF4] group transition-colors h-[52px] ' +
-                (isRowExpanded(plan.id)
-                  ? 'bg-[#F8F9FC]'
-                  : 'hover:bg-[#F8F9FC] bg-white')
-              "
-            >
-              <td class="px-2 py-2 text-center align-middle">
-                <button
-                  (click)="toggleRow(plan.id)"
-                  class="p-1 rounded-md text-[#94A3B8] hover:bg-[#E8ECF4] hover:text-[#0F172A] transition-colors"
-                >
-                  {{ isRowExpanded(plan.id) ? "▼" : "▶" }}
+            <!-- Row -->
+            <tr [class.row-expanded-header]="isRowExpanded(plan.id)">
+              <td class="text-center">
+                <button (click)="toggleRow(plan.id)" class="btn-expand-row">
+                  {{ isRowExpanded(plan.id) ? '▼' : '▶' }}
                 </button>
               </td>
-              <td class="px-4 py-2 font-bold text-[14px] text-[#0F172A]">
-                {{ plan.name }}
+              <td class="font-heading font-bold text-black uppercase">{{ plan.name }}</td>
+              <td>
+                <span class="flat-chip uppercase font-bold">{{ plan.duration }} DAYS</span>
               </td>
-              <td class="px-4 py-2">
+              <td class="font-heading font-black text-black">₹{{ formatPrice(plan.price) }}</td>
+              <td>
                 <span
-                  class="bg-[#F1F5F9] text-[#475569] text-[11px] font-bold px-2 py-1 rounded-md border border-[#E8ECF4]"
-                  >{{ plan.duration }} days</span
-                >
-              </td>
-              <td class="px-4 py-2 font-bold text-[14px] text-[#0F172A]">
-                ₹{{ formatPrice(plan.price) }}
-              </td>
-              <td class="px-4 py-2">
-                <span
-                  [class]="
-                    'text-[11px] font-bold px-2 py-1 rounded-md border ' +
-                    eligibilityColors[plan.eligibility]
-                  "
+                  class="elig-chip font-heading font-bold"
+                  [class.elig-general]="plan.eligibility === 'General'"
+                  [class.elig-student]="plan.eligibility === 'Student'"
+                  [class.elig-senior]="plan.eligibility === 'Senior'"
+                  [class.elig-corporate]="plan.eligibility === 'Corporate'"
                 >
                   {{ plan.eligibility }}
                 </span>
               </td>
-              <td class="px-4 py-2 font-mono text-[12px] text-[#475569]">
-                {{ plan.version }}
-              </td>
-              <td class="px-4 py-2 text-[13px] text-[#475569] font-light">
-                {{ plan.effectiveFrom }}
-              </td>
-              <td class="px-4 py-2">
+              <td class="font-mono text-muted">{{ plan.version }}</td>
+              <td class="text-muted font-bold uppercase">{{ plan.effectiveFrom }}</td>
+              <td>
                 <span
-                  *ngIf="plan.branches === 'All'"
-                  class="bg-[#EFF5FF] text-[#2563EB] text-[11px] font-bold px-2 py-1 rounded-md border border-[#2563EB]/20"
-                  >All</span
+                  class="branch-chip font-heading font-bold"
+                  [style.background-color]="plan.branches === 'All' ? '#2563EB' : '#F3F3F1'"
+                  [style.color]="plan.branches === 'All' ? '#FFF' : '#111'"
                 >
-                <span
-                  *ngIf="plan.branches !== 'All'"
-                  class="bg-[#F8F9FC] text-[#475569] text-[11px] font-bold px-2 py-1 rounded-md border border-[#E8ECF4]"
-                  >{{ plan.branches }} branches</span
-                >
+                  {{ plan.branches === 'All' ? 'ALL' : plan.branches + ' BRANCHES' }}
+                </span>
               </td>
-              <td class="px-4 py-2">
-                <div class="flex items-center gap-2">
+              <td>
+                <div class="toggle-switch-wrapper">
                   <button
                     (click)="togglePlanStatus(plan)"
-                    [class]="
-                      'w-9 h-5 rounded-full relative transition-colors ' +
-                      (plan.status ? 'bg-[#16A34A]' : 'bg-[#CBD5E1]')
-                    "
+                    class="brutal-toggle-switch"
+                    [class.active]="plan.status"
                   >
-                    <div
-                      [class]="
-                        'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
-                        (plan.status ? 'translate-x-4' : 'translate-x-0')
-                      "
-                    ></div>
+                    <div class="toggle-thumb"></div>
                   </button>
-                  <span
-                    [class]="
-                      'text-[11px] font-bold ' +
-                      (plan.status ? 'text-[#16A34A]' : 'text-[#94A3B8]')
-                    "
-                  >
-                    {{ plan.status ? "Active" : "Inactive" }}
+                  <span class="toggle-text font-heading font-bold" [style.color]="plan.status ? '#00D26A' : '#555'">
+                    {{ plan.status ? 'ACTIVE' : 'INACTIVE' }}
                   </span>
                 </div>
               </td>
-              <td class="px-4 py-2">
-                <div
-                  class="flex items-center gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <button
-                    (click)="handleEdit(plan)"
-                    title="Edit Plan"
-                    class="p-1.5 rounded-[6px] bg-white border border-[#E8ECF4] text-[#2563EB] hover:bg-[#EFF5FF] hover:border-[#2563EB]/30 transition-all shadow-sm"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    (click)="handleDeactivate(plan)"
-                    [title]="plan.status ? 'Deactivate Plan' : 'Activate Plan'"
-                    [class]="
-                      'p-1.5 rounded-[6px] bg-white border border-[#E8ECF4] transition-all shadow-sm ' +
-                      (plan.status
-                        ? 'text-[#DC2626] hover:bg-[#FEF2F2] hover:border-[#DC2626]/30'
-                        : 'text-[#16A34A] hover:bg-[#F0FDF4] hover:border-[#16A34A]/30')
-                    "
-                  >
-                    {{ plan.status ? "🚫" : "✓" }}
-                  </button>
+              <td>
+                <div class="actions-wrapper">
+                  <!-- Edit Action -->
+                  <div class="tooltip-container">
+                    <button (click)="handleEdit(plan)" class="btn-icon-action">✏</button>
+                    <span class="tooltip-text font-heading">EDIT</span>
+                  </div>
+                  <!-- Deactivate Action -->
+                  <div class="tooltip-container">
+                    <button (click)="handleDeactivate(plan)" class="btn-icon-action">⊘</button>
+                    <span class="tooltip-text font-heading">DEACTIVATE</span>
+                  </div>
                 </div>
               </td>
             </tr>
 
-            <!-- Expanded Row -->
-            <tr *ngIf="isRowExpanded(plan.id)" class="bg-[#F8F9FC]">
-              <td colSpan="10" class="p-0 border-b border-[#E8ECF4]">
-                <div
-                  class="border-l-4 border-[#2563EB] px-8 py-5 flex gap-10 overflow-hidden animate-in slide-in-from-top-2 duration-200"
-                >
-                  <div>
-                    <div
-                      class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider mb-2"
-                    >
-                      Facilities Included
-                    </div>
-                    <div class="flex gap-2 flex-wrap max-w-[300px]">
+            <!-- Expanded Details Row -->
+            <tr *ngIf="isRowExpanded(plan.id)" class="row-expanded-body">
+              <td colspan="10" class="expanded-cell">
+                <div class="expanded-inner-box">
+                  <!-- Facilities -->
+                  <div class="expanded-group">
+                    <span class="expanded-group-title font-heading font-bold">FACILITIES INCLUDED</span>
+                    <div class="facilities-pills">
                       <span
                         *ngFor="let fac of plan.facilities"
-                        [class]="
-                          'text-[12px] font-medium px-2 py-1 rounded-md border flex items-center gap-1 ' +
-                          (fac.included
-                            ? 'bg-white border-[#E8ECF4] text-[#0F172A]'
-                            : 'bg-transparent border-transparent text-[#94A3B8] line-through')
-                        "
+                        class="facility-flat-pill font-heading font-bold"
+                        [class.facility-excluded]="!fac.included"
                       >
-                        {{ fac.name }} {{ fac.included ? "✓" : "✕" }}
+                        {{ fac.name }} {{ fac.included ? '✓' : '✕' }}
                       </span>
                     </div>
                   </div>
 
-                  <div>
-                    <div
-                      class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider mb-2"
-                    >
-                      Linked Add-Ons
-                    </div>
-                    <div class="flex gap-2 flex-wrap">
-                      <ng-container
-                        *ngIf="plan.addons.length > 0; else noAddons"
-                      >
-                        <span
-                          *ngFor="let addon of plan.addons"
-                          class="text-[12px] font-bold px-2 py-1 rounded-md bg-[#EFF5FF] text-[#2563EB] border border-[#2563EB]/20"
-                        >
-                          {{ addon }}
-                        </span>
-                      </ng-container>
-                      <ng-template #noAddons>
-                        <span class="text-[12px] text-[#94A3B8] italic"
-                          >None</span
-                        >
-                      </ng-template>
+                  <!-- Add-ons -->
+                  <div class="expanded-group">
+                    <span class="expanded-group-title font-heading font-bold">LINKED ADD-ONS</span>
+                    <div class="addons-pills">
+                      <span *ngFor="let addon of plan.addons" class="addon-flat-pill font-heading font-bold">
+                        {{ addon }}
+                      </span>
+                      <span *ngIf="plan.addons.length === 0" class="no-addons-text font-body">NO ADD-ONS REGISTERED</span>
                     </div>
                   </div>
 
-                  <div>
-                    <div
-                      class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider mb-2"
-                    >
-                      Billing Details
-                    </div>
-                    <div class="flex gap-3">
-                      <span
-                        class="text-[12px] font-bold px-2 py-1 rounded-md bg-white border border-[#E8ECF4] text-[#475569]"
-                      >
-                        Tax: {{ plan.tax }}% GST
-                      </span>
-                      <span
-                        class="text-[12px] font-bold px-2 py-1 rounded-md bg-white border border-[#E8ECF4] text-[#475569]"
-                      >
-                        Proration: {{ plan.proration }}
-                      </span>
+                  <!-- Proration & Tax -->
+                  <div class="expanded-group">
+                    <span class="expanded-group-title font-heading font-bold">BILLING VARIABLES</span>
+                    <div class="billing-details-row">
+                      <span class="billing-pill font-heading font-bold">TAX: {{ plan.tax }}% GST</span>
+                      <span class="billing-pill font-heading font-bold">PRORATION: {{ plan.proration }}</span>
                     </div>
                   </div>
                 </div>
@@ -336,328 +210,223 @@
           </ng-container>
 
           <tr *ngIf="filteredPlans.length === 0">
-            <td
-              colSpan="10"
-              class="px-4 py-8 text-center text-[#94A3B8] font-medium text-[14px]"
-            >
-              No plans match your filters.
+            <td colspan="10" class="empty-table-cell font-body font-bold text-muted uppercase">
+              NO PLANS MATCH YOUR SELECTION CRITERIA.
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-  </div>
+  </section>
 
   <!-- CREATE / EDIT PLAN DRAWER -->
-  <div *ngIf="isDrawerOpen" class="fixed inset-0 z-40 backdrop-blur-[1px]">
-    <div
-      class="fixed inset-0 bg-[#0F172A]/20 z-40"
-      (click)="closeDrawer()"
-    ></div>
-    <div
-      class="fixed top-0 right-0 bottom-0 w-[480px] bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300"
-    >
-      <div
-        class="p-6 border-b border-[#E8ECF4] flex justify-between items-center bg-[#F8F9FC]/50"
-      >
-        <h2 class="font-bold text-[18px] text-[#0F172A]">
-          {{ editingPlan ? "Edit: " + editingPlan.name : "Create New Plan" }}
-        </h2>
-        <button
-          (click)="closeDrawer()"
-          class="text-[#94A3B8] hover:text-[#0F172A] p-1 bg-white rounded-md shadow-sm border border-[#E8ECF4] transition-colors"
-        >
-          ✕
-        </button>
+  <div *ngIf="isDrawerOpen" class="drawer-overlay" (click)="closeDrawer()"></div>
+  <div *ngIf="isDrawerOpen" class="drawer-panel">
+    <header class="drawer-header">
+      <h2 class="font-heading font-black uppercase">
+        {{ editingPlan!.id ? 'EDIT: ' + editingPlan!.name : 'CREATE NEW PLAN' }}
+      </h2>
+      <button (click)="closeDrawer()" class="btn-close-drawer">✕</button>
+    </header>
+
+    <form class="drawer-body-form font-body" (submit)="$event.preventDefault()">
+      <!-- PLAN NAME -->
+      <div class="form-field">
+        <label class="form-label">PLAN NAME</label>
+        <input
+          type="text"
+          [(ngModel)]="editingPlan!.name"
+          name="name"
+          class="brutal-input"
+          placeholder="E.G. GOLD ANNUAL"
+        />
       </div>
 
-      <div class="flex-1 overflow-y-auto p-6 text-[14px]">
-        <div class="flex flex-col gap-4">
-          <div>
-            <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-              >Plan Name <span class="text-[#DC2626]">*</span></label
+      <!-- DURATION & PRICE -->
+      <div class="form-row-2">
+        <div class="form-field">
+          <label class="form-label">DURATION (DAYS)</label>
+          <input
+            type="number"
+            [(ngModel)]="editingPlan!.duration"
+            name="duration"
+            class="brutal-input"
+            placeholder="365"
+          />
+        </div>
+        <div class="form-field">
+          <label class="form-label">PRICE (₹)</label>
+          <input
+            type="number"
+            [(ngModel)]="editingPlan!.price"
+            name="price"
+            class="brutal-input"
+            placeholder="3999"
+          />
+        </div>
+      </div>
+
+      <!-- ACCESS HOURS -->
+      <div class="form-row-2">
+        <div class="form-field">
+          <label class="form-label">ACCESS START</label>
+          <input
+            type="time"
+            [(ngModel)]="editingPlan!.accessStart"
+            name="accessStart"
+            class="brutal-input"
+          />
+        </div>
+        <div class="form-field">
+          <label class="form-label">ACCESS END</label>
+          <input
+            type="time"
+            [(ngModel)]="editingPlan!.accessEnd"
+            name="accessEnd"
+            class="brutal-input"
+          />
+        </div>
+      </div>
+
+      <!-- ELIGIBILITY & EFFECTIVE DATE -->
+      <div class="form-row-2">
+        <div class="form-field">
+          <label class="form-label">ELIGIBILITY</label>
+          <div class="select-wrapper">
+            <select
+              [(ngModel)]="editingPlan!.eligibility"
+              name="eligibility"
+              class="brutal-select w-full"
             >
+              <option value="General">GENERAL</option>
+              <option value="Student">STUDENT</option>
+              <option value="Senior">SENIOR</option>
+              <option value="Corporate">CORPORATE</option>
+            </select>
+            <span class="select-arrow">▼</span>
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">EFFECTIVE FROM</label>
+          <input
+            type="date"
+            [(ngModel)]="editingPlan!.effectiveFrom"
+            name="effectiveFrom"
+            class="brutal-input"
+          />
+        </div>
+      </div>
+
+      <!-- PRORATION & TAX -->
+      <div class="form-row-2">
+        <div class="form-field">
+          <label class="form-label">PRORATION RULE</label>
+          <div class="select-wrapper">
+            <select
+              [(ngModel)]="editingPlan!.proration"
+              name="proration"
+              class="brutal-select w-full"
+            >
+              <option value="Daily">DAILY</option>
+              <option value="Weekly">WEEKLY</option>
+              <option value="None">NONE</option>
+            </select>
+            <span class="select-arrow">▼</span>
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">TAX %</label>
+          <input
+            type="number"
+            [(ngModel)]="editingPlan!.tax"
+            name="tax"
+            class="brutal-input"
+            placeholder="18"
+          />
+        </div>
+      </div>
+
+      <!-- BRANCH VISIBILITY -->
+      <div class="form-field">
+        <label class="form-label">BRANCH VISIBILITY</label>
+        <div class="visibility-checklist-box">
+          <label class="checkbox-container">
             <input
-              type="text"
-              [(ngModel)]="editingPlan!.name"
-              class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
-              placeholder="e.g. Gold Annual"
+              type="checkbox"
+              [checked]="editingPlan!.branches === 'All'"
+              (change)="editingPlan!.branches = editingPlan!.branches === 'All' ? 1 : 'All'"
             />
-          </div>
+            <span class="custom-checkbox"></span>
+            ALL BRANCHES MASTER TOGGLE
+          </label>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-                >Duration
-                <span class="font-normal text-[#94A3B8]">(days)</span></label
-              >
-              <input
-                type="number"
-                [(ngModel)]="editingPlan!.duration"
-                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
-              />
-            </div>
-            <div>
-              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-                >Price
-                <span class="font-normal text-[#94A3B8]">(₹)</span></label
-              >
-              <input
-                type="number"
-                [(ngModel)]="editingPlan!.price"
-                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
-              />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-                >Access Start Time</label
-              >
-              <input
-                type="time"
-                [(ngModel)]="editingPlan!.accessStart"
-                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm cursor-pointer"
-              />
-            </div>
-            <div>
-              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-                >Access End Time</label
-              >
-              <input
-                type="time"
-                [(ngModel)]="editingPlan!.accessEnd"
-                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm cursor-pointer"
-              />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-                >Eligibility</label
-              >
-              <div class="relative">
-                <select
-                  [(ngModel)]="editingPlan!.eligibility"
-                  class="w-full h-11 pl-3 pr-8 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white shadow-sm appearance-none cursor-pointer"
-                >
-                  <option value="General">General</option>
-                  <option value="Student">Student</option>
-                  <option value="Senior">Senior</option>
-                  <option value="Corporate">Corporate</option>
-                </select>
-                <div
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none"
-                >
-                  ▼
-                </div>
-              </div>
-            </div>
-            <div>
-              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-                >Effective From</label
-              >
-              <input
-                type="date"
-                [(ngModel)]="editingPlan!.effectiveFrom"
-                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm cursor-pointer"
-              />
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-                >Proration Rule</label
-              >
-              <div class="relative">
-                <select
-                  [(ngModel)]="editingPlan!.proration"
-                  class="w-full h-11 pl-3 pr-8 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all bg-white shadow-sm appearance-none cursor-pointer"
-                >
-                  <option value="Daily">Daily</option>
-                  <option value="Weekly">Weekly</option>
-                  <option value="None">None</option>
-                </select>
-                <div
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none"
-                >
-                  ▼
-                </div>
-              </div>
-            </div>
-            <div>
-              <label class="block text-[13px] font-bold text-[#0F172A] mb-1.5"
-                >Tax <span class="font-normal text-[#94A3B8]">(%)</span></label
-              >
-              <input
-                type="number"
-                [(ngModel)]="editingPlan!.tax"
-                class="w-full h-11 px-3 border border-[#E8ECF4] rounded-[8px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all shadow-sm"
-              />
-            </div>
-          </div>
-
-          <div class="mt-2">
-            <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
-              >Branch Visibility</label
-            >
-            <div
-              class="bg-[#F8F9FC] p-3 rounded-[8px] border border-[#E8ECF4] space-y-2"
-            >
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  [checked]="editingPlan!.branches === 'All'"
-                  class="w-4 h-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
-                />
-                <span class="text-[13px] font-bold text-[#0F172A]"
-                  >All Branches</span
-                >
-              </label>
-              <div class="pl-6 space-y-2 border-t border-[#E8ECF4] pt-2 mt-2">
-                <label
-                  *ngFor="
-                    let b of [
-                      'Downtown Main',
-                      'Westside Flex',
-                      'Koramangala Elite',
-                      'Pune East',
-                    ]
-                  "
-                  class="flex items-center gap-2 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    [checked]="editingPlan!.branches === 'All'"
-                    class="w-4 h-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
-                  />
-                  <span class="text-[13px] text-[#475569]">{{ b }}</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-2">
-            <label class="block text-[13px] font-bold text-[#0F172A] mb-2"
-              >Facilities Included</label
-            >
-            <div class="grid grid-cols-2 gap-2">
-              <label
-                *ngFor="
-                  let fac of [
-                    'Gym Floor',
-                    'Pool',
-                    'Classes',
-                    'Steam Room',
-                    'Sauna',
-                    'Rock Climbing',
-                  ]
-                "
-                [class]="
-                  'flex items-center gap-2 p-2.5 rounded-[8px] border cursor-pointer transition-all ' +
-                  (true
-                    ? 'bg-[#EFF5FF] border-[#2563EB]/20 text-[#2563EB]'
-                    : 'bg-white border-[#E8ECF4] text-[#475569]')
-                "
-              >
-                <input
-                  type="checkbox"
-                  class="w-4 h-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
-                />
-                <span class="text-[13px] font-medium">{{ fac }}</span>
-              </label>
-            </div>
-          </div>
-
-          <div
-            class="mt-4 flex items-center justify-between p-4 border border-[#E8ECF4] rounded-[8px] bg-white shadow-sm"
-          >
-            <div>
-              <div class="font-bold text-[14px] text-[#0F172A]">
-                Plan is active
-              </div>
-              <div class="text-[12px] text-[#94A3B8]">
-                Available for new purchases
-              </div>
-            </div>
-            <button
-              (click)="editingPlan!.status = !editingPlan!.status"
-              [class]="
-                'w-11 h-6 rounded-full relative transition-colors ' +
-                (editingPlan!.status ? 'bg-[#16A34A]' : 'bg-[#CBD5E1]')
-              "
-            >
-              <div
-                [class]="
-                  'absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform shadow-sm ' +
-                  (editingPlan!.status ? 'translate-x-5' : 'translate-x-0')
-                "
-              ></div>
-            </button>
+          <div class="visibility-branches-rows mt-2 pl-4">
+            <label *ngFor="let b of ['DOWNTOWN MAIN', 'WESTSIDE FLEX', 'KORAMANGALA ELITE', 'PUNE EAST']" class="checkbox-container">
+              <input type="checkbox" [checked]="editingPlan!.branches === 'All'" />
+              <span class="custom-checkbox"></span>
+              {{ b }}
+            </label>
           </div>
         </div>
       </div>
 
-      <div class="p-6 border-t border-[#E8ECF4] bg-[#F8F9FC]/50 flex gap-3">
+      <!-- FACILITIES -->
+      <div class="form-field">
+        <label class="form-label">FACILITIES</label>
+        <div class="facilities-checkbox-grid">
+          <label *ngFor="let fac of editingPlan!.facilities" class="checkbox-container">
+            <input type="checkbox" [(ngModel)]="fac.included" [name]="'fac-' + fac.name" />
+            <span class="custom-checkbox"></span>
+            {{ fac.name | uppercase }}
+          </label>
+        </div>
+      </div>
+
+      <!-- IS_ACTIVE TOGGLE -->
+      <div class="form-field brutal-active-toggle-row">
+        <div class="toggle-info">
+          <span class="toggle-title font-heading font-bold">PLAN IS ACTIVE</span>
+          <span class="toggle-desc font-body">AVAILABLE FOR MEMBERSHIP PURCHASE</span>
+        </div>
         <button
-          (click)="discardChanges()"
-          class="flex-1 bg-white border border-[#E8ECF4] text-[#475569] font-bold text-[14px] h-12 rounded-[8px] hover:bg-[#F8F9FC] transition-colors shadow-sm"
+          (click)="editingPlan!.status = !editingPlan!.status"
+          class="brutal-toggle-switch"
+          [class.active]="editingPlan!.status"
         >
-          Discard
-        </button>
-        <button
-          (click)="savePlan()"
-          class="flex-[2] bg-[#2563EB] text-white font-bold text-[14px] h-12 rounded-[8px] hover:bg-[#1D4ED8] transition-colors shadow-sm"
-        >
-          Save Plan
+          <div class="toggle-thumb"></div>
         </button>
       </div>
-    </div>
+    </form>
+
+    <footer class="drawer-footer">
+      <button (click)="savePlan()" class="btn-brutal btn-primary w-full mb-3 font-heading font-black">
+        SAVE PLAN
+      </button>
+      <button (click)="discardChanges()" class="btn-brutal btn-secondary w-full font-heading font-bold">
+        DISCARD
+      </button>
+    </footer>
   </div>
 
   <!-- DEACTIVATION WARNING MODAL -->
-  <div
-    *ngIf="deactivatingPlan"
-    class="fixed inset-0 z-[60] flex items-center justify-center"
-  >
-    <div
-      class="absolute inset-0 bg-[#0F172A]/40 backdrop-blur-[2px]"
-      (click)="deactivatingPlan = null"
-    ></div>
-    <div
-      class="relative bg-white rounded-[16px] shadow-2xl w-[440px] p-8 animate-in zoom-in-95 fade-in duration-200"
-    >
-      <div
-        class="w-14 h-14 bg-[#FFFBEB] rounded-full flex items-center justify-center text-[#D97706] mb-5 border-[4px] border-[#FFFBEB]"
-      >
-        ⚠️
-      </div>
-      <h3 class="font-bold text-[20px] text-[#0F172A] mb-3">
-        Deactivate {{ deactivatingPlan.name }} Plan?
-      </h3>
-      <p class="text-[14px] text-[#475569] mb-8 leading-relaxed">
-        <strong>{{ deactivatingPlan.activeMembers }} active members</strong> are
-        on this plan. Deactivation will not affect their current membership —
-        they will retain access until expiry. It will no longer be available for
-        new purchases.
-      </p>
-      <div class="flex gap-3 justify-end">
-        <button
-          (click)="deactivatingPlan = null"
-          class="px-5 h-11 rounded-[8px] text-[14px] font-bold text-[#475569] bg-white border border-[#E8ECF4] hover:bg-[#F8F9FC] transition-all"
-        >
-          Cancel
-        </button>
-        <button
-          (click)="confirmDeactivate()"
-          class="px-5 h-11 rounded-[8px] text-[14px] font-bold text-white bg-[#D97706] hover:bg-[#B45309] transition-colors shadow-sm"
-        >
-          Deactivate Plan
-        </button>
-      </div>
+  <div *ngIf="deactivatingPlan" class="modal-overlay" (click)="deactivatingPlan = null"></div>
+  <div *ngIf="deactivatingPlan" class="warning-modal">
+    <div class="modal-alert-icon-box">
+      ⚠️
+    </div>
+    <h3 class="modal-title font-heading font-black">
+      DEACTIVATE {{ deactivatingPlan.name | uppercase }} PLAN?
+    </h3>
+    <p class="modal-desc font-body">
+      {{ deactivatingPlan.activeMembers }} ACTIVE MEMBERS ARE ON THIS PLAN. DEACTIVATION WILL NOT AFFECT THEIR CURRENT MEMBERSHIP — THEY WILL RETAIN ACCESS UNTIL EXPIRY.
+    </p>
+    <div class="modal-actions">
+      <button (click)="deactivatingPlan = null" class="btn-brutal btn-secondary font-heading font-bold uppercase">
+        CANCEL
+      </button>
+      <button (click)="confirmDeactivate()" class="btn-brutal font-heading font-bold uppercase" style="background-color: #FFB800; color: #111;">
+        DEACTIVATE PLAN
+      </button>
     </div>
   </div>
 </div>

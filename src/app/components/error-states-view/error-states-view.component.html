@@ -1,50 +1,84 @@
-<div class="max-w-[1000px] mx-auto pb-10 py-12 px-4">
-  <div class="mb-12">
-    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Error States</h1>
-    <p class="text-[#475569] text-[14px]">
-      UI examples for different error scenarios
-    </p>
-  </div>
+<div class="states-view-container">
+  <!-- PAGE HEADER -->
+  <header class="page-header-block">
+    <h1 class="page-title">ERROR & EMPTY STATES</h1>
+    <p class="page-subtitle">2X3 DESIGN SYSTEM DEMONSTRATION GRID</p>
+  </header>
 
-  <!-- ERROR SELECTOR -->
-  <div class="flex gap-2 mb-8 overflow-x-auto pb-2">
-    <button
-      *ngFor="let error of errorStates"
-      (click)="selectError(error)"
-      [class]="
-        'px-4 py-2 rounded-[8px] font-bold text-[13px] whitespace-nowrap transition-colors ' +
-        (selectedError === error
-          ? 'bg-[#2563EB] text-white'
-          : 'bg-[#F8F9FC] text-[#475569] hover:bg-[#E8ECF4]')
-      "
-    >
-      {{ error }}
-    </button>
-  </div>
+  <!-- 2X3 DASHBOARD GRID -->
+  <main class="states-grid">
+    <!-- Card 1: 401 Unauthorized -->
+    <article class="mockup-card">
+      <div class="card-header">401 UNAUTHORIZED</div>
+      <div class="card-body">
+        <div class="status-icon">🔒</div>
+        <h2 class="status-title">AUTHENTICATION REQUIRED</h2>
+        <p class="status-message">YOUR SESSION HAS EXPIRED OR IS INVALID. PLEASE SIGN IN TO CONTINUE.</p>
+        <button class="btn-primary">LOG IN →</button>
+      </div>
+    </article>
 
-  <!-- ERROR DISPLAY -->
-  <div
-    class="bg-white border border-[#E8ECF4] rounded-[14px] p-12 shadow-sm text-center min-h-[400px] flex flex-col items-center justify-center"
-  >
-    <div class="text-[96px] mb-6">{{ getErrorDetails().icon }}</div>
-    <h2 class="font-bold text-[32px] text-[#0F172A] mb-3">
-      {{ getErrorDetails().title }}
-    </h2>
-    <p class="text-[16px] text-[#475569] max-w-[400px] mb-8">
-      {{ getErrorDetails().message }}
-    </p>
+    <!-- Card 2: 403 Forbidden -->
+    <article class="mockup-card">
+      <div class="card-header">403 FORBIDDEN</div>
+      <div class="card-body">
+        <div class="status-icon">🛡️</div>
+        <h2 class="status-title">ACCESS IS RESTRICTED</h2>
+        <p class="status-message">YOUR ASSIGNED ROLE LACKS REQUIRED SCOPES TO VIEW THIS RESOURCE.</p>
+        <button class="btn-secondary">BACK TO SAFETY</button>
+      </div>
+    </article>
 
-    <div class="flex gap-3">
-      <button
-        class="px-6 h-11 bg-white border border-[#E8ECF4] text-[#475569] font-bold rounded-[8px] hover:bg-[#F8F9FC]"
-      >
-        Go Back
-      </button>
-      <button
-        class="px-6 h-11 bg-[#2563EB] text-white font-bold rounded-[8px] hover:bg-[#1D4ED8]"
-      >
-        Go Home
-      </button>
-    </div>
-  </div>
+    <!-- Card 3: 404 Not Found -->
+    <article class="mockup-card">
+      <div class="card-header">404 NOT FOUND</div>
+      <div class="card-body">
+        <div class="status-icon">🧭</div>
+        <h2 class="status-title">PAGE NOT FOUND</h2>
+        <p class="status-message">THE URL PATH SPECIFIED COULD NOT BE FOUND IN ROOT ROUTING CONFIGS.</p>
+        <button class="btn-secondary">GO HOME</button>
+      </div>
+    </article>
+
+    <!-- Card 4: 500 Server Error -->
+    <article class="mockup-card">
+      <div class="card-header">500 SERVER ERROR</div>
+      <div class="card-body">
+        <div class="status-icon">🔧</div>
+        <h2 class="status-title">INTERNAL SERVER ERROR</h2>
+        <p class="status-message">THE SERVICE ENCOUNTERED AN UNEXPECTED EXCEPTION DURING PROVISIONING.</p>
+        <button class="btn-primary">RETRY CONNECTION</button>
+      </div>
+    </article>
+
+    <!-- Card 5: Empty Calendar State -->
+    <article class="mockup-card">
+      <div class="card-header">EMPTY STATE: CALENDAR</div>
+      <div class="card-body">
+        <div class="status-icon">📅</div>
+        <h2 class="status-title">NO CLASSES SCHEDULED</h2>
+        <p class="status-message">THERE ARE NO ACTIVE CLASSES RUNNING ON SELECTED CALENDAR DATE.</p>
+        <button class="btn-secondary">ADD CLASS +</button>
+      </div>
+    </article>
+
+    <!-- Card 6: Toast Controller -->
+    <article class="mockup-card">
+      <div class="card-header">TOAST CONTROLLER</div>
+      <div class="card-body controller-body">
+        <p class="controller-text">CLICK TO TRIGGER TOASTS IN THE BOTTOM-RIGHT CORNER OF SCREEN.</p>
+        
+        <div class="trigger-buttons-grid">
+          <button class="btn-toast btn-success" (click)="triggerToast('success')">SUCCESS</button>
+          <button class="btn-toast btn-info" (click)="triggerToast('info')">INFO</button>
+          <button class="btn-toast btn-warning" (click)="triggerToast('warning')">WARNING</button>
+          <button class="btn-toast btn-error" (click)="triggerToast('error')">ERROR</button>
+        </div>
+
+        <button class="btn-primary trigger-all-btn" (click)="triggerAllToasts()">
+          TRIGGER STACKED TOASTS (4)
+        </button>
+      </div>
+    </article>
+  </main>
 </div>

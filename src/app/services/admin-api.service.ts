@@ -70,10 +70,17 @@ export interface PromoCodeDto {
 
 export interface AuditLogDto {
   auditId?: number;
+  performedBy?: number;
+  entityName?: string;
+  entityId?: number;
+  action?: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'OVERRIDE';
+  oldValue?: string;
+  newValue?: string;
+  createdAt?: string;
   username?: string;
   entity?: string;
-  action?: string;
   timestamp?: string;
+  performedByRole?: string; // Virtual/retrieved role
 }
 
 export interface FeatureFlagDto {

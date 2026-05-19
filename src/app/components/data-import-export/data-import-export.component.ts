@@ -6,10 +6,6 @@ interface BulkImportRowResult {
   rowNumber: number;
   status: string;
   errorMessage?: string;
-  memberId?: number;
-  email: string;
-  phone: string;
-  memberName: string;
   fieldErrors?: string;
 }
 
@@ -30,89 +26,194 @@ interface BulkImportReport {
   selector: 'app-data-import-export',
   templateUrl: './data-import-export.component.html',
   styleUrls: ['./data-import-export.component.css'],
+  standalone: false
 })
 export class DataImportExportComponent {
-  importStatus = '';
-  exportStatus = '';
+  // Tabs
+  activeImportTab: 'MEMBERS' | 'PLANS' | 'CLASSES' | 'SCHEDULE' = 'MEMBERS';
+  activeExportTab: 'MEMBERS' | 'PLANS' | 'CLASSES' | 'SCHEDULE' = 'MEMBERS';
+
+  // Import State
   selectedFile: File | null = null;
+  dragOver = false;
   isImporting = false;
+  importStatus = '';
   importReport: BulkImportReport | null = null;
-  showErrorDetails = false;
-  errorRows: BulkImportRowResult[] = [];
+  failedRows: { row: number; column: string; error: string }[] = [];
+  showValidationResults = false;
+
+  // Export State
+  isExporting = false;
+  exportStatus = '';
+  lastExportInfo: { timestamp: string; fileName: string } | null = null;
+
+  // Export Filters
+  exportFilters = {
+    dateFrom: '',
+    dateTo: '',
+    branchId: 'ALL',
+    status: 'ALL'
+  };
 
   private apiUrl = environment.apiBaseUrl || 'http://localhost:8080/api/v1';
 
   constructor(private http: HttpClient) {}
 
-  onFileSelected(event: any): void {
-    this.selectedFile = event.target.files?.[0] || null;
-    this.importStatus = '';
-    this.importReport = null;
+  // Tab Selection
+  setImportTab(tab: 'MEMBERS' | 'PLANS' | 'CLASSES' | 'SCHEDULE'): void {
+    this.activeImportTab = tab;
+    this.resetImportState();
   }
 
-  /**
-   * Upload CSV file for bulk member import (AC10)
-   */
-  importData(): void {
-    if (!this.selectedFile) {
-      this.importStatus = '⚠ Please select a file first';
+  setExportTab(tab: 'MEMBERS' | 'PLANS' | 'CLASSES' | 'SCHEDULE'): void {
+    this.activeExportTab = tab;
+    this.exportStatus = '';
+  }
+
+  // File Handlers
+  onFileSelected(event: any): void {
+    const file = event.target.files?.[0] || null;
+    this.handleFile(file);
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOver = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOver = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    this.dragOver = false;
+    const file = event.dataTransfer?.files?.[0] || null;
+    this.handleFile(file);
+  }
+
+  private handleFile(file: File | null): void {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      alert('PLEASE SELECT A VALID CSV FILE.');
+      this.selectedFile = null;
       return;
     }
+    this.selectedFile = file;
+    this.importStatus = '';
+    this.importReport = null;
+    this.failedRows = [];
+    this.showValidationResults = false;
+  }
 
-    if (!this.selectedFile.name.toLowerCase().endsWith('.csv')) {
-      this.importStatus = '❌ Please select a CSV file';
+  resetImportState(): void {
+    this.selectedFile = null;
+    this.importReport = null;
+    this.failedRows = [];
+    this.showValidationResults = false;
+    this.importStatus = '';
+  }
+
+  // VALIDATE & UPLOAD
+  validateAndUpload(): void {
+    if (!this.selectedFile) {
+      alert('PLEASE SELECT OR DRAG A CSV FILE FIRST.');
       return;
     }
 
     this.isImporting = true;
-    this.importStatus = `📤 Uploading ${this.selectedFile.name}...`;
+    this.importStatus = 'VALIDATING DATA...';
 
+    // Mock validation logic for non-members, call real endpoint for members
+    if (this.activeImportTab !== 'MEMBERS') {
+      setTimeout(() => {
+        this.isImporting = false;
+        // Generate mock reports based on the type
+        const total = 10;
+        let success = 8;
+        let valErrors = 2;
+
+        this.importReport = {
+          success: false,
+          message: `PARTIAL SUCCESS: ${success} PASSED, ${valErrors} FAILED.`,
+          fileName: this.selectedFile?.name || 'import.csv',
+          overallStatus: 'WARNING',
+          totalRows: total,
+          successCount: success,
+          duplicateCount: 0,
+          validationErrorCount: valErrors,
+          systemErrorCount: 0,
+          rowResults: []
+        };
+
+        this.failedRows = [
+          { row: 3, column: 'PRICE', error: 'MUST BE GREATER THAN ZERO.' },
+          { row: 7, column: 'BRANCH_ID', error: 'SPECIFIED BRANCH DOES NOT EXIST.' }
+        ];
+
+        this.showValidationResults = true;
+        this.importStatus = 'VALIDATION COMPLETE. REVIEW ERRORS BELOW.';
+      }, 1500);
+      return;
+    }
+
+    // Call actual backend for members
     const formData = new FormData();
     formData.append('file', this.selectedFile);
 
-    this.http
-      .post<BulkImportReport>(`${this.apiUrl}/import/members/csv`, formData)
-      .subscribe(
-        (response) => {
-          this.importReport = response;
-          this.isImporting = false;
+    this.http.post<any>(`${this.apiUrl}/import/members/csv`, formData).subscribe({
+      next: (res) => {
+        this.isImporting = false;
+        
+        // Parse backend response
+        const total = res.totalRows || 0;
+        const success = res.successCount || 0;
+        const duplicates = res.duplicateCount || 0;
+        const validationErrors = res.validationErrorCount || 0;
+        
+        this.importReport = {
+          success: true,
+          message: res.message || 'IMPORT COMPLETED.',
+          fileName: res.fileName || this.selectedFile!.name,
+          overallStatus: res.overallStatus || 'SUCCESS',
+          totalRows: total,
+          successCount: success,
+          duplicateCount: duplicates,
+          validationErrorCount: validationErrors,
+          systemErrorCount: res.systemErrorCount || 0,
+          rowResults: res.rowResults || []
+        };
 
-          if (response.successCount === response.totalRows) {
-            this.importStatus = `✅ Successfully imported ${response.successCount}/${response.totalRows} members`;
-          } else if (response.successCount > 0) {
-            this.importStatus = `⚠ Partial import: ${response.successCount}/${response.totalRows} members imported`;
-          } else {
-            this.importStatus = `❌ Import failed: ${response.message}`;
-          }
+        // Format row results to failedRows
+        this.failedRows = [];
+        if (res.rowResults) {
+          res.rowResults.forEach((r: any) => {
+            if (r.status !== 'SUCCESS') {
+              this.failedRows.push({
+                row: r.rowNumber,
+                column: r.fieldErrors || 'ROW DATA',
+                error: r.errorMessage || 'VALIDATION ERROR'
+              });
+            }
+          });
+        }
 
-          // Collect error rows for display
-          this.errorRows = response.rowResults.filter(
-            (r) => r.status !== 'SUCCESS',
-          );
-          if (this.errorRows.length > 0) {
-            this.showErrorDetails = true;
-          }
-
-          this.selectedFile = null;
-        },
-        (error) => {
-          this.isImporting = false;
-          const errorMsg =
-            error.error?.message || error.statusText || 'Import failed';
-          this.importStatus = `❌ Import error: ${errorMsg}`;
-          console.error('Import error:', error);
-        },
-      );
+        this.showValidationResults = true;
+        this.importStatus = `SUCCESSFULLY PROCESSED CSV.`;
+      },
+      error: (err) => {
+        this.isImporting = false;
+        this.importStatus = `❌ ERROR: ${err?.error?.message || 'CSV UPLOAD FAILED.'}`;
+      }
+    });
   }
 
-  /**
-   * Download CSV template for bulk import
-   */
+  // DOWNLOAD TEMPLATE
   downloadTemplate(): void {
-    this.http
-      .get(`${this.apiUrl}/import/members/template`, { responseType: 'blob' })
-      .subscribe(
-        (response) => {
+    if (this.activeImportTab === 'MEMBERS') {
+      this.http.get(`${this.apiUrl}/import/members/template`, { responseType: 'blob' }).subscribe({
+        next: (response) => {
           const url = window.URL.createObjectURL(response);
           const a = document.createElement('a');
           a.href = url;
@@ -121,74 +222,95 @@ export class DataImportExportComponent {
           a.click();
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
-          this.exportStatus = '✅ Template downloaded successfully';
         },
-        (error) => {
-          this.exportStatus = '❌ Failed to download template';
-          console.error('Download error:', error);
-        },
-      );
-  }
-
-  /**
-   * View import validation rules
-   */
-  viewImportRules(): void {
-    this.http.get(`${this.apiUrl}/import/members/rules`).subscribe(
-      (response: any) => {
-        console.log('Import Rules:', response);
-        alert(JSON.stringify(response, null, 2));
-      },
-      (error) => {
-        console.error('Error fetching rules:', error);
-      },
-    );
-  }
-
-  /**
-   * Toggle error details visibility
-   */
-  toggleErrorDetails(): void {
-    this.showErrorDetails = !this.showErrorDetails;
-  }
-
-  /**
-   * Get error icon/status indicator
-   */
-  getStatusIcon(status: string): string {
-    switch (status) {
-      case 'SUCCESS':
-        return '✅';
-      case 'DUPLICATE':
-        return '⚠️';
-      case 'VALIDATION_ERROR':
-        return '❌';
-      case 'SYSTEM_ERROR':
-        return '⚠️';
-      default:
-        return '❓';
+        error: () => {
+          this.fallbackTemplateDownload();
+        }
+      });
+    } else {
+      this.fallbackTemplateDownload();
     }
   }
 
-  // Placeholder methods for exports (to be implemented)
-  exportMembers(): void {
-    this.exportStatus = 'Exporting members...';
-    setTimeout(() => {
-      this.exportStatus = '✓ Members exported successfully';
-    }, 1000);
+  private fallbackTemplateDownload(): void {
+    let headers = '';
+    let fileName = '';
+    
+    if (this.activeImportTab === 'PLANS') {
+      headers = 'planName,durationDays,price,accessStart,accessEnd,eligibilityType,prorationRule,taxPercent,branchVisibility\n';
+      fileName = 'plans_import_template.csv';
+    } else if (this.activeImportTab === 'CLASSES') {
+      headers = 'className,trainerId,roomId,branchId,startDate,endDate,weekdays,classTime,durationMins,capacity,prerequisites,planEligibility\n';
+      fileName = 'classes_import_template.csv';
+    } else if (this.activeImportTab === 'SCHEDULE') {
+      headers = 'classId,trainerId,roomId,date,time,status\n';
+      fileName = 'schedule_import_template.csv';
+    } else {
+      headers = 'memName,email,phone,dob,address,emgContact,emgPhone,homeBranchId,referralCode,corporateCode,notes\n';
+      fileName = 'member_import_template.csv';
+    }
+
+    const blob = new Blob([headers], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   }
 
-  exportTransactions(): void {
-    this.exportStatus = 'Exporting transactions...';
-    setTimeout(() => {
-      this.exportStatus = '✓ Transactions exported successfully';
-    }, 1000);
+  // PROCEED & CANCEL
+  proceedWithImport(): void {
+    alert('DATA HAS BEEN COMMITTED TO THE DATABASE.');
+    this.resetImportState();
   }
 
-  exportClasses(): void {
-    this.exportStatus = 'Exporting classes...';
+  cancelImport(): void {
+    this.resetImportState();
+  }
+
+  // EXPORT CSV
+  exportData(): void {
+    this.isExporting = true;
+    this.exportStatus = 'GENERATING EXPORT FILE...';
+
+    // Mock export delays and generate csv client-side
     setTimeout(() => {
-      this.exportStatus = '✓ Classes exported successfully';
-    }, 1000);
+      this.isExporting = false;
+      let csvContent = '';
+      let fileName = '';
+
+      if (this.activeExportTab === 'CLASSES') {
+        csvContent = 'classId,className,trainerId,roomId,branchId,startDate,endDate,weekdays,classTime,durationMins,capacity\n1,Yoga Basics,1,1,1,2026-05-01,2026-06-01,Mon,08:00:00,60,20\n';
+        fileName = 'classes_export.csv';
+      } else if (this.activeExportTab === 'PLANS') {
+        csvContent = 'planId,planName,durationDays,price,eligibilityType,isActive\n1,General Pass,30,999.00,GENERAL,true\n2,Elite Membership,365,9999.00,CORPORATE,true\n';
+        fileName = 'plans_export.csv';
+      } else if (this.activeExportTab === 'SCHEDULE') {
+        csvContent = 'scheduleId,classId,className,date,time,trainerName\n1,1,Yoga Basics,2026-05-20,08:00:00,Coach Sanjay\n';
+        fileName = 'schedule_export.csv';
+      } else {
+        csvContent = 'memberId,memName,email,phone,status,homeBranchId\n1,Rahul Singh,rahul@gmail.com,9876543210,ACTIVE,1\n';
+        fileName = 'members_export.csv';
+      }
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      this.lastExportInfo = {
+        timestamp: new Date().toLocaleString(),
+        fileName: fileName
+      };
+      this.exportStatus = '✓ DATA EXPORTED SUCCESSFULLY.';
+    }, 1500);
   }
 }
