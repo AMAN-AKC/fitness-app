@@ -73,6 +73,10 @@
         CREATE CLASS +
       </button>
 
+      <button (click)="openMaintenancePanel()" class="btn-secondary font-heading font-black" style="padding: 0 16px;">
+        ROOM MAINTENANCE
+      </button>
+
       <!-- CSV Export -->
       <button (click)="exportCalendarReport()" class="btn-export-csv" title="Export schedule to CSV">
         📥 CSV
@@ -437,6 +441,81 @@
           [disabled]="isLoading"
         >
           {{ isEditMode ? 'UPDATE CLASS SCHEDULE' : 'SAVE RECURRING CLASS' }}
+        </button>
+      </footer>
+    </div>
+  </div>
+  <!-- ROOM MAINTENANCE MODAL -->
+  <div class="create-drawer-overlay" *ngIf="isMaintenancePanelOpen" (click)="isMaintenancePanelOpen = false">
+    <div class="create-drawer-panel" style="width: 500px;" (click)="$event.stopPropagation()">
+      <header class="drawer-header" style="background-color: var(--yellow); color: #000;">
+        <h2 class="font-heading font-black text-md uppercase">
+          SCHEDULE ROOM MAINTENANCE
+        </h2>
+        <button (click)="isMaintenancePanelOpen = false" class="btn-close-drawer" style="color: #000;">✕</button>
+      </header>
+
+      <div class="drawer-body-form">
+        <!-- Room Selection -->
+        <div class="form-field">
+          <label class="form-label">TARGET ROOM/FACILITY</label>
+          <select [(ngModel)]="maintenanceRoomId" class="brutal-input" (change)="checkMaintenanceOverlap()">
+            <option value="0">CHOOSE ROOM...</option>
+            <option *ngFor="let r of rooms" [value]="r.facilityId">
+              {{ r.facilityName | uppercase }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Date Range -->
+        <div class="form-row-2">
+          <div class="form-field">
+            <label class="form-label">START DATE</label>
+            <input type="date" [(ngModel)]="maintenanceStartDate" class="brutal-input" (change)="checkMaintenanceOverlap()" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">END DATE</label>
+            <input type="date" [(ngModel)]="maintenanceEndDate" class="brutal-input" (change)="checkMaintenanceOverlap()" />
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">MAINTENANCE REASON / NOTES</label>
+          <textarea [(ngModel)]="maintenanceReason" placeholder="E.G. HVAC REPAIR, PAINTING..." class="brutal-textarea"></textarea>
+        </div>
+
+        <!-- Conflict Resolution Panel -->
+        <div class="conflict-banner font-heading mt-4" *ngIf="overlappingClasses.length > 0" style="background-color: #fff; border: 4px solid var(--red); color: #111;">
+          <span class="conflict-title" style="color: var(--red); display: block; margin-bottom: 8px;">⚠ ACTION REQUIRED: {{ overlappingClasses.length }} OVERLAPPING CLASSES DETECTED</span>
+          <p class="conflict-text text-xs uppercase mb-3">You must migrate or cancel these existing class blocks before enforcing the room maintenance hold.</p>
+          
+          <div class="flex flex-col gap-2">
+            <div *ngFor="let cls of overlappingClasses" class="brutal-card p-2" style="border-width: 2px;">
+              <div class="flex justify-between items-center mb-2">
+                <span class="font-bold uppercase">{{ cls.className }} ({{ cls.classTime }})</span>
+                <button (click)="cancelOverlappingClass(cls)" class="btn-cancel text-xs px-2 py-1">CANCEL CLASS</button>
+              </div>
+              <div class="flex gap-2">
+                <select #migrateSelect class="brutal-input text-xs" style="height: 30px; padding: 0 4px;">
+                  <option value="">SELECT NEW ROOM...</option>
+                  <ng-container *ngFor="let r of rooms">
+                    <option *ngIf="r.facilityId != cls.roomId" [value]="r.facilityId">{{ r.facilityName }}</option>
+                  </ng-container>
+                </select>
+                <button (click)="migrateClass(cls, migrateSelect.value)" class="btn-primary text-xs px-2 py-1 whitespace-nowrap" [disabled]="!migrateSelect.value">MIGRATE</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="drawer-footer">
+        <button
+          (click)="confirmMaintenance()"
+          class="btn-drawer-save btn-primary w-full"
+          [disabled]="isSubmittingMaintenance || overlappingClasses.length > 0"
+        >
+          ENFORCE MAINTENANCE HOLD
         </button>
       </footer>
     </div>

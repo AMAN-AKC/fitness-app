@@ -60,9 +60,16 @@
             </div>
           </div>
 
-          <button (click)="openBookingDrawer()" class="btn-primary-action">
-            BOOK 1-ON-1 SESSION 📅
-          </button>
+          <ng-container *ngIf="selectedTrainer.acceptingPtClients !== false; else notAcceptingTemplate">
+            <button (click)="openBookingDrawer()" class="btn-primary-action">
+              BOOK 1-ON-1 SESSION 📅
+            </button>
+          </ng-container>
+          <ng-template #notAcceptingTemplate>
+            <div class="not-accepting-banner" style="background-color: var(--red); color: white; border: 3px solid var(--black); box-shadow: 4px 4px 0 var(--black); padding: 12px; margin-top: 15px; font-weight: bold; text-align: center; text-transform: uppercase; font-family: Inter, Arial, sans-serif; font-size: 13px;">
+              ⚠️ NOT ACCEPTING NEW CLIENTS
+            </div>
+          </ng-template>
         </div>
       </section>
 

@@ -72,6 +72,15 @@ export class ManagerScheduleComponent implements OnInit {
   isEditMode = false;
   editingClass: FitnessClass = this.getEmptyClass();
 
+  // Room Maintenance State
+  isMaintenancePanelOpen = false;
+  maintenanceRoomId = 0;
+  maintenanceStartDate = '';
+  maintenanceEndDate = '';
+  maintenanceReason = '';
+  isSubmittingMaintenance = false;
+  overlappingClasses: FitnessClass[] = [];
+
   timeSlotLabels = [
     '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
     '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
@@ -548,6 +557,80 @@ export class ManagerScheduleComponent implements OnInit {
       error: (err) => {
         alert(err.error?.message || 'Conflict: Failed to schedule recurring class due to database conflicts.');
         this.isLoading = false;
+      }
+    });
+  }
+
+  // Room Maintenance Flow
+  openMaintenancePanel(): void {
+    this.maintenanceRoomId = 0;
+    this.maintenanceStartDate = new Date().toISOString().split('T')[0];
+    this.maintenanceEndDate = new Date().toISOString().split('T')[0];
+    this.maintenanceReason = '';
+    this.overlappingClasses = [];
+    this.isMaintenancePanelOpen = true;
+  }
+
+  checkMaintenanceOverlap(): void {
+    this.overlappingClasses = [];
+    if (!this.maintenanceRoomId || !this.maintenanceStartDate || !this.maintenanceEndDate) return;
+    const start = this.maintenanceStartDate;
+    const end = this.maintenanceEndDate;
+    this.overlappingClasses = this.classes.filter(c => 
+      Number(c.roomId) === Number(this.maintenanceRoomId) && 
+      c.status !== 'CANCELLED' && 
+      c.startDate <= end && c.endDate >= start
+    );
+  }
+
+  confirmMaintenance(): void {
+    if (!this.maintenanceRoomId || !this.maintenanceStartDate || !this.maintenanceEndDate || !this.maintenanceReason) {
+      alert('ALL FIELDS ARE REQUIRED TO ENFORCE MAINTENANCE HOLD.');
+      return;
+    }
+    this.checkMaintenanceOverlap();
+    if (this.overlappingClasses.length > 0) {
+      alert(`MAINTENANCE BLOCK POSTPONED: There are ${this.overlappingClasses.length} pre-scheduled class obligations in this room. You must migrate or cancel these sessions before saving the hold.`);
+      return;
+    }
+
+    this.isSubmittingMaintenance = true;
+    this.managerApi.toggleMaintenance(this.maintenanceRoomId, true, this.maintenanceReason).subscribe({
+      next: () => {
+        this.successMessage = 'ROOM MAINTENANCE HOLD ACTIVE!';
+        this.isMaintenancePanelOpen = false;
+        this.isSubmittingMaintenance = false;
+        this.loadData();
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (err) => {
+        alert(err.error?.message || 'Failed to schedule room maintenance.');
+        this.isSubmittingMaintenance = false;
+      }
+    });
+  }
+
+  cancelOverlappingClass(cls: FitnessClass): void {
+    if (!confirm('Are you sure you want to cancel this class?')) return;
+    this.managerApi.cancelClass(cls.classId!, 'ROOM MAINTENANCE OVERRIDE: ' + this.maintenanceReason).subscribe({
+      next: () => {
+        cls.status = 'CANCELLED';
+        this.checkMaintenanceOverlap();
+        this.successMessage = 'CLASS CANCELLATION COMPLETED!';
+        setTimeout(() => this.successMessage = '', 3000);
+      }
+    });
+  }
+
+  migrateClass(cls: FitnessClass, newRoomIdStr: string | number): void {
+    const newRoomId = Number(newRoomIdStr);
+    const updated = { ...cls, roomId: newRoomId };
+    this.managerApi.updateClass(cls.classId!, updated).subscribe({
+      next: () => {
+        cls.roomId = newRoomId;
+        this.checkMaintenanceOverlap();
+        this.successMessage = 'SESSION MIGRATED SUCCESSFULLY!';
+        setTimeout(() => this.successMessage = '', 3000);
       }
     });
   }

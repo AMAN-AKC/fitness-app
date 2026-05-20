@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ToastService } from '../../services/toast.service';
 import { AuthService } from '../../services/auth.service';
-import { FrontdeskApiService, ClassesDto, TrainerDto, PtSessionDto, MemberDto } from '../../services/frontdesk-api.service';
+import { FrontdeskApiService, ClassesDto, TrainerDto, PtSessionDto, MemberDto, AttendanceDto } from '../../services/frontdesk-api.service';
 import { forkJoin } from 'rxjs';
 
 interface PTRequest {
@@ -60,6 +60,48 @@ export class TrainerDashboardComponent implements OnInit {
   completedSessions: CompletedSession[] = [];
   chartData: number[] = [0, 0, 0, 0, 0, 0, 0];
 
+  activeTab: string = 'overview';
+  tempBio: string = '';
+  tempSpecialties: string = '';
+  newCertName: string = '';
+  certList: { name: string, isPending: boolean }[] = [];
+  acceptingPtClients: boolean = true;
+  profileError: string = '';
+
+  // Availability Planner state
+  selectedDays: string[] = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+  availableHours: string[] = [
+    '06:00 AM', '07:00 AM', '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM', 
+    '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM', '04:00 PM', '05:00 PM', 
+    '06:00 PM', '07:00 PM', '08:00 PM'
+  ];
+  activeSlotsSet: Set<string> = new Set<string>();
+  availabilityError: string = '';
+  
+  // Register leave state
+  leaveStartDate: string = '';
+  leaveEndDate: string = '';
+  leaveReason: string = '';
+  
+  // Intervention warning modal state
+  showInterventionModal: boolean = false;
+  affectedSessionsCount: number = 0;
+  interventionJustification: string = '';
+  pendingSlotsToSave: string = '';
+
+  // Classes & Roster State
+  selectedRosterClass: ClassesDto | null = null;
+  rosterDateStr: string = new Date().toISOString().split('T')[0];
+  rosterBookings: any[] = [];
+  isLoadingRoster: boolean = false;
+
+  // Retroactive Override Modal state
+  showOverrideModal: boolean = false;
+  overrideBookingId: number = 0;
+  overrideMemberId: number = 0;
+  overrideState: 'checked-in' | 'no-show' | 'excused' | null = null;
+  overrideJustification: string = '';
+
   constructor(
     private toastService: ToastService,
     private authService: AuthService,
@@ -109,6 +151,19 @@ export class TrainerDashboardComponent implements OnInit {
     this.frontdeskApi.getTrainerByUserId(Number(session.userId)).subscribe({
       next: (trainer) => {
         this.trainer = trainer;
+        this.tempBio = trainer.bio || '';
+        this.tempSpecialties = trainer.specialties || '';
+        this.certList = this.parseCertifications(trainer.certifications);
+        this.acceptingPtClients = trainer.acceptingPtClients !== false;
+        
+        // Initialize availability planner
+        this.activeSlotsSet.clear();
+        if (trainer.availability) {
+          trainer.availability.split(',').map(s => s.trim()).filter(s => s.length > 0).forEach(slot => {
+            this.activeSlotsSet.add(slot);
+          });
+        }
+
         const trainerId = Number(trainer.trainerId);
         
         forkJoin({
@@ -272,6 +327,11 @@ export class TrainerDashboardComponent implements OnInit {
     return 'block-cardio';
   }
 
+  getRoomName(roomId: number): string {
+    const room = this.roomsList.find(r => r.facilityId === roomId);
+    return room ? room.facilityName : 'Studio Room';
+  }
+
   closeSubAlert(): void {
     this.subAlertOpen = false;
   }
@@ -347,5 +407,544 @@ export class TrainerDashboardComponent implements OnInit {
 
   cancelNotes(): void {
     this.activeNotes = null;
+  }
+
+  parseCertifications(certsStr: string | undefined): { name: string, isPending: boolean }[] {
+    if (!certsStr) return [];
+    return certsStr.split(',').map(c => c.trim()).filter(c => c.length > 0).map(c => {
+      const isPending = c.includes('Pending Manager Verification');
+      return {
+        name: c.replace(' (Pending Manager Verification)', ''),
+        isPending
+      };
+    });
+  }
+
+  serializeCertifications(certs: { name: string, isPending: boolean }[]): string {
+    return certs.map(c => c.isPending ? `${c.name} (Pending Manager Verification)` : c.name).join(', ');
+  }
+
+  addCertification(): void {
+    const name = this.newCertName.trim();
+    if (!name) return;
+    this.certList.push({ name, isPending: true });
+    this.newCertName = '';
+  }
+
+  removeCertification(index: number): void {
+    this.certList.splice(index, 1);
+  }
+
+  saveProfileChanges(): void {
+    this.profileError = '';
+    const bio = this.tempBio.trim();
+    if (!bio || bio.length > 500) {
+      this.profileError = 'Validation Error: Biography text cannot be left blank and must not exceed 500 characters.';
+      this.toastService.error('VALIDATION ERROR: BIOGRAPHY TEXT CANNOT BE LEFT BLANK AND MUST NOT EXCEED 500 CHARACTERS.');
+      return;
+    }
+
+    if (!this.trainer || !this.trainer.trainerId) {
+      this.toastService.error('TRAINER NOT INITIALIZED.');
+      return;
+    }
+
+    const updated: TrainerDto = {
+      ...this.trainer,
+      bio: bio,
+      specialties: this.tempSpecialties.trim(),
+      certifications: this.serializeCertifications(this.certList),
+      acceptingPtClients: this.acceptingPtClients
+    };
+
+    this.frontdeskApi.updateTrainer(Number(this.trainer.trainerId), updated).subscribe({
+      next: (res) => {
+        this.trainer = res;
+        this.tempBio = res.bio || '';
+        this.tempSpecialties = res.specialties || '';
+        this.certList = this.parseCertifications(res.certifications);
+        this.acceptingPtClients = res.acceptingPtClients !== false;
+        this.toastService.success('Profile updated successfully. Your updated biography and specializations are now live. Newly appended certifications have been routed to branch management for documentation review.');
+      },
+      error: (err) => {
+        console.error('Failed to update trainer profile:', err);
+        this.toastService.error('FAILED TO SAVE PROFILE CHANGES.');
+      }
+    });
+  }
+
+  convertTo24h(time12h: string): string {
+    const [time, modifier] = time12h.split(' ');
+    let [hours, minutes] = time.split(':');
+    if (hours === '12') {
+      hours = '00';
+    }
+    if (modifier === 'PM') {
+      hours = (parseInt(hours, 10) + 12).toString();
+    }
+    return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
+  }
+
+  capitalize(str: string): string {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+
+  isSlotActive(day: string, hour: string): boolean {
+    return this.activeSlotsSet.has(`${day}-${hour}`);
+  }
+
+  toggleSlot(day: string, hour: string): void {
+    this.availabilityError = '';
+    const key = `${day}-${hour}`;
+    if (this.activeSlotsSet.has(key)) {
+      this.activeSlotsSet.delete(key);
+    } else {
+      // Validate class conflict:
+      const conflictMsg = this.checkAvailabilityConflict(day, hour);
+      if (conflictMsg) {
+        this.availabilityError = conflictMsg;
+        this.toastService.error(conflictMsg);
+        return;
+      }
+      this.activeSlotsSet.add(key);
+    }
+  }
+
+  checkAvailabilityConflict(dayName: string, timeStr: string): string | null {
+    const parsedTime = this.convertTo24h(timeStr);
+    
+    const conflictingClass = this.classesList.find(c => {
+      if (c.status === 'CANCELLED') return false;
+      const days = c.weekdays.toUpperCase().split(',').map(d => d.trim());
+      if (!days.includes(dayName.toUpperCase())) return false;
+      
+      const classStart = c.classTime.substring(0, 5); // "09:00"
+      const slotStart = parsedTime.substring(0, 5); // "09:00"
+      return classStart === slotStart;
+    });
+
+    if (conflictingClass) {
+      const room = this.roomsList.find(r => r.roomId === conflictingClass.roomId);
+      const roomName = room ? room.roomName : `Room #${conflictingClass.roomId}`;
+      return `Schedule Matrix Conflict: An availability block cannot be configured on ${this.capitalize(dayName)}s at ${timeStr} because you are already assigned to lead [${conflictingClass.className}] in ${roomName} during that time window.`;
+    }
+    
+    return null;
+  }
+
+  saveAvailability(): void {
+    if (!this.trainer || !this.trainer.trainerId) {
+      this.toastService.error('TRAINER PROFILE NOT LOADED.');
+      return;
+    }
+
+    const newSlotsStr = Array.from(this.activeSlotsSet).join(', ');
+    const oldSlots = this.trainer.availability ? this.trainer.availability.split(',').map(s => s.trim()).filter(s => s.length > 0) : [];
+    
+    // Identify trimmed slots: in oldSlots but not in activeSlotsSet
+    const trimmedSlots = oldSlots.filter(s => !this.activeSlotsSet.has(s));
+    
+    if (trimmedSlots.length > 0) {
+      // Check if any trimmed slot has future active bookings
+      const affectedBookings = this.ptSessionsList.filter(s => {
+        if (s.status !== 'APPROVED' && s.status !== 'REQUESTED') return false;
+        const scheduledTime = new Date(s.scheduledAt);
+        if (scheduledTime < new Date()) return false;
+        
+        // Get day and time of booking
+        const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+        const bookingDayName = days[scheduledTime.getDay()];
+        
+        // format time back to "hh:mm AM/PM"
+        let hours = scheduledTime.getHours();
+        const minutes = scheduledTime.getMinutes().toString().padStart(2, '0');
+        const modifier = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // 0 should be 12
+        const bookingTimeStr = `${hours.toString().padStart(2, '0')}:${minutes} ${modifier}`;
+        
+        const bookingSlotKey = `${bookingDayName}-${bookingTimeStr}`;
+        return trimmedSlots.includes(bookingSlotKey);
+      });
+
+      if (affectedBookings.length > 0) {
+        this.affectedSessionsCount = affectedBookings.length;
+        this.pendingSlotsToSave = newSlotsStr;
+        this.interventionJustification = '';
+        this.showInterventionModal = true;
+        return;
+      }
+    }
+
+    // No affected bookings, save directly
+    this.updateTrainerAvailability(newSlotsStr);
+  }
+
+  abortAvailabilitySave(): void {
+    this.showInterventionModal = false;
+    this.pendingSlotsToSave = '';
+    // Restore slots from trainer model
+    this.activeSlotsSet.clear();
+    if (this.trainer && this.trainer.availability) {
+      this.trainer.availability.split(',').map(s => s.trim()).filter(s => s.length > 0).forEach(slot => {
+        this.activeSlotsSet.add(slot);
+      });
+    }
+    this.toastService.warning('SAVING AVAILABILITY OPERATION ABORTED.');
+  }
+
+  forceSectorCancellation(): void {
+    const reason = this.interventionJustification.trim();
+    if (!reason) {
+      this.toastService.error('CANCELLATION JUSTIFICATION REASON IS MANDATORY.');
+      return;
+    }
+
+    if (!this.trainer || !this.trainer.trainerId) return;
+
+    // Identify and cancel bookings
+    const oldSlots = this.trainer.availability ? this.trainer.availability.split(',').map(s => s.trim()).filter(s => s.length > 0) : [];
+    const trimmedSlots = oldSlots.filter(s => !this.activeSlotsSet.has(s));
+
+    const affectedBookings = this.ptSessionsList.filter(s => {
+      if (s.status !== 'APPROVED' && s.status !== 'REQUESTED') return false;
+      const scheduledTime = new Date(s.scheduledAt);
+      if (scheduledTime < new Date()) return false;
+      
+      const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+      const bookingDayName = days[scheduledTime.getDay()];
+      
+      let hours = scheduledTime.getHours();
+      const minutes = scheduledTime.getMinutes().toString().padStart(2, '0');
+      const modifier = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const bookingTimeStr = `${hours.toString().padStart(2, '0')}:${minutes} ${modifier}`;
+      
+      const bookingSlotKey = `${bookingDayName}-${bookingTimeStr}`;
+      return trimmedSlots.includes(bookingSlotKey);
+    });
+
+    // Cancel all affected bookings sequentially
+    const cancelObservables = affectedBookings.map(b => 
+      this.frontdeskApi.updatePtSessionStatus(Number(b.sessionId), 'CANCELLED', reason)
+    );
+
+    if (cancelObservables.length > 0) {
+      // Execute cancellation requests
+      forkJoin(cancelObservables).subscribe({
+        next: () => {
+          this.updateTrainerAvailability(this.pendingSlotsToSave);
+          this.showInterventionModal = false;
+          this.toastService.success(`AVAILABILITY UPDATED: ${affectedBookings.length} CONFIRMED PT SESSIONS AUTOMATICALLY CANCELLED. RE-CREDITS PROTOCOL TRIGGERED (+1 CREDIT).`);
+        },
+        error: (err) => {
+          console.error('Failed to cancel affected bookings:', err);
+          this.toastService.error('ERROR CANCELING SESSIONS.');
+        }
+      });
+    } else {
+      this.updateTrainerAvailability(this.pendingSlotsToSave);
+      this.showInterventionModal = false;
+    }
+  }
+
+  updateTrainerAvailability(newSlotsStr: string): void {
+    if (!this.trainer || !this.trainer.trainerId) return;
+
+    const updated: TrainerDto = {
+      ...this.trainer,
+      availability: newSlotsStr
+    };
+
+    this.frontdeskApi.updateTrainer(Number(this.trainer.trainerId), updated).subscribe({
+      next: (res) => {
+        this.trainer = res;
+        this.activeSlotsSet.clear();
+        if (res.availability) {
+          res.availability.split(',').map(s => s.trim()).filter(s => s.length > 0).forEach(slot => {
+            this.activeSlotsSet.add(slot);
+          });
+        }
+        this.toastService.success('Standard weekly template availability published successfully.');
+        this.loadDashboardData();
+      },
+      error: (err) => {
+        console.error('Failed to update trainer availability:', err);
+        this.toastService.error('FAILED TO SAVE AVAILABILITY.');
+      }
+    });
+  }
+
+  registerLeave(): void {
+    if (!this.leaveStartDate || !this.leaveEndDate || !this.leaveReason.trim()) {
+      this.toastService.error('ALL FIELDS ARE MANDATORY TO REGISTER LEAVE / TIME-OFF.');
+      return;
+    }
+
+    const start = new Date(this.leaveStartDate + 'T00:00:00');
+    const end = new Date(this.leaveEndDate + 'T23:59:59');
+    
+    if (start > end) {
+      this.toastService.error('START DATE CANNOT BE AFTER END DATE.');
+      return;
+    }
+
+    if (!this.trainer || !this.trainer.trainerId) return;
+
+    // 1. Identify group classes in range
+    const affectedClasses = this.classesList.filter(c => {
+      if (c.status === 'CANCELLED') return false;
+      const classStart = new Date(c.startDate);
+      const classEnd = new Date(c.endDate);
+      return classStart <= end && classEnd >= start;
+    });
+
+    // 2. Identify confirmed/pending PT sessions in range
+    const affectedSessions = this.ptSessionsList.filter(s => {
+      if (s.status !== 'APPROVED' && s.status !== 'REQUESTED') return false;
+      const scheduled = new Date(s.scheduledAt);
+      return scheduled >= start && scheduled <= end;
+    });
+
+    // Cancel all PT sessions
+    const cancelObservables = affectedSessions.map(s => 
+      this.frontdeskApi.updatePtSessionStatus(Number(s.sessionId), 'CANCELLED', `TRAINER ON LEAVE: ${this.leaveReason.trim()}`)
+    );
+
+    if (cancelObservables.length > 0) {
+      forkJoin(cancelObservables).subscribe({
+        next: () => {
+          this.toastService.success(`LEAVE REGISTERED: ${affectedSessions.length} PT BOOKINGS CANCELLED AND AUTOMATICALLY RE-CREDITED.`);
+          this.finalizeLeave(affectedClasses);
+        },
+        error: (err) => {
+          console.error('Failed to cancel PT sessions for leave:', err);
+          this.toastService.error('FAILED TO REGISTER LEAVE / PT CANCELLATION.');
+        }
+      });
+    } else {
+      this.finalizeLeave(affectedClasses);
+    }
+  }
+
+  finalizeLeave(affectedClasses: ClassesDto[]): void {
+    if (affectedClasses.length > 0) {
+      this.toastService.info(`${affectedClasses.length} ASSIGNED CLASSES DETECTED. MARKED PENDING SUBSTITUTE INSTRUCTOR COVERAGE.`);
+    }
+    this.toastService.success('UNAVAILABILITY DATE BLOCK REGISTERED SYSTEM-WIDE.');
+    
+    this.leaveStartDate = '';
+    this.leaveEndDate = '';
+    this.leaveReason = '';
+    this.loadDashboardData();
+  }
+
+  selectRosterClass(cls: ClassesDto): void {
+    this.selectedRosterClass = cls;
+    this.loadRosterForClass();
+  }
+
+  loadRosterForClass(): void {
+    if (!this.selectedRosterClass) return;
+    this.isLoadingRoster = true;
+    this.rosterBookings = [];
+    
+    this.frontdeskApi.getBookingsByClass(Number(this.selectedRosterClass.classId)).subscribe({
+      next: (bookings) => {
+        const memberMap = new Map<number, any>();
+        this.membersList.forEach(m => memberMap.set(Number(m.memberId), m));
+        
+        this.frontdeskApi.getTodayAttendance(Number(this.trainer?.branchId || 1)).subscribe({
+          next: (attendanceList) => {
+            const checkedInMemberIds = new Set<number>();
+            attendanceList.forEach(a => {
+              if (a.classId === this.selectedRosterClass?.classId && a.memberId) {
+                checkedInMemberIds.add(Number(a.memberId));
+              }
+            });
+
+            this.rosterBookings = bookings.map(b => {
+              const member = memberMap.get(Number(b.memberId));
+              const memName = member?.memName || `Member #${b.memberId}`;
+              const email = member?.email || 'N/A';
+              
+              const hasUnpaidDues = member?.status === 'SUSPENDED';
+              const pendingHealthWaiver = false;
+              
+              const isCheckedIn = checkedInMemberIds.has(Number(b.memberId));
+              
+              return {
+                id: b.bookingId,
+                memberId: b.memberId,
+                name: memName,
+                email: email,
+                bookingStatus: b.bookingStatus,
+                isCheckedIn: isCheckedIn,
+                hasUnpaidDues: hasUnpaidDues,
+                pendingHealthWaiver: pendingHealthWaiver
+              };
+            });
+            this.isLoadingRoster = false;
+          },
+          error: (err) => {
+            console.error('Failed to load class attendance list:', err);
+            this.rosterBookings = bookings.map(b => {
+              const member = memberMap.get(Number(b.memberId));
+              return {
+                id: b.bookingId,
+                memberId: b.memberId,
+                name: member?.memName || `Member #${b.memberId}`,
+                email: member?.email || 'N/A',
+                bookingStatus: b.bookingStatus,
+                isCheckedIn: false,
+                hasUnpaidDues: member?.status === 'SUSPENDED',
+                pendingHealthWaiver: false
+              };
+            });
+            this.isLoadingRoster = false;
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Failed to load class bookings:', err);
+        this.isLoadingRoster = false;
+        this.toastService.error('FAILED TO LOAD CLASS ROSTER.');
+      }
+    });
+  }
+
+  isTimingGateLocked(classTimeStr: string, dateStr: string): { locked: boolean; message: string; isRetroactive: boolean } {
+    if (!classTimeStr || !dateStr) {
+      return { locked: false, message: '', isRetroactive: false };
+    }
+
+    const classStart = new Date(`${dateStr}T${classTimeStr}`);
+    const gateStart = new Date(classStart.getTime() - 10 * 60 * 1000); // -10 mins
+    const gateEnd = new Date(classStart.getTime() + 60 * 60 * 1000);   // +60 mins
+    const now = new Date();
+
+    if (now < gateStart) {
+      return {
+        locked: true,
+        message: `Attendance Window Locked: The roster checklist is only editable between [${gateStart.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}] and [${gateEnd.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}] on the scheduled class date.`,
+        isRetroactive: false
+      };
+    }
+
+    if (now > gateEnd) {
+      return {
+        locked: true,
+        message: `Attendance Window Locked: Standard editing window has closed. Mutating attendance now requires a mandatory retroactive justification log.`,
+        isRetroactive: true
+      };
+    }
+
+    return { locked: false, message: '', isRetroactive: false };
+  }
+
+  mutateAttendanceState(booking: any, state: 'checked-in' | 'no-show' | 'excused'): void {
+    if (!this.selectedRosterClass) return;
+
+    const gate = this.isTimingGateLocked(this.selectedRosterClass.classTime, this.rosterDateStr);
+    
+    if (gate.locked) {
+      if (gate.isRetroactive) {
+        this.overrideBookingId = booking.id;
+        this.overrideMemberId = booking.memberId;
+        this.overrideState = state;
+        this.overrideJustification = '';
+        this.showOverrideModal = true;
+      } else {
+        this.toastService.error(gate.message);
+      }
+      return;
+    }
+
+    this.executeAttendanceMutation(booking.id, booking.memberId, state);
+  }
+
+  executeAttendanceMutation(bookingId: number, memberId: number, state: 'checked-in' | 'no-show' | 'excused', justification?: string): void {
+    if (!this.selectedRosterClass) return;
+    const classId = Number(this.selectedRosterClass.classId);
+    const branchId = Number(this.trainer?.branchId || 1);
+
+    if (state === 'checked-in') {
+      if (justification) {
+        const dto: AttendanceDto = {
+          memberId: memberId,
+          branchId: branchId,
+          classId: classId,
+          scanMethod: 'MANUAL'
+        };
+        const session = this.authService.getCurrentSession();
+        const userId = session ? Number(session.userId) : 1;
+        this.frontdeskApi.overrideCheckIn(dto, userId, justification).subscribe({
+          next: () => {
+            this.toastService.success('RETROACTIVE ATTENDANCE RECORDED: MEMBER MARKED CHECKED-IN WITH OVERRIDE JUSTIFICATION LOGGED.');
+            this.loadRosterForClass();
+          },
+          error: (err) => {
+            console.error('Failed to override check-in:', err);
+            this.toastService.error('FAILED TO OVERRIDE ATTENDANCE.');
+          }
+        });
+      } else {
+        this.frontdeskApi.markClassAttendance(classId, memberId, branchId).subscribe({
+          next: () => {
+            this.toastService.success('MEMBER ATTENDANCE MARKED CHECKED-IN.');
+            this.loadRosterForClass();
+          },
+          error: (err) => {
+            console.error('Failed to mark class attendance:', err);
+            this.toastService.error('FAILED TO MARK ATTENDANCE.');
+          }
+        });
+      }
+    } else if (state === 'no-show') {
+      this.frontdeskApi.markNoShow(bookingId).subscribe({
+        next: () => {
+          this.toastService.success(justification ? 'RETROACTIVE ATTENDANCE OVERRIDE: MEMBER MARKED NO-SHOW.' : 'MEMBER MARKED NO-SHOW.');
+          this.loadRosterForClass();
+        },
+        error: (err) => {
+          console.error('Failed to mark no-show:', err);
+          this.toastService.error('FAILED TO MARK NO-SHOW.');
+        }
+      });
+    } else if (state === 'excused') {
+      this.frontdeskApi.cancelClassBooking(bookingId).subscribe({
+        next: () => {
+          this.toastService.success(justification ? 'RETROACTIVE ATTENDANCE OVERRIDE: BOOKING CANCELLED AND EXCUSED.' : 'BOOKING CANCELLED AND EXCUSED.');
+          this.loadRosterForClass();
+        },
+        error: (err) => {
+          console.error('Failed to cancel booking (excuse):', err);
+          this.toastService.error('FAILED TO EXCUSE BOOKING.');
+        }
+      });
+    }
+  }
+
+  submitRetroactiveOverride(): void {
+    const reason = this.overrideJustification.trim();
+    if (!reason) {
+      this.toastService.error('MANDATORY RETROACTIVE OVERRIDE JUSTIFICATION REQUIRED.');
+      return;
+    }
+
+    if (!this.overrideState) return;
+
+    this.executeAttendanceMutation(this.overrideBookingId, this.overrideMemberId, this.overrideState, reason);
+    this.showOverrideModal = false;
+  }
+
+  closeOverrideModal(): void {
+    this.showOverrideModal = false;
+    this.overrideBookingId = 0;
+    this.overrideMemberId = 0;
+    this.overrideState = null;
+    this.overrideJustification = '';
   }
 }

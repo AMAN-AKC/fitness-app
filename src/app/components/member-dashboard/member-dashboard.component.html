@@ -27,8 +27,10 @@
   <!-- KPI CARDS ROW -->
   <div class="kpi-grid">
     <!-- 1. Membership Status -->
-    <div class="kpi-card">
-      <div class="status-badge">ACTIVE</div>
+    <div class="kpi-card" [style.borderLeftColor]="getMembershipStatusColor(membershipStatus)">
+      <div class="status-badge" [style.backgroundColor]="getMembershipStatusColor(membershipStatus)" style="color: #FFF;">
+        {{ membershipStatus }}
+      </div>
       <h3 class="kpi-title">Membership Status</h3>
       <p class="kpi-subtitle">Renewed on {{ renewalDate }}</p>
     </div>
@@ -153,7 +155,7 @@
         </div>
       </div>
 
-      <button class="book-session-btn">Book PT Session →</button>
+      <button (click)="goToTrainers()" class="book-session-btn">Book PT Session →</button>
       <p class="sessions-remaining">
         {{ sessionsRemaining }} sessions remaining in your package
       </p>

@@ -136,6 +136,7 @@
           <div class="member-badges">
             <span class="member-id">{{ memberFound.id }}</span>
             <span class="member-plan">{{ memberFound.plan }}</span>
+            <span class="member-id" style="background-color: #DEF7EC; color: #03543F; font-weight: 700; border-color: #03543F;">{{ memberFound.membershipStatus }}</span>
           </div>
           <div *ngIf="memberFound.hasUnpaidDues" class="member-dues">
             <span>⚠ Unpaid Dues — {{ memberFound.dues }}</span>
@@ -148,15 +149,29 @@
           </div>
         </div>
 
-        <button (click)="confirmCheckIn()" class="confirm-checkin-btn">
-          ✓ Confirm Check-In
-        </button>
+        <div style="display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
+          <button (click)="confirmCheckIn()" class="confirm-checkin-btn" style="margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
+            ✓ Confirm Check-In
+          </button>
+          <button (click)="addHealthNote()" class="confirm-checkin-btn" style="background-color: var(--orange); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
+            Add Health Note
+          </button>
+          <button *ngIf="memberFound.membershipStatus !== 'SUSPENDED'" (click)="suspendMember()" class="confirm-checkin-btn" style="background-color: var(--yellow); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
+            Suspend
+          </button>
+          <button *ngIf="memberFound.membershipStatus !== 'DEACTIVATED'" (click)="deactivateMember()" class="confirm-checkin-btn" style="background-color: var(--red); color: white; margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
+            Deactivate
+          </button>
+          <button (click)="clearSearch()" class="confirm-checkin-btn" style="background-color: var(--surface); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
+            Cancel
+          </button>
+        </div>
       </div>
     </ng-container>
 
     <!-- Member Found - Blocked Status -->
     <ng-container *ngIf="memberFound && memberFound.status === 'blocked'">
-      <div class="member-result member-result--blocked">
+      <div class="member-result member-result--blocked" [style.boxShadow]="'6px 6px 0 ' + (memberFound.membershipStatus === 'SUSPENDED' ? 'var(--orange)' : 'var(--red)')" [style.borderColor]="memberFound.membershipStatus === 'SUSPENDED' ? 'var(--orange)' : 'var(--red)'">
         <div
           class="member-avatar"
           [style.background-color]="'#ffffff'"
@@ -166,27 +181,43 @@
         </div>
 
         <div class="member-info">
-          <h3 class="member-name">{{ memberFound.name }}</h3>
-          <p class="member-id">{{ memberFound.id }}</p>
-          <div class="member-alert">
+          <h3 class="member-name" style="color: white;">{{ memberFound.name }}</h3>
+          <div class="member-badges">
+            <span class="member-id" style="color: white; border-color: white; background: rgba(0,0,0,0.2);">{{ memberFound.id }}</span>
+            <span class="member-plan" style="background-color: var(--black); color: white; border-color: white;">{{ memberFound.plan }}</span>
+            <span class="member-id" style="color: #FFF; background-color: var(--orange); font-weight: 700; border-color: white;">{{ memberFound.membershipStatus }}</span>
+          </div>
+          <div class="member-alert" style="margin-bottom: 4px;">
             <span>✕ {{ memberFound.alert }}</span>
           </div>
-          <p class="member-alert-note">
-            Redirect to front desk for renewal processing.
-          </p>
+          <div *ngIf="memberFound.hasUnpaidDues" class="member-dues" style="margin-bottom: 4px;">
+            <span>⚠ Unpaid Dues — {{ memberFound.dues }}</span>
+          </div>
+          <div *ngIf="memberFound.hasHealthNotes" class="member-dues" style="color: var(--black); background-color: var(--yellow); margin-bottom: 4px;">
+            <span>📋 Health Note: {{ memberFound.healthNotes }}</span>
+          </div>
+          <div *ngIf="memberFound.consentRequired" class="member-dues" style="color: white; background-color: var(--red); margin-bottom: 4px;">
+            <span>Consent Alert: {{ memberFound.consentMessage }}</span>
+          </div>
         </div>
 
-        <div class="result-actions">
-          <button class="check-in-btn" (click)="confirmCheckIn()" [disabled]="memberFound.status === 'blocked'">
-            Confirm Check-in
-          </button>
-          <button class="override-btn" (click)="addHealthNote()" style="background-color: var(--orange); border-color: var(--black); color: var(--black);">
-            Add Health Note
-          </button>
-          <button *ngIf="memberFound.status === 'blocked'" class="override-btn" (click)="confirmOverrideCheckIn()">
+        <div style="display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
+          <button class="confirm-checkin-btn" (click)="confirmOverrideCheckIn()" style="background-color: var(--yellow); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
             Force Check-in (Override)
           </button>
-          <button class="cancel-search-btn" (click)="clearSearch()">
+          <button class="confirm-checkin-btn" (click)="addHealthNote()" style="background-color: var(--orange); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
+            Add Health Note
+          </button>
+          <button *ngIf="memberFound.membershipStatus === 'SUSPENDED' || memberFound.membershipStatus === 'DEACTIVATED' || memberFound.membershipStatus === 'DUNNING' || memberFound.membershipStatus === 'PENDING'" class="confirm-checkin-btn" (click)="reactivateMember()" style="background-color: var(--green); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
+            Reactivate Membership
+          </button>
+          <button *ngIf="memberFound.membershipStatus !== 'SUSPENDED' && memberFound.membershipStatus !== 'DEACTIVATED'" class="confirm-checkin-btn" (click)="suspendMember()" style="background-color: var(--orange); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
+            Suspend Membership
+          </button>
+          <button *ngIf="memberFound.membershipStatus !== 'DEACTIVATED'" class="confirm-checkin-btn" (click)="deactivateMember()" style="background-color: var(--red); color: white; margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
+            Deactivate Membership
+          </button>
+          <button class="confirm-checkin-btn" (click)="clearSearch()" style="background-color: var(--surface); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
             Cancel
           </button>
         </div>

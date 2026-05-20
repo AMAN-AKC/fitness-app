@@ -107,6 +107,27 @@ export class MemberDashboardComponent implements OnInit {
     this.router.navigate(['/plans'], { queryParams: { upgrade: 'true' } });
   }
 
+  goToTrainers(): void {
+    this.router.navigate(['/member/trainers']);
+  }
+
+  getMembershipStatusColor(status: string): string {
+    switch (status) {
+      case 'ACTIVE':
+        return '#00D26A';
+      case 'SUSPENDED':
+        return '#F59E0B';
+      case 'DUNNING':
+        return '#EF4444';
+      case 'DEACTIVATED':
+        return '#6B7280';
+      case 'PENDING':
+        return '#3B82F6';
+      default:
+        return '#00D26A';
+    }
+  }
+
   loadMemberData(): void {
     this.showAlert = false;
   }

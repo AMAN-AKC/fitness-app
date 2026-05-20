@@ -686,3 +686,446 @@
   padding: 8px 16px;
   font-size: 11px;
 }
+
+/* NEO TABS NAVIGATION */
+.neo-tabs-nav {
+  display: flex;
+  gap: 12px;
+  border-bottom: 3px solid var(--black);
+  padding-bottom: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.neo-tab-btn {
+  background-color: var(--surface);
+  border: 3px solid var(--black);
+  box-shadow: 4px 4px 0 var(--black);
+  padding: 12px 24px;
+  font-family: Inter, "Arial Black", Arial, sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 100ms, box-shadow 100ms;
+}
+
+.neo-tab-btn:hover {
+  background-color: var(--yellow);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--black);
+}
+
+.neo-tab-btn.active-tab {
+  background-color: var(--blue);
+  color: white;
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0 var(--black);
+}
+
+/* EDIT PROFILE TAB */
+.profile-edit-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 30px;
+  margin-top: 10px;
+}
+
+@media (max-width: 800px) {
+  .profile-edit-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.profile-avatar-card {
+  background-color: var(--surface);
+  border: 3px solid var(--black);
+  box-shadow: 6px 6px 0 var(--black);
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.avatar-emoji-large {
+  font-size: 80px;
+  background-color: var(--yellow);
+  border: 3px solid var(--black);
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 4px 4px 0 var(--black);
+}
+
+.profile-rating-badge {
+  background-color: var(--surface);
+  border: 3px solid var(--black);
+  padding: 6px 12px;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.profile-fields-card {
+  background-color: var(--surface);
+  border: 3px solid var(--black);
+  box-shadow: 6px 6px 0 var(--black);
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-group-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label-text {
+  font-family: Inter, "Arial Black", Arial, sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.field-input-box {
+  border: 3px solid var(--black);
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  padding: 12px;
+  outline: none;
+}
+
+.field-input-box:focus {
+  border-color: var(--yellow);
+}
+
+.field-textarea-box {
+  border: 3px solid var(--black);
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  padding: 12px;
+  height: 120px;
+  resize: vertical;
+  outline: none;
+}
+
+.field-textarea-box:focus {
+  border-color: var(--yellow);
+}
+
+.validation-error-text {
+  color: var(--red);
+  font-weight: bold;
+  font-size: 12px;
+}
+
+/* Certifications list */
+.certs-matrix-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cert-chip-item {
+  background-color: var(--surface);
+  border: 3px solid var(--black);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cert-chip-item.pending-verification {
+  background-color: #E5E5E5;
+  color: #777;
+  border-style: dashed;
+}
+
+.remove-cert-btn {
+  background: none;
+  border: none;
+  font-weight: bold;
+  color: var(--red);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+
+.add-cert-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.add-cert-row input {
+  flex-grow: 1;
+}
+
+/* Toggle Switch Style */
+.toggle-switch-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.switch-label-check {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.switch-label-check input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider-switch {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #CCC;
+  border: 3px solid var(--black);
+  transition: .4s;
+}
+
+.slider-switch:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: var(--black);
+  transition: .4s;
+}
+
+input:checked + .slider-switch {
+  background-color: var(--green);
+}
+
+input:checked + .slider-switch:before {
+  transform: translateX(26px);
+  background-color: white;
+}
+
+.btn-save-profile {
+  background-color: var(--green);
+  color: white;
+  border: 3px solid var(--black);
+  box-shadow: 4px 4px 0 var(--black);
+  padding: 14px 28px;
+  font-family: Inter, "Arial Black", Arial, sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 100ms, box-shadow 100ms;
+  margin-top: 10px;
+  align-self: flex-start;
+}
+
+.btn-save-profile:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--black);
+}
+
+.btn-save-profile:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 var(--black);
+}
+
+/* AVAILABILITY & LEAVE PLANNER */
+.availability-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  margin-top: 10px;
+}
+
+@media (max-width: 1024px) {
+  .availability-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.availability-grid-card, .leave-registration-card {
+  background-color: var(--surface);
+  border: 3px solid var(--black);
+  box-shadow: 6px 6px 0 var(--black);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.slots-grid-table-wrapper {
+  overflow-x: auto;
+  border: 3px solid var(--black);
+}
+
+.slots-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.slots-grid-table th {
+  background-color: var(--black);
+  color: white;
+  padding: 10px;
+  text-transform: uppercase;
+  font-family: Inter, sans-serif;
+  font-weight: 800;
+  border: 1px solid var(--black);
+}
+
+.slots-grid-table td {
+  padding: 8px;
+  border: 1px solid var(--black);
+  text-align: center;
+}
+
+.slot-time-col {
+  font-weight: bold;
+  background-color: #F3F4F6;
+  border-right: 3px solid var(--black) !important;
+  text-transform: uppercase;
+}
+
+.slot-cell-interactive {
+  cursor: pointer;
+  background-color: white;
+  transition: all 80ms;
+  font-weight: 600;
+  font-size: 10px;
+}
+
+.slot-cell-interactive:hover {
+  background-color: #FEF08A; /* yellow-light */
+}
+
+.slot-cell-interactive.slot-active {
+  background-color: var(--green);
+  color: white;
+  border: 2px solid var(--black);
+}
+
+.slot-cell-interactive.slot-conflict {
+  background-color: var(--red);
+  color: white;
+  border: 2px solid var(--black);
+}
+
+.conflict-alert-box {
+  background-color: #FEE2E2;
+  color: var(--red);
+  border: 3px solid var(--red);
+  padding: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+/* Leave Form styles */
+.leave-registration-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Intervention Modal Overlay */
+.intervention-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.intervention-modal-content {
+  background-color: var(--surface);
+  border: 4px solid var(--black);
+  box-shadow: 10px 10px 0 var(--black);
+  padding: 30px;
+  width: 90%;
+  max-width: 550px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.intervention-header {
+  background-color: var(--red);
+  color: white;
+  border: 3px solid var(--black);
+  padding: 12px;
+  font-family: Inter, "Arial Black", Arial, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 16px;
+  text-align: center;
+  box-shadow: 4px 4px 0 var(--black);
+}
+
+.intervention-body {
+  font-size: 14px;
+  line-height: 1.5;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.intervention-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.btn-abort-action {
+  flex: 1;
+  background-color: var(--black);
+  color: white;
+  border: 3px solid var(--black);
+  padding: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 #777;
+}
+
+.btn-force-cancellation {
+  flex: 1.5;
+  background-color: var(--red);
+  color: white;
+  border: 3px solid var(--black);
+  padding: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 4px 4px 0 var(--black);
+  transition: transform 100ms;
+}
+
+.btn-force-cancellation:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--black);
+}
+
+

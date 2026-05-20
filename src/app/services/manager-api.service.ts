@@ -111,4 +111,34 @@ export class ManagerApiService {
   suspendDunning(membershipId: number, reason: string): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/dunning/suspend/${membershipId}?reason=${encodeURIComponent(reason)}`, {});
   }
+
+  toggleMaintenance(facilityId: number, underMaintenance: boolean, reason?: string): Observable<any> {
+    let url = `${this.baseUrl}/facilities/${facilityId}/maintenance?underMaintenance=${underMaintenance}`;
+    if (reason) url += `&reason=${encodeURIComponent(reason)}`;
+    return this.http.patch<any>(url, {});
+  }
+
+  overrideBooking(dto: any, overrideByUserId: number, reason: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/bookings/override?overrideByUserId=${overrideByUserId}&reason=${encodeURIComponent(reason)}`, dto);
+  }
+
+  refundPayment(paymentId: number, refundBy: number, reason: string): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/payments/${paymentId}/refund?refundBy=${refundBy}&reason=${encodeURIComponent(reason)}`, {});
+  }
+
+  voidInvoice(invoiceId: number, reason: string): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/invoices/${invoiceId}/void?reason=${encodeURIComponent(reason)}`, {});
+  }
+
+  processPayment(dto: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/payments`, dto);
+  }
+
+  getPaymentsByMember(memberId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/payments/member/${memberId}`);
+  }
+
+  getInvoicesByMember(memberId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/invoices/member/${memberId}`);
+  }
 }

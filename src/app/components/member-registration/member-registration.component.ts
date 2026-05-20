@@ -131,6 +131,15 @@ export class MemberRegistrationComponent implements OnInit {
 
   handleNext(event: Event): void {
     event.preventDefault();
+    if (this.step === 1) {
+      const age = Number(this.getAge());
+      if (isNaN(age) || age < 14) {
+        this.photoError = 'Member must be at least 14 years old to register.';
+        return;
+      } else {
+        this.photoError = '';
+      }
+    }
     if (this.step < 4) {
       this.step++;
       this.updateProgressBar();
@@ -337,6 +346,6 @@ export class MemberRegistrationComponent implements OnInit {
 
   private normalizePhone(phone: string): string {
     const digits = phone.replace(/\D/g, '');
-    return digits.length > 10 ? digits.slice(-10) : digits;
+    return digits;
   }
 }

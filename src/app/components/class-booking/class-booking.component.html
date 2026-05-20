@@ -449,10 +449,30 @@
               >
                 {{ booking.status }}
               </span>
+              <div *ngIf="booking.status === 'PENDING_CONFIRMATION'" style="margin-top: 6px;">
+                <button
+                  (click)="acceptPromotion(booking.bookingId)"
+                  class="btn-table-accept w-full text-xs font-black uppercase"
+                  style="background-color: #00D26A; color: #FFF; border: 2px solid #111; padding: 4px 8px; cursor: pointer; box-shadow: 2px 2px 0px #111; display: block; text-align: center;"
+                >
+                  ACCEPT
+                </button>
+              </div>
             </td>
             <td>
+              <!-- If Pending Confirmation: Decline action -->
+              <div *ngIf="booking.status === 'PENDING_CONFIRMATION'">
+                <button
+                  (click)="cancelBooking(booking.bookingId)"
+                  class="btn-table-cancel"
+                  style="background-color: #FF3B30; color: #FFF; border-color: #111;"
+                >
+                  DECLINE
+                </button>
+              </div>
+
               <!-- If Cancel cut-off is valid -->
-              <div *ngIf="booking.canCancel">
+              <div *ngIf="booking.status !== 'PENDING_CONFIRMATION' && booking.canCancel">
                 <button
                   (click)="cancelBooking(booking.bookingId)"
                   class="btn-table-cancel"
@@ -462,7 +482,7 @@
               </div>
               
               <!-- If within 2 hours cut-off -->
-              <div *ngIf="!booking.canCancel" class="cancel-disabled-container relative group">
+              <div *ngIf="booking.status !== 'PENDING_CONFIRMATION' && !booking.canCancel" class="cancel-disabled-container relative group">
                 <button
                   class="btn-table-cancel disabled"
                   disabled

@@ -366,6 +366,7 @@ export class ClassBookingComponent implements OnInit {
       case 'ALMOST FULL': return { bg: '#FFB800', text: '#111' };
       case 'FULL': return { bg: '#FF3B30', text: '#FFF' };
       case 'WAITLISTED': return { bg: '#7C3AED', text: '#FFF' };
+      case 'PENDING_CONFIRMATION': return { bg: '#F59E0B', text: '#FFF' };
       default: return { bg: '#00D26A', text: '#FFF' };
     }
   }
@@ -411,14 +412,14 @@ export class ClassBookingComponent implements OnInit {
 
   get upcomingBookings() {
     return this.myBookings
-      .filter(b => b.bookingStatus === 'CONFIRMED' || b.bookingStatus === 'WAITLISTED')
+      .filter(b => b.bookingStatus === 'CONFIRMED' || b.bookingStatus === 'WAITLISTED' || b.bookingStatus === 'PENDING_CONFIRMATION')
       .map(b => {
-        const cls = this.classes.find(c => c.id === b.classId.toString());
+        const cls = this.classes.find(c => c.id === String(b.classId));
         const mockCls = {
           date: cls ? cls.date : this.getClassDateInCurrentWeek('Mon'),
           time: cls ? cls.time : '07:00:00'
         };
-        const canCancel = b.bookingStatus === 'CONFIRMED' && this.canCancelBooking(mockCls);
+        const canCancel = (b.bookingStatus === 'CONFIRMED' && this.canCancelBooking(mockCls)) || b.bookingStatus === 'PENDING_CONFIRMATION';
         
         return {
           bookingId: b.bookingId!,
@@ -434,6 +435,25 @@ export class ClassBookingComponent implements OnInit {
           canCancel: canCancel
         };
       });
+  }
+
+  acceptPromotion(bookingId: number): void {
+    this.isLoading = true;
+    this.frontdeskApi.acceptWaitlistPromotion(bookingId).subscribe({
+      next: () => {
+        this.successMessage = 'Waitlist promotion accepted successfully!';
+        this.toastService.success('WAITLIST PROMOTION ACCEPTED SUCCESSFULLY.');
+        this.initializeClasses();
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (err) => {
+        const errorMsg = err?.error?.message || 'Failed to accept promotion.';
+        this.errorMessage = errorMsg;
+        this.toastService.error(`PROMOTION ACCEPT FAILED: ${errorMsg.toUpperCase()}`);
+        this.isLoading = false;
+        setTimeout(() => this.errorMessage = '', 4000);
+      }
+    });
   }
 
   cancelBooking(bookingId: number): void {

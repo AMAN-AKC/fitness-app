@@ -18,6 +18,8 @@ interface MemberData {
   branchId: number;
   avatar: string;
   status: 'ok' | 'blocked';
+  membershipStatus?: string;
+  membershipId?: number;
   alert?: string;
   dues?: string;
   hasUnpaidDues?: boolean;
@@ -369,6 +371,88 @@ export class FrontdeskDashboardComponent implements OnInit {
     }
   }
 
+  suspendMember(): void {
+    if (!this.memberFound || !this.memberFound.membershipId) {
+      alert('No active membership found to suspend.');
+      return;
+    }
+    const monthsStr = prompt('Enter suspension duration in months (optional, leave blank for indefinite):');
+    const months = monthsStr ? parseInt(monthsStr, 10) : null;
+    const reason = prompt('Enter reason for suspension:');
+    if (reason === null) return; // cancelled
+    if (!reason.trim()) {
+      alert('Reason is required.');
+      return;
+    }
+
+    this.isLoading = true;
+    this.frontdeskApi.suspendMembership(this.memberFound.membershipId, months, reason).subscribe({
+      next: () => {
+        this.successMessage = `Membership suspended successfully.`;
+        this.isLoading = false;
+        // reload the searched member to refresh states
+        this.searchValue = String(this.memberFound!.memberId);
+        // We need to refresh the main members list from backend as well
+        this.frontdeskApi.getMembers().subscribe(mems => this.members = mems);
+        this.handleSearch(new Event('submit'));
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to suspend membership.';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  deactivateMember(): void {
+    if (!this.memberFound || !this.memberFound.membershipId) {
+      alert('No active membership found to deactivate.');
+      return;
+    }
+    const reason = prompt('Enter reason for deactivation:');
+    if (reason === null) return; // cancelled
+    if (!reason.trim()) {
+      alert('Reason is required.');
+      return;
+    }
+
+    this.isLoading = true;
+    this.frontdeskApi.deactivateMembership(this.memberFound.membershipId, reason).subscribe({
+      next: () => {
+        this.successMessage = `Membership deactivated successfully.`;
+        this.isLoading = false;
+        this.searchValue = String(this.memberFound!.memberId);
+        this.frontdeskApi.getMembers().subscribe(mems => this.members = mems);
+        this.handleSearch(new Event('submit'));
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to deactivate membership.';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  reactivateMember(): void {
+    if (!this.memberFound || !this.memberFound.membershipId) {
+      alert('No membership found to reactivate.');
+      return;
+    }
+
+    this.isLoading = true;
+    this.frontdeskApi.reactivateMembership(this.memberFound.membershipId).subscribe({
+      next: () => {
+        this.successMessage = `Membership reactivated successfully.`;
+        this.isLoading = false;
+        this.searchValue = String(this.memberFound!.memberId);
+        this.frontdeskApi.getMembers().subscribe(mems => this.members = mems);
+        this.handleSearch(new Event('submit'));
+      },
+      error: (err) => {
+        this.errorMessage = err.error?.message || 'Failed to reactivate membership.';
+        this.isLoading = false;
+      }
+    });
+  }
+
 
   toggleClassExpanded(classId: number): void {
     if (this.expandedClass === classId) {
@@ -455,15 +539,28 @@ export class FrontdeskDashboardComponent implements OnInit {
       id: `MEM-${member.memberId}`,
       memberId: Number(member.memberId),
       name: member.memName,
-      plan: member.status === 'ACTIVE' ? 'Active Membership' : 'No Active Plan',
+      plan: member.status === 'ACTIVE' ? 'Active Membership' : `No Active Plan (${member.status || 'INACTIVE'})`,
       branch: branch?.branchName || `Branch ${member.homeBranchId}`,
       branchId: member.homeBranchId,
       avatar: this.getInitials(member.memName),
       status: isBlocked ? 'blocked' : 'ok',
-      alert: isBlocked ? 'No active membership. Check-in denied.' : undefined,
+      membershipStatus: member.status || 'ACTIVE',
+      alert: isBlocked ? `Membership status: ${member.status || 'INACTIVE'}. Check-in denied.` : undefined,
     };
 
     if (member.memberId) {
+      this.frontdeskApi.getMembershipsByMember(member.memberId).subscribe({
+        next: (memberships) => {
+          const active = memberships.find(m => m.status === 'ACTIVE') || memberships[0];
+          if (active) {
+            data.membershipId = active.memId;
+            if (active.status) {
+              data.membershipStatus = active.status;
+            }
+          }
+        }
+      });
+
       this.frontdeskApi.getMemberCheckInFlags(member.memberId).subscribe({
         next: (flags) => {
           if (flags.hasUnpaidDues) {

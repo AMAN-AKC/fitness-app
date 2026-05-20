@@ -6,9 +6,27 @@
 
   <div *ngIf="!isLoading">
     <!-- HEADER -->
-    <div class="dashboard-header mb-8">
-      <h1 class="font-heading font-black text-2xl uppercase">MANAGER CONSOLE</h1>
-      <p class="font-body text-muted uppercase">Operational oversight & member analytics for fitClub</p>
+    <div class="dashboard-header mb-6 flex justify-between items-center" style="display: flex; justify-content: space-between;">
+      <div>
+        <h1 class="font-heading font-black text-2xl uppercase">MANAGER CONSOLE</h1>
+        <p class="font-body text-muted uppercase">Operational oversight & member analytics for fitClub</p>
+      </div>
+      <button (click)="exportDashboardCsv()" class="btn-secondary font-heading font-black" style="padding: 8px 16px; border: 3px solid #000; background: #fff;">
+        📥 EXPORT DASHBOARD CSV
+      </button>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs-container mb-6" style="display: flex; gap: 8px; border-bottom: 4px solid #000; padding-bottom: 8px;">
+      <button (click)="switchTab('DASHBOARD')" [style.background]="activeTab === 'DASHBOARD' ? 'var(--yellow)' : '#fff'" class="font-heading font-black px-4 py-2" style="border: 3px solid #000;">
+        DASHBOARD METRICS
+      </button>
+      <button (click)="switchTab('BILLING')" [style.background]="activeTab === 'BILLING' ? 'var(--yellow)' : '#fff'" class="font-heading font-black px-4 py-2" style="border: 3px solid #000;">
+        BILLING & REFUNDS
+      </button>
+      <button (click)="switchTab('ALERTS')" [style.background]="activeTab === 'ALERTS' ? 'var(--yellow)' : '#fff'" class="font-heading font-black px-4 py-2" style="border: 3px solid #000;">
+        STAFF ESCALATIONS ({{ pendingEscalations.length }})
+      </button>
     </div>
 
     <!-- ERROR STATE -->
@@ -17,6 +35,8 @@
       <div class="alert-text font-heading font-black uppercase">{{ errorMessage }}</div>
     </div>
 
+    <!-- DASHBOARD TAB CONTENT -->
+    <div *ngIf="activeTab === 'DASHBOARD'">
     <!-- KPI TILES (5-col Grid) -->
     <section class="kpi-grid">
       <!-- Tile 1: Active Members -->
@@ -280,7 +300,75 @@
         </div>
       </div>
     </section>
-  </div>
+    </div> <!-- END DASHBOARD TAB -->
+
+    <!-- BILLING TAB CONTENT -->
+    <div *ngIf="activeTab === 'BILLING'" class="billing-tab">
+      <div class="brutal-card p-4 mb-6" style="border: 4px solid #000; background: #fff;">
+        <h3 class="font-heading font-black text-md uppercase mb-4">MEMBER BILLING SEARCH</h3>
+        <div class="flex gap-4">
+          <input type="text" [(ngModel)]="memberSearchId" placeholder="ENTER MEMBER ID..." class="brutal-input flex-1" style="height: 48px;" />
+          <button (click)="searchMemberBilling()" class="btn-primary font-heading font-black px-6" style="height: 48px;">SEARCH LEDGER</button>
+        </div>
+      </div>
+
+      <div *ngIf="memberInvoices.length > 0 || memberPayments.length > 0" class="flex gap-6">
+        <!-- Invoices List -->
+        <div class="flex-1 brutal-card p-4" style="border: 3px solid #000; background: #fff;">
+          <h3 class="font-heading font-black text-md uppercase mb-4">INVOICES</h3>
+          <div *ngFor="let inv of memberInvoices" class="brutal-card p-3 mb-3" style="border: 2px solid #000;">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-heading font-black text-sm uppercase">INV #{{ inv.invoiceId }}</span>
+              <span class="brutal-badge font-mono font-bold" [style.background]="inv.status === 'PAID' ? '#00D26A' : '#FFB800'" style="color: #000;">{{ inv.status }}</span>
+            </div>
+            <div class="font-mono text-sm font-bold mb-2">{{ formatCurrency(inv.finalAmount) }}</div>
+            <button (click)="voidInvoice(inv)" class="btn-cancel w-full" style="padding: 8px;">VOID INVOICE</button>
+          </div>
+        </div>
+
+        <!-- Payments List -->
+        <div class="flex-1 brutal-card p-4" style="border: 3px solid #000; background: #fff;">
+          <h3 class="font-heading font-black text-md uppercase mb-4">PAYMENTS (LAST 30 DAYS)</h3>
+          <div *ngFor="let pay of memberPayments" class="brutal-card p-3 mb-3" style="border: 2px solid #000; background: #E7FF3C;">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-heading font-black text-sm uppercase">PAY #{{ pay.paymentId }}</span>
+              <span class="font-mono text-xs">{{ pay.paymentDate | date }}</span>
+            </div>
+            <div class="font-mono text-sm font-bold mb-2">{{ formatCurrency(pay.amount) }}</div>
+            <button (click)="refundPayment(pay)" class="btn-secondary w-full" style="padding: 8px; background: #FF3B30; color: #FFF; border-color: #000;">ISSUE REFUND</button>
+          </div>
+        </div>
+      </div>
+    </div> <!-- END BILLING TAB -->
+
+    <!-- ALERTS TAB CONTENT -->
+    <div *ngIf="activeTab === 'ALERTS'" class="alerts-tab">
+      <div class="brutal-card p-4" style="border: 4px solid #000; background: #fff;">
+        <h3 class="font-heading font-black text-md uppercase mb-4 text-red">PENDING STAFF ESCALATIONS</h3>
+        
+        <div *ngIf="pendingEscalations.length === 0" class="font-body uppercase font-bold text-muted">
+          NO PENDING ESCALATION REQUESTS.
+        </div>
+
+        <div *ngFor="let esc of pendingEscalations" class="brutal-card p-4 mb-4" style="border: 3px solid #000; background: #f9f9f9; box-shadow: 4px 4px 0px #000;">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h4 class="font-heading font-black text-sm uppercase">OVERRIDE REQUEST: {{ esc.className }}</h4>
+              <p class="font-body font-bold text-xs uppercase mt-1">MEMBER: {{ esc.memberName }} (ID: {{ esc.dto.memberId }})</p>
+              <p class="font-body font-bold text-xs uppercase text-red mt-1">REASON: {{ esc.reason }}</p>
+            </div>
+            <span class="brutal-badge font-heading font-bold" [style.background]="esc.status === 'PENDING' ? '#FFB800' : '#00D26A'" style="color: #000;">
+              {{ esc.status }}
+            </span>
+          </div>
+          <button *ngIf="esc.status === 'PENDING'" (click)="approveOverride(esc)" class="btn-primary w-full mt-2" style="padding: 12px;">
+            APPROVE ADMINISTRATIVE EXCEPTION
+          </button>
+        </div>
+      </div>
+    </div> <!-- END ALERTS TAB -->
+
+  </div> <!-- END NOT LOADING -->
 
   <!-- DUNNING MANAGEMENT CONSOLE DRAWER -->
   <div class="create-drawer-overlay" *ngIf="showDunningDrawer" (click)="closeDunningDrawer()">
@@ -342,12 +430,20 @@
                 📝 RECORD FOLLOW-UP NOTE
               </button>
 
+              <button (click)="openPartialPaymentForm()" class="btn-panel-action btn-secondary w-full" style="text-align: left; padding: 10px;">
+                💸 RECORD PARTIAL PAYMENT
+              </button>
+
               <button (click)="resolveDunning(selectedDunningInvoice)" class="btn-panel-action btn-substitute w-full" style="text-align: left; padding: 10px; background: #00D26A; color: #FFF;">
-                ✔ MARK PAID / RESOLVE
+                ✔ MARK FULLY PAID
               </button>
 
               <button (click)="openSuspendForm()" class="btn-panel-action btn-cancel w-full" style="text-align: left; padding: 10px; background: #FF3B30; color: #FFF;">
                 🛡 ENFORCE SUSPENSION
+              </button>
+
+              <button *ngIf="selectedDunningInvoice.membership?.status === 'SUSPENDED' || selectedDunningInvoice.status === 'FAILED'" (click)="grantGraceOverride()" class="btn-panel-action btn-secondary w-full" style="text-align: left; padding: 10px; background: #7C3AED; color: #FFF;">
+                ⌛ GRANT GRACE OVERRIDE
               </button>
             </div>
 
@@ -359,6 +455,14 @@
               <label class="form-label">PROMISE DATE (OPTIONAL):</label>
               <input type="date" [(ngModel)]="followUpPromiseDate" class="brutal-input mb-3" style="height: 36px; font-size: 11px;" />
               <button (click)="submitFollowUp()" class="btn-action btn-primary w-full" style="height: 36px; font-size: 11px;">SAVE FOLLOW-UP</button>
+            </div>
+
+            <!-- Partial Payment Form -->
+            <div *ngIf="showPartialPaymentForm" class="brutal-card p-3 mt-3" style="border: 2px solid #000; background: #FFF; box-shadow: 3px 3px 0px #000;">
+              <h5 class="font-heading font-black text-xs uppercase mb-2">PARTIAL PAYMENT</h5>
+              <label class="form-label">TENDERED AMOUNT (₹):</label>
+              <input type="number" [(ngModel)]="partialPaymentAmount" class="brutal-input mb-3" style="height: 36px; font-size: 11px;" />
+              <button (click)="submitPartialPayment()" class="btn-action btn-primary w-full" style="height: 36px; font-size: 11px;">AUTHORIZE COLLECTION</button>
             </div>
 
             <!-- Suspension form -->

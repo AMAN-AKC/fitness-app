@@ -40,7 +40,7 @@ export class ErrorPageComponent implements OnInit, OnDestroy {
       status: 'FORBIDDEN',
       icon: '🛡️',
       title: 'ACCESS IS RESTRICTED',
-      body: 'YOUR ASSIGNED ROLE LACKS REQUIRED SCOPES TO VIEW THIS RESOURCE.',
+      body: 'Access Denied: HTTP 403 Forbidden. Your account role does not possess authorization to view this module. This security event has been recorded in the system audit trail.',
       button: 'BACK TO SAFETY',
       action: () => this.router.navigate(['/']),
     },

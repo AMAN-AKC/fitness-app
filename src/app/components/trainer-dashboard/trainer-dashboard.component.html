@@ -12,7 +12,24 @@
     </div>
   </div>
 
-  <!-- KPI CARDS -->
+  <!-- NAVIGATION TABS -->
+  <div class="neo-tabs-nav">
+    <button (click)="activeTab = 'overview'" class="neo-tab-btn" [class.active-tab]="activeTab === 'overview'">
+      📊 OVERVIEW
+    </button>
+    <button (click)="activeTab = 'classes'" class="neo-tab-btn" [class.active-tab]="activeTab === 'classes'">
+      🗓️ CLASSES & ROSTERS
+    </button>
+    <button (click)="activeTab = 'availability'" class="neo-tab-btn" [class.active-tab]="activeTab === 'availability'">
+      ⚡ AVAILABILITY & LEAVE
+    </button>
+    <button (click)="activeTab = 'profile'" class="neo-tab-btn" [class.active-tab]="activeTab === 'profile'">
+      👤 EDIT PROFILE
+    </button>
+  </div>
+
+  <div *ngIf="activeTab === 'overview'" style="display: flex; flex-direction: column; gap: 20px;">
+    <!-- KPI CARDS -->
   <div class="kpi-grid">
     <!-- Card 1: Classes This Week -->
     <div class="kpi-card">
@@ -212,4 +229,434 @@
       </table>
     </div>
   </section>
+  </div>
+
+  <!-- TAB: CLASSES & ROSTERS -->
+  <div class="classes-layout" *ngIf="activeTab === 'classes'">
+    <!-- Left panel: List of group classes -->
+    <div class="classes-list-panel" *ngIf="!selectedRosterClass">
+      <div class="availability-grid-card">
+        <div>
+          <h2 style="font-family: Inter; font-weight: 800; text-transform: uppercase; margin: 0 0 5px 0;">MY ASSIGNED GROUP CLASSES</h2>
+          <p style="font-size: 11px; color: var(--muted); margin: 0; text-transform: uppercase; font-weight: bold;">
+            SELECT A CLASS BLOCK TO LOAD THE LIVE ATTENDANCE ROSTER.
+          </p>
+        </div>
+
+        <div class="classes-grid-table-wrapper" style="border: 3px solid var(--black); overflow-x: auto;">
+          <table class="slots-grid-table" style="font-size: 13px;">
+            <thead>
+              <tr>
+                <th>CLASS TITLE</th>
+                <th>STUDIO / ROOM</th>
+                <th>SCHEDULED DAYS</th>
+                <th>CLASS TIME</th>
+                <th>CAPACITY</th>
+                <th>ACTION</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let cls of classesList">
+                <td style="font-weight: bold; text-align: left; padding: 12px; text-transform: uppercase;">{{ cls.className }}</td>
+                <td style="font-family: monospace;">{{ getRoomName(cls.roomId) }}</td>
+                <td style="font-weight: bold; color: var(--blue); text-transform: uppercase;">{{ cls.weekdays }}</td>
+                <td style="font-weight: bold;">{{ cls.classTime }}</td>
+                <td>{{ cls.capacity }} MEMBERS</td>
+                <td>
+                  <button (click)="selectRosterClass(cls)" class="btn-save-profile" style="margin: 0; padding: 6px 12px; font-size: 12px; background-color: var(--yellow);">
+                    VIEW ROSTER 📋
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="classesList.length === 0">
+                <td colspan="6" style="padding: 30px; text-align: center; text-transform: uppercase; font-weight: bold; color: var(--muted);">
+                  NO ASSIGNED CLASSES ASSIGNED TO YOUR SCHEDULE.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Class Roster view -->
+    <div class="roster-view-panel" *ngIf="selectedRosterClass">
+      <div class="availability-grid-card">
+        <div class="roster-header-row" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 15px;">
+          <div>
+            <button (click)="selectedRosterClass = null" class="btn-save-profile" style="margin: 0 0 10px 0; padding: 6px 12px; font-size: 11px; background-color: var(--black); color: white;">
+              ← BACK TO CLASSES
+            </button>
+            <h2 style="font-family: Inter; font-weight: 800; text-transform: uppercase; margin: 0;">
+              ROSTER: {{ selectedRosterClass.className | uppercase }}
+            </h2>
+            <p style="font-size: 11px; color: var(--muted); margin: 5px 0 0 0; text-transform: uppercase; font-weight: bold;">
+              STUDIO: {{ getRoomName(selectedRosterClass.roomId) }} | TIME: {{ selectedRosterClass.classTime }}
+            </p>
+          </div>
+
+          <!-- Date picker to select which session occurrence they are marking -->
+          <div style="display: flex; flex-direction: column; gap: 4px; text-align: right;">
+            <label class="field-label-text" style="margin: 0; font-size: 11px;">SESSION DATE</label>
+            <input 
+              type="date" 
+              [(ngModel)]="rosterDateStr" 
+              (change)="loadRosterForClass()"
+              class="field-input-box" 
+              style="padding: 6px; font-weight: bold; font-family: monospace; border: 3px solid var(--black); width: 160px;" 
+            />
+          </div>
+        </div>
+
+        <!-- Roster Window Timing Gate Check Alert Banner -->
+        <div class="conflict-alert-box" *ngIf="isTimingGateLocked(selectedRosterClass.classTime, rosterDateStr).locked" 
+             [style.background-color]="isTimingGateLocked(selectedRosterClass.classTime, rosterDateStr).isRetroactive ? '#FEF3C7' : '#FEE2E2'"
+             [style.border-color]="isTimingGateLocked(selectedRosterClass.classTime, rosterDateStr).isRetroactive ? '#D97706' : '#DC2626'"
+             [style.color]="isTimingGateLocked(selectedRosterClass.classTime, rosterDateStr).isRetroactive ? '#D97706' : '#DC2626'">
+          ⚠️ {{ isTimingGateLocked(selectedRosterClass.classTime, rosterDateStr).message }}
+        </div>
+
+        <!-- Loader -->
+        <div *ngIf="isLoadingRoster" style="padding: 50px; text-align: center; text-transform: uppercase; font-weight: bold;">
+          LOADING CLASS BOOKINGS & ATTENDANCE DATA...
+        </div>
+
+        <div class="classes-grid-table-wrapper" *ngIf="!isLoadingRoster" style="border: 3px solid var(--black); overflow-x: auto;">
+          <table class="slots-grid-table" style="font-size: 12px;">
+            <thead>
+              <tr>
+                <th>MEMBER PROFILE</th>
+                <th>BOOKING STATUS</th>
+                <th>ALERTS & FLAGS</th>
+                <th>CHECK-IN BADGE</th>
+                <th>ATTENDANCE STATE ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let member of rosterBookings">
+                <!-- Profile -->
+                <td style="text-align: left; padding: 12px; font-weight: bold;">
+                  <div style="font-size: 14px; text-transform: uppercase;">{{ member.name }}</div>
+                  <div style="font-size: 10px; color: var(--muted); font-family: monospace;">{{ member.email }}</div>
+                </td>
+                
+                <!-- Booking Status -->
+                <td>
+                  <span class="cert-badge" 
+                        [style.background-color]="member.bookingStatus === 'CONFIRMED' ? 'var(--blue)' : (member.bookingStatus === 'WAITLISTED' ? 'var(--yellow)' : '#E5E7EB')"
+                        [style.color]="member.bookingStatus === 'CONFIRMED' || member.bookingStatus === 'WAITLISTED' ? 'white' : 'var(--black)'">
+                    {{ member.bookingStatus | uppercase }}
+                  </span>
+                </td>
+
+                <!-- Alerts & Flags -->
+                <td>
+                  <div style="display: flex; gap: 6px; justify-content: center;">
+                    <span *ngIf="member.hasUnpaidDues" class="badge-unpaid-dues" style="background-color: var(--red); color: white; border: 2px solid var(--black); font-size: 9px; padding: 2px 6px; font-weight: bold;">
+                      ⚠️ UNPAID DUES
+                    </span>
+                    <span *ngIf="member.pendingHealthWaiver" class="badge-pending-waiver" style="background-color: var(--yellow); color: var(--black); border: 2px solid var(--black); font-size: 9px; padding: 2px 6px; font-weight: bold;">
+                      ⚠️ MISSING WAIVER
+                    </span>
+                    <span *ngIf="!member.hasUnpaidDues && !member.pendingHealthWaiver" style="color: var(--muted); font-style: italic;">
+                      CLEAR
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Check-in Badge -->
+                <td>
+                  <span *ngIf="member.isCheckedIn" class="cert-badge" style="background-color: var(--green); color: white;">
+                    ✓ CHECKED-IN
+                  </span>
+                  <span *ngIf="member.bookingStatus === 'NO_SHOW'" class="cert-badge" style="background-color: var(--red); color: white;">
+                    ✗ NO-SHOW
+                  </span>
+                  <span *ngIf="member.bookingStatus === 'CANCELLED'" class="cert-badge" style="background-color: #9CA3AF; color: white;">
+                    EXCUSED / CANCELLED
+                  </span>
+                  <span *ngIf="!member.isCheckedIn && member.bookingStatus !== 'NO_SHOW' && member.bookingStatus !== 'CANCELLED'" class="cert-badge" style="background-color: #E5E7EB; color: var(--black);">
+                    PENDING SCAN
+                  </span>
+                </td>
+
+                <!-- Actions -->
+                <td>
+                  <div style="display: flex; gap: 8px; justify-content: center;">
+                    <button 
+                      (click)="mutateAttendanceState(member, 'checked-in')" 
+                      class="btn-save-profile" 
+                      style="margin: 0; padding: 6px 12px; font-size: 10px; background-color: var(--green); color: white;"
+                      [disabled]="member.isCheckedIn"
+                    >
+                      CHECK-IN
+                    </button>
+                    <button 
+                      (click)="mutateAttendanceState(member, 'no-show')" 
+                      class="btn-save-profile" 
+                      style="margin: 0; padding: 6px 12px; font-size: 10px; background-color: var(--red); color: white;"
+                      [disabled]="member.bookingStatus === 'NO_SHOW'"
+                    >
+                      NO-SHOW
+                    </button>
+                    <button 
+                      (click)="mutateAttendanceState(member, 'excused')" 
+                      class="btn-save-profile" 
+                      style="margin: 0; padding: 6px 12px; font-size: 10px; background-color: var(--black); color: white;"
+                      [disabled]="member.bookingStatus === 'CANCELLED'"
+                    >
+                      EXCUSE
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="rosterBookings.length === 0">
+                <td colspan="5" style="padding: 30px; text-align: center; text-transform: uppercase; font-weight: bold; color: var(--muted);">
+                  NO ENROLLED MEMBERS DETECTED FOR THIS SESSION OCCURRENCE.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RETROACTIVE ATTENDANCE OVERRIDE MODAL -->
+  <div class="intervention-modal-overlay" *ngIf="showOverrideModal">
+    <div class="intervention-modal-content" style="border-color: var(--yellow); box-shadow: 10px 10px 0 var(--yellow);">
+      <div class="intervention-header" style="background-color: var(--yellow); color: var(--black);">
+        ⚠️ RETROACTIVE ATTENDANCE OVERRIDE REQUIRED
+      </div>
+      <div class="intervention-body">
+        YOU ARE ATTEMPTING TO EDIT THE ATTENDANCE CHECKLIST AFTER THE CLOSE OF THE STANDARD TIMING GATE WINDOW. THIS ACTION WILL BE LOGGED TO THE SYSTEM AUDIT TRAIL.
+      </div>
+      <div class="form-group-block">
+        <label class="field-label-text">MANDATORY OVERRIDE JUSTIFICATION REASON:</label>
+        <textarea 
+          [(ngModel)]="overrideJustification" 
+          placeholder="e.g. Member checked in late / Frontdesk card scanner error" 
+          class="field-textarea-box"
+          style="height: 100px;"
+        ></textarea>
+      </div>
+      <div class="intervention-actions">
+        <button (click)="closeOverrideModal()" class="btn-abort-action">
+          ABORT ACTION
+        </button>
+        <button (click)="submitRetroactiveOverride()" class="btn-force-cancellation" style="background-color: var(--yellow); color: var(--black);">
+          SUBMIT OVERRIDE LOG
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: EDIT PROFILE -->
+  <div class="profile-edit-layout" *ngIf="activeTab === 'profile'">
+    <div class="profile-avatar-card">
+      <div class="avatar-emoji-large">🏋️</div>
+      <h3 style="font-family: Inter; font-weight: 800; text-transform: uppercase; margin: 0;">{{ trainer?.trainerName }}</h3>
+      <div class="profile-rating-badge">RATING: {{ trainer?.rating || 0 }} ⭐</div>
+    </div>
+
+    <div class="profile-fields-card">
+      <h2 style="font-family: Inter; font-weight: 800; text-transform: uppercase; margin: 0 0 10px 0;">EDIT PROFILE</h2>
+
+      <!-- Personal Bio Block -->
+      <div class="form-group-block">
+        <label class="field-label-text">Personal Bio Block (Max 500 characters)</label>
+        <textarea 
+          [(ngModel)]="tempBio" 
+          placeholder="Outline your fitness philosophy and professional approach..." 
+          class="field-textarea-box"
+        ></textarea>
+        <div class="validation-error-text" *ngIf="profileError || (tempBio && tempBio.length > 500)">
+          {{ profileError || 'Validation Error: Biography text cannot be left blank and must not exceed 500 characters.' }}
+        </div>
+        <div style="font-size: 11px; text-align: right; font-weight: bold;">
+          {{ tempBio ? tempBio.length : 0 }}/500 CHARACTERS
+        </div>
+      </div>
+
+      <!-- Specialties Tags -->
+      <div class="form-group-block">
+        <label class="field-label-text">Specialties Tags (Comma-separated)</label>
+        <input 
+          type="text" 
+          [(ngModel)]="tempSpecialties" 
+          placeholder="e.g. Strength Training, HIIT, Pilates, Rehabilitation" 
+          class="field-input-box"
+        />
+      </div>
+
+      <!-- Verified Certifications Matrix -->
+      <div class="form-group-block">
+        <label class="field-label-text">Certifications Matrix</label>
+        <div class="certs-matrix-list">
+          <span 
+            *ngFor="let cert of certList; let idx = index" 
+            class="cert-chip-item" 
+            [class.pending-verification]="cert.isPending"
+          >
+            {{ cert.name }} 
+            <span *ngIf="cert.isPending" style="font-size: 9px; font-style: italic; color: #777;">
+              (Pending Manager Verification)
+            </span>
+            <button class="remove-cert-btn" (click)="removeCertification(idx)">×</button>
+          </span>
+          <span *ngIf="certList.length === 0" style="font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: bold;">
+            No certifications added yet.
+          </span>
+        </div>
+        
+        <div class="add-cert-row">
+          <input 
+            type="text" 
+            [(ngModel)]="newCertName" 
+            placeholder="e.g. NASM-CPT, Precision Nutrition" 
+            class="field-input-box"
+            (keyup.enter)="addCertification()"
+          />
+          <button (click)="addCertification()" class="btn-secondary btn-sm" style="height: 100%; border: 3px solid var(--black); box-shadow: 2px 2px 0 var(--black);">
+            + ADD CERT
+          </button>
+        </div>
+      </div>
+
+      <!-- Accepting New PT Clients -->
+      <div class="form-group-block">
+        <label class="field-label-text">Privacy boundary settings</label>
+        <div class="toggle-switch-wrapper">
+          <label class="switch-label-check">
+            <input type="checkbox" [(ngModel)]="acceptingPtClients" />
+            <span class="slider-switch"></span>
+          </label>
+          <span style="font-weight: bold; text-transform: uppercase; font-size: 13px;">
+            {{ acceptingPtClients ? 'Accepting New PT Clients (Active)' : 'Accepting New PT Clients (Inactive)' }}
+          </span>
+        </div>
+        <p style="font-size: 11px; color: var(--muted); margin: 0; text-transform: uppercase;">
+          Flipping this switch to Inactive retains your profile in the directory for class identification but hides your personal availability grid from member catalog views, blocking incoming client requests.
+        </p>
+      </div>
+
+      <button (click)="saveProfileChanges()" class="btn-save-profile">
+        SAVE PROFILE CHANGES
+      </button>
+    </div>
+  </div>
+
+  <!-- TAB: AVAILABILITY & LEAVE PLANNER -->
+  <div class="availability-layout" *ngIf="activeTab === 'availability'">
+    <!-- Availability Slot Template Builder -->
+    <div class="availability-grid-card">
+      <div>
+        <h2 style="font-family: Inter; font-weight: 800; text-transform: uppercase; margin: 0 0 5px 0;">STANDARD WEEKLY TEMPLATE</h2>
+        <p style="font-size: 11px; color: var(--muted); margin: 0; text-transform: uppercase; font-weight: bold;">
+          CLICK AND TOGGLE YOUR STANDARD 1-ON-1 PT AVAILABILITY SLOTS FOR EACH DAY.
+        </p>
+      </div>
+
+      <!-- Schedule Matrix Conflict Alert Banner -->
+      <div class="conflict-alert-box" *ngIf="availabilityError">
+        ⚠️ {{ availabilityError }}
+      </div>
+
+      <div class="slots-grid-table-wrapper">
+        <table class="slots-grid-table">
+          <thead>
+            <tr>
+              <th style="width: 100px;">TIME</th>
+              <th *ngFor="let day of selectedDays">{{ day.substring(0, 3) }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let hour of availableHours">
+              <td class="slot-time-col">{{ hour }}</td>
+              <td 
+                *ngFor="let day of selectedDays" 
+                class="slot-cell-interactive" 
+                [class.slot-active]="isSlotActive(day, hour)"
+                [class.slot-conflict]="checkAvailabilityConflict(day, hour) !== null"
+                (click)="toggleSlot(day, hour)"
+              >
+                {{ isSlotActive(day, hour) ? 'ACTIVE' : '—' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <button (click)="saveAvailability()" class="btn-save-profile" style="background-color: var(--blue);">
+        PUBLISH AVAILABILITY SCHEDULE ⚡
+      </button>
+    </div>
+
+    <!-- Register Unavailability date block -->
+    <div class="leave-registration-card">
+      <div>
+        <h2 style="font-family: Inter; font-weight: 800; text-transform: uppercase; margin: 0 0 5px 0;">REGISTER TIME-OFF</h2>
+        <p style="font-size: 11px; color: var(--muted); margin: 0; text-transform: uppercase; font-weight: bold;">
+          BLOCK A RANGE OF DATES FOR LEAVE OR VACATION.
+        </p>
+      </div>
+
+      <form (submit)="registerLeave(); $event.preventDefault();">
+        <div class="form-group-block">
+          <label class="field-label-text">START DATE</label>
+          <input type="date" [(ngModel)]="leaveStartDate" name="leaveStartDate" class="field-input-box" required />
+        </div>
+
+        <div class="form-group-block">
+          <label class="field-label-text">END DATE</label>
+          <input type="date" [(ngModel)]="leaveEndDate" name="leaveEndDate" class="field-input-box" required />
+        </div>
+
+        <div class="form-group-block">
+          <label class="field-label-text">CANCELLATION REASON FOR MEMBER NOTIFICATIONS</label>
+          <input 
+            type="text" 
+            [(ngModel)]="leaveReason" 
+            name="leaveReason"
+            placeholder="e.g. Attending a conference / Personal emergency" 
+            class="field-input-box" 
+            required 
+          />
+        </div>
+
+        <button type="submit" class="btn-save-profile" style="background-color: var(--red); width: 100%;">
+          REGISTER DATE BLOCK 🗓️
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- INTERVENTION WARNING MODAL -->
+  <div class="intervention-modal-overlay" *ngIf="showInterventionModal">
+    <div class="intervention-modal-content">
+      <div class="intervention-header">
+        ⚠️ AVAILABILITY IMPACT INTERVENTION ALERT
+      </div>
+      <div class="intervention-body">
+        WARNING: THIS AVAILABILITY BLOCK CONTAINS {{ affectedSessionsCount }} CONFIRMED/PENDING PERSONAL TRAINING SESSIONS. DELETING THIS WINDOW WILL CANCEL ALL ACTIVE MEMBER RESERVATIONS.
+      </div>
+      <div class="form-group-block">
+        <label class="field-label-text">MANDATORY CANCELLATION JUSTIFICATION REASON:</label>
+        <textarea 
+          [(ngModel)]="interventionJustification" 
+          placeholder="e.g. Schedule adjustment / Facility maintenance" 
+          class="field-textarea-box"
+          style="height: 100px;"
+        ></textarea>
+      </div>
+      <div class="intervention-actions">
+        <button (click)="abortAvailabilitySave()" class="btn-abort-action">
+          ABORT ACTION
+        </button>
+        <button (click)="forceSectorCancellation()" class="btn-force-cancellation">
+          FORCE SECTOR CANCELLATION
+        </button>
+      </div>
+    </div>
+  </div>
 </div>

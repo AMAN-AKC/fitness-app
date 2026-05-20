@@ -25,6 +25,7 @@ export interface MemberDto {
   status?: MemberStatus;
   homeBranchId: number;
   photoPath?: string;
+  ptSessionCredits?: number;
 }
 
 export interface AttendanceDto {
@@ -108,7 +109,7 @@ export interface ClassBookingDto {
   bookingId?: number;
   classId: number;
   memberId: number;
-  bookingStatus?: 'CONFIRMED' | 'WAITLISTED' | 'CANCELLED' | 'NO_SHOW';
+  bookingStatus?: 'CONFIRMED' | 'WAITLISTED' | 'CANCELLED' | 'NO_SHOW' | 'PENDING_CONFIRMATION';
   waitlistPosition?: number;
   cancelledAt?: string;
   overrideBy?: number;
@@ -143,6 +144,8 @@ export interface TrainerDto {
   rating?: number;
   branchId: number;
   isActive?: boolean;
+  acceptingPtClients?: boolean;
+  availability?: string;
 }
 
 export interface PtSessionDto {
@@ -290,6 +293,23 @@ export class FrontdeskApiService {
     );
   }
 
+  suspendMembership(id: number, months: number | null, reason: string): Observable<MembershipDto> {
+    let url = `${this.baseUrl}/memberships/${id}/suspend?reason=${encodeURIComponent(reason)}`;
+    if (months !== null) {
+      url += `&months=${months}`;
+    }
+    return this.http.patch<MembershipDto>(url, {});
+  }
+
+  deactivateMembership(id: number, reason: string): Observable<MembershipDto> {
+    const url = `${this.baseUrl}/memberships/${id}/deactivate?reason=${encodeURIComponent(reason)}`;
+    return this.http.patch<MembershipDto>(url, {});
+  }
+
+  reactivateMembership(id: number): Observable<MembershipDto> {
+    return this.http.patch<MembershipDto>(`${this.baseUrl}/memberships/${id}/reactivate`, {});
+  }
+
   getInvoicesByMember(memberId: number): Observable<InvoiceDto[]> {
     return this.http.get<InvoiceDto[]>(
       `${this.baseUrl}/invoices/member/${memberId}`,
@@ -320,6 +340,31 @@ export class FrontdeskApiService {
       `${this.baseUrl}/bookings/${bookingId}/cancel`,
       {},
     );
+  }
+
+  acceptWaitlistPromotion(bookingId: number): Observable<ClassBookingDto> {
+    return this.http.patch<ClassBookingDto>(
+      `${this.baseUrl}/bookings/${bookingId}/accept-promotion`,
+      {}
+    );
+  }
+
+  reschedulePtSession(id: number, newScheduledAt: string): Observable<PtSessionDto> {
+    return this.http.patch<PtSessionDto>(
+      `${this.baseUrl}/pt-sessions/${id}/reschedule?newScheduledAt=${encodeURIComponent(newScheduledAt)}`,
+      {}
+    );
+  }
+
+  cancelPtSession(id: number): Observable<PtSessionDto> {
+    return this.http.patch<PtSessionDto>(
+      `${this.baseUrl}/pt-sessions/${id}/cancel`,
+      {}
+    );
+  }
+
+  requestPtSession(session: PtSessionDto): Observable<PtSessionDto> {
+    return this.http.post<PtSessionDto>(`${this.baseUrl}/pt-sessions`, session);
   }
 
   getClasses(): Observable<ClassesDto[]> {
@@ -578,4 +623,18 @@ export class FrontdeskApiService {
   getRooms(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/facilities`);
   }
+
+  updateTrainer(id: number, dto: TrainerDto): Observable<TrainerDto> {
+    return this.http.put<TrainerDto>(`${this.baseUrl}/trainers/${id}`, dto);
+  }
+
+  markNoShow(bookingId: number): Observable<ClassBookingDto> {
+    return this.http.patch<ClassBookingDto>(`${this.baseUrl}/bookings/${bookingId}/no-show`, {});
+  }
+
+  cancelClassBooking(bookingId: number): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/bookings/${bookingId}/cancel`, {});
+  }
+
+
 }

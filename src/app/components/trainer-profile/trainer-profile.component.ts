@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ToastService } from '../../services/toast.service';
+import { FrontdeskApiService, MemberDto, TrainerDto } from '../../services/frontdesk-api.service';
+import { AuthService } from '../../services/auth.service';
 
 export interface Trainer {
   id: string;
@@ -13,6 +15,7 @@ export interface Trainer {
   image: string;
   bio: string;
   experience: number;
+  acceptingPtClients?: boolean;
 }
 
 export interface TrainerReview {
@@ -27,6 +30,7 @@ export interface TrainerReview {
   selector: 'app-trainer-profile',
   templateUrl: './trainer-profile.component.html',
   styleUrls: ['./trainer-profile.component.css'],
+  standalone: false
 })
 export class TrainerProfileComponent implements OnInit {
   selectedTrainer: Trainer | null = null;
@@ -35,6 +39,7 @@ export class TrainerProfileComponent implements OnInit {
   isBookingDrawerOpen = false;
   selectedDate = '';
   selectedSlot = '';
+  member: MemberDto | null = null;
 
   availableSlots = [
     '06:00 AM',
@@ -45,54 +50,64 @@ export class TrainerProfileComponent implements OnInit {
     '07:00 PM',
   ];
 
-  constructor(private toastService: ToastService) {}
+  constructor(
+    private frontdeskApi: FrontdeskApiService,
+    private authService: AuthService,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
-    this.initializeTrainers();
+    this.loadMemberAndTrainers();
+  }
+
+  loadMemberAndTrainers(): void {
+    this.frontdeskApi.getCurrentMember().subscribe({
+      next: (mem) => {
+        this.member = mem;
+        this.initializeTrainers();
+      },
+      error: () => {
+        this.initializeTrainers();
+      }
+    });
   }
 
   initializeTrainers(): void {
-    this.trainers = [
-      {
-        id: '1',
-        name: 'Priya Sharma',
-        specialty: 'Weight Training & Strength',
-        certifications: ['NASM-CPT', 'Precision Nutrition Level 1'],
-        availability: 'Mon - Sat, 6 AM - 8 PM',
-        rating: 4.9,
-        reviews: 47,
-        price: 500,
-        image: '👩‍🏫',
-        bio: 'Specialized in helping beginners build strength and confidence. 8+ years of coaching experience.',
-        experience: 8,
+    this.frontdeskApi.getTrainers().subscribe({
+      next: (dtos: TrainerDto[]) => {
+        const activeTrainers = dtos.filter(t => t.isActive !== false);
+        this.trainers = activeTrainers.map((t, idx) => {
+          let emoji = '🧘';
+          const nameLower = t.trainerName.toLowerCase();
+          if (nameLower.includes('priya') || nameLower.includes('sharma') || nameLower.includes('neha')) {
+            emoji = '👩‍🏫';
+          } else if (nameLower.includes('amit') || nameLower.includes('singh') || nameLower.includes('raj')) {
+            emoji = '🏋️';
+          }
+          return {
+            id: t.trainerId?.toString() || '',
+            name: t.trainerName,
+            specialty: t.specialties || 'Weight Training & Strength',
+            certifications: t.certifications ? t.certifications.split(',').map(c => c.trim()) : ['NASM-CPT'],
+            availability: 'Mon - Sat, 6 AM - 8 PM',
+            rating: Number(t.rating || 4.8),
+            reviews: 20 + (t.trainerId || 0) * 3,
+            price: 500,
+            image: emoji,
+            bio: t.bio || 'Specialized in helping beginners build strength and confidence.',
+            experience: 5 + (t.trainerId || 0) % 5,
+            acceptingPtClients: t.acceptingPtClients !== false
+          };
+        });
+
+        if (this.trainers.length > 0) {
+          this.selectedTrainer = this.trainers[0];
+        }
       },
-      {
-        id: '2',
-        name: 'Rajesh Kumar',
-        specialty: 'Yoga & Flexibility',
-        certifications: ['RYT-200', 'Yin Yoga Specialization'],
-        availability: 'Daily, 6 AM - 6 PM',
-        rating: 4.8,
-        reviews: 32,
-        price: 300,
-        image: '🧘',
-        bio: 'Expert in flexibility training and injury recovery. Holistic approach to fitness.',
-        experience: 10,
-      },
-      {
-        id: '3',
-        name: 'Amit Singh',
-        specialty: 'HIIT & Cardio',
-        certifications: ['ACE-CPT', 'ISSF Sports Nutrition'],
-        availability: 'Tue - Sun, 5 AM - 7 PM',
-        rating: 4.7,
-        reviews: 58,
-        price: 450,
-        image: '🏃',
-        bio: 'High-energy coach focused on fat loss and cardiovascular endurance.',
-        experience: 6,
-      },
-    ];
+      error: (err) => {
+        this.toastService.error('FAILED TO LOAD TRAINERS.');
+      }
+    });
 
     this.reviews = [
       {
@@ -117,8 +132,6 @@ export class TrainerProfileComponent implements OnInit {
         date: '2 months ago',
       },
     ];
-
-    this.selectedTrainer = this.trainers[0];
   }
 
   selectTrainer(trainer: Trainer): void {
@@ -136,12 +149,43 @@ export class TrainerProfileComponent implements OnInit {
   }
 
   bookSession(): void {
-    if (this.selectedDate && this.selectedSlot && this.selectedTrainer) {
-      this.toastService.success(`PT SESSION BOOKED WITH ${this.selectedTrainer.name.toUpperCase()} ON ${this.selectedDate} AT ${this.selectedSlot}`);
-      this.closeBookingDrawer();
-    } else {
+    if (!this.selectedDate || !this.selectedSlot || !this.selectedTrainer) {
       this.toastService.warning('PLEASE SELECT BOTH DATE AND TIME SLOT.');
+      return;
     }
+
+    if (!this.member || !this.member.memberId) {
+      this.toastService.error('MEMBER ACCOUNT DETAILS NOT LOADED. CANNOT BOOK.');
+      return;
+    }
+
+    // Convert slot like "06:00 AM" to 24h format
+    const [time, modifier] = this.selectedSlot.split(' ');
+    let [hours, minutes] = time.split(':');
+    if (hours === '12') {
+      hours = '00';
+    }
+    if (modifier === 'PM') {
+      hours = (parseInt(hours, 10) + 12).toString();
+    }
+    const formattedTime = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
+    const scheduledAt = `${this.selectedDate}T${formattedTime}`;
+
+    this.frontdeskApi.requestPtSession({
+      memberId: this.member.memberId,
+      trainerId: Number(this.selectedTrainer.id),
+      scheduledAt: scheduledAt,
+      durationMins: 60
+    }).subscribe({
+      next: () => {
+        this.toastService.success(`PT SESSION REQUESTED WITH ${this.selectedTrainer!.name.toUpperCase()} ON ${this.selectedDate} AT ${this.selectedSlot}`);
+        this.closeBookingDrawer();
+      },
+      error: (err) => {
+        const errMsg = err?.error?.message || 'Failed to request PT session.';
+        this.toastService.error(`PT BOOKING FAILED: ${errMsg.toUpperCase()}`);
+      }
+    });
   }
 
   getRatingColor(rating: number): string {
