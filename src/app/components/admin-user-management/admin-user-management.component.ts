@@ -5,6 +5,8 @@ import {
   SystemUserDto,
 } from '../../services/admin-api.service';
 import { FrontdeskApiService } from '../../services/frontdesk-api.service';
+import { PasswordPolicyService, PasswordPolicy } from '../../services/password-policy.service';
+import { ToastService } from '../../services/toast.service';
 
 export type RoleType =
   | 'Member'
@@ -26,15 +28,7 @@ export interface User {
   memberId?: string;
 }
 
-export interface PasswordPolicy {
-  minPasswordLength: number;
-  requireUppercase: boolean;
-  requireNumber: boolean;
-  requireSpecialChar: boolean;
-  sessionTimeout: string;
-  maxFailedAttempts: number;
-  lockoutDuration: number;
-}
+// PasswordPolicy type is imported from PasswordPolicyService
 
 @Component({
   selector: 'app-admin-user-management',
@@ -54,25 +48,25 @@ export class AdminUserManagementComponent implements OnInit {
   isDrawerOpen = false;
   drawerRole: RoleType = 'Member';
   drawerActive = true;
+  drawerBranch = 'ALL';
   drawerMode: 'edit' | 'create' = 'edit';
   drawerPassword = '';
   drawerUsername = '';
   drawerEmail = '';
+
+  // Validation error state
+  drawerErrors: { username?: string; email?: string; password?: string } = {};
+  showPasswordStrength = false;
+
+  branches: { id: number, name: string }[] = [];
 
   // CSV Bulk Upload
   isBulkUploading = false;
   bulkUploadReport: any[] = [];
   showBulkUploadReport = false;
 
-  passwordPolicy: PasswordPolicy = {
-    minPasswordLength: 12,
-    requireUppercase: true,
-    requireNumber: true,
-    requireSpecialChar: true,
-    sessionTimeout: '60',
-    maxFailedAttempts: 5,
-    lockoutDuration: 30,
-  };
+  // Loaded from PasswordPolicyService — always reflects what admin last saved
+  passwordPolicy!: PasswordPolicy;
 
   roleColors: Record<RoleType, string> = {
     Member: 'bg-blue-soft',
@@ -98,10 +92,31 @@ export class AdminUserManagementComponent implements OnInit {
   constructor(
     private adminApi: AdminApiService,
     private frontdeskApi: FrontdeskApiService,
+    private policyService: PasswordPolicyService,
+    private toastService: ToastService,
   ) {}
 
   ngOnInit(): void {
+    // Sync local copy from service (service loads from localStorage on first call)
+    this.passwordPolicy = { ...this.policyService.policy };
+    // Stay in sync with any future updates (e.g. another tab changes the policy)
+    this.policyService.policy$.subscribe(p => this.passwordPolicy = { ...p });
     this.loadUsers();
+    this.loadBranches();
+  }
+
+  loadBranches(): void {
+    this.adminApi.getBranches().subscribe({
+      next: (branches) => {
+        this.branches = (branches || []).map(b => ({
+          id: b.branchId || 0,
+          name: b.branchName.toUpperCase()
+        }));
+      },
+      error: (error) => {
+        console.error('Unable to load branches', error);
+      }
+    });
   }
 
   loadUsers(): void {
@@ -153,7 +168,8 @@ export class AdminUserManagementComponent implements OnInit {
     this.drawerUsername = user.name;
     this.drawerEmail = user.email;
     this.drawerRole = user.role;
-    this.drawerActive = user.status === 'Active';
+    this.drawerBranch = user.branch === 'System HQ' || user.branch === 'Unassigned' ? 'ALL' : user.branch;
+    this.drawerActive = user.status !== 'Deactivated';
     this.isDrawerOpen = true;
   }
 
@@ -163,6 +179,7 @@ export class AdminUserManagementComponent implements OnInit {
     this.drawerUsername = '';
     this.drawerEmail = '';
     this.drawerRole = 'Front-Desk';
+    this.drawerBranch = 'ALL';
     this.drawerActive = true;
     this.drawerPassword = 'Staff@' + Math.floor(1000 + Math.random() * 9000);
     this.isDrawerOpen = true;
@@ -178,16 +195,30 @@ export class AdminUserManagementComponent implements OnInit {
     }
 
     if (action === 'lock') {
-      user.status = 'Locked';
-      user.lockedDetail = 'Manually locked by Admin';
-      this.filterUsers();
+      this.adminApi.lockUser(Number(user.id)).subscribe({
+        next: () => {
+          user.status = 'Locked';
+          user.lockedDetail = 'Manually locked by Admin';
+          this.filterUsers();
+        },
+        error: (error) => {
+          this.errorMessage = error?.error?.message || 'Unable to lock user.';
+        }
+      });
       return;
     }
 
     if (action === 'unlock') {
-      user.status = 'Active';
-      user.lockedDetail = undefined;
-      this.filterUsers();
+      this.adminApi.unlockUser(Number(user.id)).subscribe({
+        next: () => {
+          user.status = 'Active';
+          user.lockedDetail = undefined;
+          this.filterUsers();
+        },
+        error: (error) => {
+          this.errorMessage = error?.error?.message || 'Unable to unlock user.';
+        }
+      });
       return;
     }
 
@@ -229,15 +260,127 @@ export class AdminUserManagementComponent implements OnInit {
   closeDrawer(): void {
     this.isDrawerOpen = false;
     this.editingUser = null;
+    this.drawerErrors = {};
+    this.showPasswordStrength = false;
   }
 
+  // ── Validation Helpers ─────────────────────────────────────────────────
+
+  validateUsername(): boolean {
+    if (!this.drawerUsername || !this.drawerUsername.trim()) {
+      this.drawerErrors.username = 'USERNAME / FULL NAME IS REQUIRED.';
+      return false;
+    }
+    if (this.drawerUsername.trim().length < 3) {
+      this.drawerErrors.username = 'NAME MUST BE AT LEAST 3 CHARACTERS.';
+      return false;
+    }
+    this.drawerErrors.username = undefined;
+    return true;
+  }
+
+  validateEmail(): boolean {
+    if (!this.drawerEmail || !this.drawerEmail.trim()) {
+      this.drawerErrors.email = 'EMAIL ADDRESS IS REQUIRED.';
+      return false;
+    }
+    const emailRegex = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(this.drawerEmail.trim())) {
+      this.drawerErrors.email = 'ENTER A VALID EMAIL ADDRESS (E.G. USER@DOMAIN.COM).';
+      return false;
+    }
+    this.drawerErrors.email = undefined;
+    return true;
+  }
+
+  validatePassword(): boolean {
+    if (this.drawerMode !== 'create') return true;
+    const p = this.drawerPassword;
+    if (!p) {
+      this.drawerErrors.password = 'PASSWORD IS REQUIRED.';
+      return false;
+    }
+    if (p.length < this.passwordPolicy.minPasswordLength) {
+      this.drawerErrors.password = `PASSWORD MUST BE AT LEAST ${this.passwordPolicy.minPasswordLength} CHARACTERS.`;
+      return false;
+    }
+    if (this.passwordPolicy.requireUppercase && !/[A-Z]/.test(p)) {
+      this.drawerErrors.password = 'PASSWORD MUST CONTAIN AT LEAST ONE UPPERCASE LETTER.';
+      return false;
+    }
+    if (this.passwordPolicy.requireNumber && !/[0-9]/.test(p)) {
+      this.drawerErrors.password = 'PASSWORD MUST CONTAIN AT LEAST ONE NUMBER.';
+      return false;
+    }
+    if (this.passwordPolicy.requireSpecialChar && !/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p)) {
+      this.drawerErrors.password = 'PASSWORD MUST CONTAIN AT LEAST ONE SPECIAL CHARACTER (!@#$%^&* etc.)';
+      return false;
+    }
+    this.drawerErrors.password = undefined;
+    return true;
+  }
+
+  get passwordStrengthScore(): number {
+    const p = this.drawerPassword;
+    if (!p) return 0;
+    let score = 0;
+    if (p.length >= 8) score++;
+    if (p.length >= 12) score++;
+    if (/[A-Z]/.test(p)) score++;
+    if (/[0-9]/.test(p)) score++;
+    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p)) score++;
+    return score;
+  }
+
+  get passwordStrengthLabel(): string {
+    const s = this.passwordStrengthScore;
+    if (s <= 1) return 'WEAK';
+    if (s <= 3) return 'FAIR';
+    if (s === 4) return 'STRONG';
+    return 'VERY STRONG';
+  }
+
+  get passwordStrengthColor(): string {
+    const s = this.passwordStrengthScore;
+    if (s <= 1) return '#FF3B30';
+    if (s <= 3) return '#FFB800';
+    if (s === 4) return '#2563EB';
+    return '#00D26A';
+  }
+
+  // Password policy hint helpers (no regex in templates — Angular parser rejects them)
+  get pwHintLength(): boolean {
+    return this.drawerPassword.length >= this.passwordPolicy.minPasswordLength;
+  }
+  get pwHintUpper(): boolean {
+    return /[A-Z]/.test(this.drawerPassword);
+  }
+  get pwHintNumber(): boolean {
+    return /[0-9]/.test(this.drawerPassword);
+  }
+  get pwHintSpecial(): boolean {
+    return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(this.drawerPassword);
+  }
+
+  // ── Save Changes ────────────────────────────────────────────────────────
+
+
   saveChanges(): void {
+    // Run all validations first
+    const usernameOk = this.validateUsername();
+    const emailOk = this.validateEmail();
+    const passwordOk = this.validatePassword();
+    if (!usernameOk || !emailOk || !passwordOk) {
+      return;
+    }
+
     if (this.drawerMode === 'create') {
       const newUser: SystemUserDto = {
-        username: this.drawerUsername,
-        email: this.drawerEmail,
+        username: this.drawerUsername.trim(),
+        email: this.drawerEmail.trim(),
         role: this.toBackendRole(this.drawerRole),
         isActive: this.drawerActive,
+        branchName: this.drawerBranch === 'ALL' ? undefined : this.drawerBranch,
       };
 
       this.adminApi.createUser(newUser, this.drawerPassword).subscribe({
@@ -264,7 +407,7 @@ export class AdminUserManagementComponent implements OnInit {
       name: this.drawerUsername,
       email: this.drawerEmail,
       role: this.drawerRole,
-      status: this.drawerActive ? 'Active' : 'Deactivated',
+      status: this.drawerActive ? (this.editingUser.status === 'Locked' ? 'Locked' : 'Active') : 'Deactivated',
     };
 
     this.adminApi
@@ -302,7 +445,20 @@ export class AdminUserManagementComponent implements OnInit {
   }
 
   savePasswordPolicy(): void {
-    console.log('Password policy saved:', this.passwordPolicy);
+    this.policyService.savePolicy({ ...this.passwordPolicy }).subscribe({
+      next: (saved) => {
+        this.toastService.success(
+          `PASSWORD POLICY SAVED — MIN ${saved.minPasswordLength} CHARS, ` +
+          `SESSION TIMEOUT ${saved.sessionTimeoutMin} MIN, ` +
+          `MAX ATTEMPTS ${saved.maxFailedAttempts}.`
+        );
+      },
+      error: (err) => {
+        this.toastService.error(
+          err?.error?.message || 'FAILED TO SAVE PASSWORD POLICY TO SERVER.'
+        );
+      }
+    });
   }
 
   triggerCsvUpload(): void {
@@ -346,16 +502,36 @@ export class AdminUserManagementComponent implements OnInit {
 
   private fromDto(user: SystemUserDto): User {
     const role = this.toUiRole(user.role);
+    
+    let userStatus: StatusType = 'Active';
+    if (user.isActive === false) {
+      userStatus = 'Deactivated';
+    } else if (user.isLocked) {
+      userStatus = 'Locked';
+    }
+
     return {
       id: String(user.userId),
       name: user.username,
       email: user.email,
       role,
-      branch: user.role === 'ADMIN' ? 'System' : 'Assigned in branch module',
-      lastLogin: 'Backend controlled',
-      status: user.isActive === false ? 'Deactivated' : 'Active',
+      branch: user.branchName || (user.role === 'ADMIN' ? 'System HQ' : 'Unassigned'),
+      lastLogin: user.lastLogin ? this.formatDate(user.lastLogin) : 'NEVER',
+      status: userStatus,
       memberId: `${role.slice(0, 3).toUpperCase()}-${user.userId}`,
     };
+  }
+
+  private formatDate(dateStr: string): string {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   private toDto(user: User): SystemUserDto {
@@ -364,7 +540,8 @@ export class AdminUserManagementComponent implements OnInit {
       username: user.name,
       email: user.email,
       role: this.toBackendRole(user.role),
-      isActive: user.status === 'Active',
+      isActive: user.status === 'Active' || user.status === 'Locked',
+      isLocked: user.status === 'Locked'
     };
   }
 

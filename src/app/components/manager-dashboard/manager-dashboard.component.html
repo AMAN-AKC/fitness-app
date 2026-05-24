@@ -168,11 +168,13 @@
           <div class="total-badge font-bold uppercase">
             TOTAL (6M): 
             <span class="font-black text-blue ml-1">
-              {{ chartMetric === 'REVENUE' ? formatCurrency(stats?.monthlyRevenue ? stats!.monthlyRevenue * 5.6 : 2485000) : '312' }}
+              {{ chartMetric === 'REVENUE' ? formatCurrency(chartTotal) : chartTotal }}
             </span>
           </div>
           <div class="brutal-badge font-bold" style="background-color: #00D26A; color: #FFF;">
-            ↑ +14.2% OVERALL
+            <span *ngIf="chartTrend >= 0">↑ +{{ chartTrend | number:'1.1-1' }}%</span>
+            <span *ngIf="chartTrend < 0">↓ {{ chartTrend | number:'1.1-1' }}%</span>
+             OVERALL
           </div>
         </footer>
       </div>
@@ -271,6 +273,9 @@
         </button>
 
         <div class="cancellations-rows">
+          <div *ngIf="upcomingCancellations.length === 0" class="font-body uppercase font-bold text-muted p-2">
+            NO UPCOMING EXPIRATIONS.
+          </div>
           <div *ngFor="let row of upcomingCancellations" class="cancellation-row">
             <!-- Avatar -->
             <div class="avatar-square font-heading font-black">

@@ -47,12 +47,7 @@ export class ManagerDashboardComponent implements OnInit {
   
   hoveredPoint: { x: number, y: number, value: number, month: string } | null = null;
 
-  upcomingCancellations = [
-    { name: 'Rohan Gupta', expiryDate: '2026-05-24', status: 'PENDING', initials: 'RG' },
-    { name: 'Karan Malhotra', expiryDate: '2026-05-28', status: 'PENDING', initials: 'KM' },
-    { name: 'Sanya Sen', expiryDate: '2026-06-01', status: 'RENEWED', initials: 'SS' },
-    { name: 'Vikram Grover', expiryDate: '2026-06-03', status: 'PENDING', initials: 'VG' }
-  ];
+  upcomingCancellations: any[] = [];
 
   // Dunning Console state
   showDunningDrawer = false;
@@ -73,10 +68,7 @@ export class ManagerDashboardComponent implements OnInit {
   memberPayments: any[] = [];
 
   // Escalations
-  pendingEscalations = [
-    { id: 1, memberName: 'Alex Rivera', className: 'Peak Hours Boxing', reason: 'Off-Peak Plan Tier Violation', status: 'PENDING', dto: { memberId: 304, classId: 102, status: 'CONFIRMED' } },
-    { id: 2, memberName: 'Samira Khan', className: 'Yoga Fundamentals', reason: 'Waitlist Capacity Override', status: 'PENDING', dto: { memberId: 412, classId: 105, status: 'CONFIRMED' } }
-  ];
+  pendingEscalations: any[] = [];
 
   constructor(
     private authService: AuthService,
@@ -130,13 +122,25 @@ export class ManagerDashboardComponent implements OnInit {
     } else if (this.chartMetric === 'NEW JOINS') {
       this.revenueData = this.stats.revenueAnalytics.map(p => ({ name: p.month.toUpperCase(), value: Number(p.newJoins) }));
     } else {
-      this.revenueData = this.stats.revenueAnalytics.map(p => ({ name: p.month.toUpperCase(), value: Number(p.churn || 2) }));
+      this.revenueData = this.stats.revenueAnalytics.map(p => ({ name: p.month.toUpperCase(), value: Number(p.churn) }));
     }
   }
 
   setChartMetric(metric: string): void {
     this.chartMetric = metric;
     this.updateChartData();
+  }
+
+  get chartTotal(): number {
+    return this.revenueData.reduce((sum, d) => sum + d.value, 0);
+  }
+
+  get chartTrend(): number {
+    if (this.revenueData.length < 2) return 0;
+    const current = this.revenueData[this.revenueData.length - 1].value;
+    const prev = this.revenueData[this.revenueData.length - 2].value;
+    if (prev === 0) return current > 0 ? 100 : 0;
+    return ((current - prev) / prev) * 100;
   }
 
   get svgLinePoints(): string {
@@ -214,14 +218,16 @@ export class ManagerDashboardComponent implements OnInit {
 
   // CSV Export
   exportDashboardCsv(): void {
-    let csvContent = "data:text/csv;charset=utf-8,MEMBER,AMOUNT_DUE,STATUS\n";
-    this.dunningMembers.forEach(row => {
-      csvContent += `${row.name},${row.outstandingAmount},${row.status}\n`;
-    });
+    let csvContent = "data:text/csv;charset=utf-8,MONTH,REVENUE,NEW_JOINS,CANCELLATIONS\n";
+    if (this.stats && this.stats.revenueAnalytics) {
+      this.stats.revenueAnalytics.forEach(row => {
+        csvContent += `${row.month},${row.revenue},${row.newJoins},${row.churn}\n`;
+      });
+    }
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `dunning_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `dashboard_metrics_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -75,7 +75,12 @@ export class TrainerProfileComponent implements OnInit {
   initializeTrainers(): void {
     this.frontdeskApi.getTrainers().subscribe({
       next: (dtos: TrainerDto[]) => {
-        const activeTrainers = dtos.filter(t => t.isActive !== false);
+        let activeTrainers = dtos.filter(t => t.isActive !== false);
+        
+        if (this.member && this.member.homeBranchId) {
+          activeTrainers = activeTrainers.filter(t => t.branchId === this.member!.homeBranchId);
+        }
+
         this.trainers = activeTrainers.map((t, idx) => {
           let emoji = '🧘';
           const nameLower = t.trainerName.toLowerCase();

@@ -32,15 +32,15 @@
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 .kpi-label { font-size: 14px; color: var(--muted); text-transform: uppercase; font-weight: 700; }
 .kpi-value { font-family: var(--font-heading); font-weight: 800; font-size: 40px; color: var(--black); line-height: 1; margin-bottom: 8px; }
-.kpi-value--warning { color: var(--orange); }
-.kpi-value--danger { color: var(--red); }
+.kpi-value--warning { color: var(--black); }
+.kpi-value--danger { color: var(--white); }
 .kpi-trend { font-size: 12px; font-weight: 700; margin: 0; color: var(--green); text-transform: uppercase; }
-.kpi-trend--warning { color: var(--orange); }
-.kpi-trend--danger { color: var(--red); }
+.kpi-trend--warning { color: var(--black); }
+.kpi-trend--danger { color: var(--white); }
 .kpi-card--warning { background-color: var(--orange); }
+.kpi-card--warning .kpi-label, .kpi-card--warning .kpi-value, .kpi-card--warning .kpi-trend { color: var(--black); }
 .kpi-card--danger { background-color: var(--red); color: white; }
-.kpi-card--danger .kpi-label { color: white; }
-.kpi-card--danger .kpi-trend { color: white; }
+.kpi-card--danger .kpi-label, .kpi-card--danger .kpi-value, .kpi-card--danger .kpi-trend { color: white; }
 
 /* QUICK CHECK-IN CARD */
 .quick-checkin-card { background-color: var(--surface); border: 3px solid var(--black); box-shadow: 6px 6px 0 var(--black); padding: 32px; margin-bottom: 24px; position: relative; overflow: hidden; }

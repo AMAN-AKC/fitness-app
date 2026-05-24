@@ -254,13 +254,14 @@
           <label class="form-label">SESSION TIMEOUT</label>
           <div class="select-wrapper">
             <select
-              [(ngModel)]="passwordPolicy.sessionTimeout"
+              [(ngModel)]="passwordPolicy.sessionTimeoutMin"
+              [ngModelOptions]="{standalone: true}"
               class="brutal-select w-full"
             >
-              <option value="15">15 MINUTES</option>
-              <option value="30">30 MINUTES</option>
-              <option value="60">60 MINUTES</option>
-              <option value="120">120 MINUTES</option>
+              <option [ngValue]="15">15 MINUTES</option>
+              <option [ngValue]="30">30 MINUTES</option>
+              <option [ngValue]="60">60 MINUTES</option>
+              <option [ngValue]="120">120 MINUTES</option>
             </select>
             <span class="select-arrow">▼</span>
           </div>
@@ -284,7 +285,8 @@
             <label class="form-label">LOCKOUT DURATION (MINUTES)</label>
             <input
               type="number"
-              [(ngModel)]="passwordPolicy.lockoutDuration"
+              [(ngModel)]="passwordPolicy.lockoutDurationMin"
+              [ngModelOptions]="{standalone: true}"
               class="brutal-input w-full text-center"
             />
           </div>
@@ -317,9 +319,12 @@
           type="text"
           [(ngModel)]="drawerUsername"
           name="username"
+          [class.input-error]="drawerErrors.username"
+          (ngModelChange)="validateUsername()"
           class="brutal-input"
           placeholder="E.G. JOHN DOE"
         />
+        <p *ngIf="drawerErrors.username" class="field-error-msg">⚠ {{ drawerErrors.username }}</p>
       </div>
 
       <!-- EMAIL -->
@@ -329,9 +334,12 @@
           type="email"
           [(ngModel)]="drawerEmail"
           name="email"
+          [class.input-error]="drawerErrors.email"
+          (ngModelChange)="validateEmail()"
           class="brutal-input"
           placeholder="E.G. JOHN@FITCLUB.COM"
         />
+        <p *ngIf="drawerErrors.email" class="field-error-msg">⚠ {{ drawerErrors.email }}</p>
       </div>
 
       <!-- INITIAL PASSWORD (if create) -->
@@ -341,9 +349,35 @@
           type="text"
           [(ngModel)]="drawerPassword"
           name="password"
+          [class.input-error]="drawerErrors.password"
+          (ngModelChange)="validatePassword()"
+          (focus)="showPasswordStrength = true"
           class="brutal-input"
         />
         <p class="field-desc font-body">GENERATED AUTOMATICALLY. YOU CAN CHANGE IT HERE.</p>
+        <p *ngIf="drawerErrors.password" class="field-error-msg">⚠ {{ drawerErrors.password }}</p>
+
+        <!-- Password Strength Bar -->
+        <div *ngIf="showPasswordStrength && drawerPassword" class="password-strength-wrapper">
+          <div class="strength-bars">
+            <div
+              *ngFor="let seg of [1,2,3,4,5]; let i = index"
+              class="strength-bar-seg"
+              [style.background-color]="i < passwordStrengthScore ? passwordStrengthColor : '#E0E0E0'"
+            ></div>
+          </div>
+          <span class="strength-label font-heading font-bold" [style.color]="passwordStrengthColor">
+            {{ passwordStrengthLabel }}
+          </span>
+        </div>
+
+        <!-- Policy hints -->
+        <div *ngIf="showPasswordStrength" class="policy-hints font-body">
+          <span [class.hint-ok]="pwHintLength" [class.hint-fail]="drawerPassword && !pwHintLength">✓ MIN {{ passwordPolicy.minPasswordLength }} CHARACTERS</span>
+          <span *ngIf="passwordPolicy.requireUppercase" [class.hint-ok]="pwHintUpper" [class.hint-fail]="drawerPassword && !pwHintUpper">✓ UPPERCASE LETTER</span>
+          <span *ngIf="passwordPolicy.requireNumber" [class.hint-ok]="pwHintNumber" [class.hint-fail]="drawerPassword && !pwHintNumber">✓ NUMBER</span>
+          <span *ngIf="passwordPolicy.requireSpecialChar" [class.hint-ok]="pwHintSpecial" [class.hint-fail]="drawerPassword && !pwHintSpecial">✓ SPECIAL CHARACTER</span>
+        </div>
       </div>
 
       <!-- ASSIGN ROLE -->
@@ -375,15 +409,15 @@
         <label class="form-label">BRANCH ACCESS</label>
         <div class="visibility-checklist-box">
           <label class="checkbox-container">
-            <input type="checkbox" />
-            <span class="custom-checkbox"></span>
+            <input type="radio" name="branchAccess" [(ngModel)]="drawerBranch" value="ALL" />
+            <span class="custom-checkbox" style="border-radius: 50%;"></span>
             ALL BRANCHES (GLOBAL ACCESS)
           </label>
           <div class="visibility-branches-rows mt-2 pl-4">
-            <label *ngFor="let b of ['DOWNTOWN MAIN', 'WESTSIDE FLEX', 'KORAMANGALA ELITE', 'PUNE EAST']" class="checkbox-container">
-              <input type="checkbox" />
-              <span class="custom-checkbox"></span>
-              {{ b }}
+            <label *ngFor="let b of branches" class="checkbox-container">
+              <input type="radio" name="branchAccess" [(ngModel)]="drawerBranch" [value]="b.name" />
+              <span class="custom-checkbox" style="border-radius: 50%;"></span>
+              {{ b.name }}
             </label>
           </div>
         </div>

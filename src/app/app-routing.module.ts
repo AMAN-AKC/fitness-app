@@ -22,7 +22,7 @@ import { ManagerScheduleComponent } from './components/manager-schedule/manager-
 import { ClassBookingComponent } from './components/class-booking/class-booking.component';
 import { AuditLogViewerComponent } from './components/audit-log-viewer/audit-log-viewer.component';
 import { DataImportExportComponent } from './components/data-import-export/data-import-export.component';
-import { ErrorStatesViewComponent } from './components/error-states-view/error-states-view.component';
+
 import { TrainerProfileComponent } from './components/trainer-profile/trainer-profile.component';
 import { AuthGuard } from './guards/auth.guard';
 
@@ -44,7 +44,6 @@ const routes: Routes = [
       { path: 'notifications', component: NotificationsCenterComponent },
       { path: 'audit-logs', component: AuditLogViewerComponent },
       { path: 'import-export', component: DataImportExportComponent },
-      { path: 'error-states', component: ErrorStatesViewComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
@@ -115,7 +114,6 @@ const routes: Routes = [
   { path: 'server-error', component: ErrorPageComponent, data: { code: '500' } },
   { path: 'not-found', component: ErrorPageComponent, data: { code: '404' } },
   { path: 'error-showcase', component: ErrorPageComponent },
-  { path: 'error-states', component: ErrorStatesViewComponent },
   { path: '**', redirectTo: 'not-found' },
 ];
 

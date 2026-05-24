@@ -66,8 +66,7 @@ export class GlobalDashboardComponent implements OnInit {
           { label: 'Plans', icon: '📋', route: '/admin/plans' },
           { label: 'Branches', icon: '📍', route: '/admin/branches' },
           { label: 'Audit Logs', icon: '📜', route: '/admin/audit-logs' },
-          { label: 'Bulk Data', icon: '📦', route: '/admin/import-export' },
-          { label: 'Error States', icon: '⚠️', route: '/admin/error-states' },
+          { label: 'Bulk Data', icon: '📦', route: '/admin/import-export' }
         ],
       },
     ];
@@ -180,7 +179,6 @@ export class GlobalDashboardComponent implements OnInit {
     if (url.includes('notifications')) return 'Notifications Center';
     if (url.includes('audit-logs')) return 'System Audit Logs';
     if (url.includes('import-export')) return 'Bulk Data Operations';
-    if (url.includes('error-states')) return 'Error States Showcase';
     return 'Dashboard';
   }
 

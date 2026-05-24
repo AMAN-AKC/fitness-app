@@ -34,9 +34,17 @@
       
       <div class="gateway-body">
         <div class="payment-details-box">
-          <div class="flex justify-between mb-4">
-            <span class="font-black uppercase text-sm">Payable Amount</span>
-            <span class="font-black text-2xl">₹{{ breakdown?.finalAmount | number }}</span>
+          <div class="flex justify-between items-center mb-4">
+            <span class="font-black uppercase text-sm">Payment Amount</span>
+            <div class="flex items-center gap-2">
+              <span class="font-black text-xl">₹</span>
+              <input 
+                type="number" 
+                [(ngModel)]="paymentAmount" 
+                class="promo-input" 
+                style="width: 140px; height: 40px; font-size: 1.25rem; text-align: right; padding: 0 8px;"
+              />
+            </div>
           </div>
           <div class="flex justify-between">
             <span class="font-bold text-sm uppercase">Method</span>

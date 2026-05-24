@@ -114,6 +114,7 @@ export class ClassBookingComponent implements OnInit {
     const currentDayOfWeek = today.getDay();
     
     let diff = targetDayOfWeek - currentDayOfWeek;
+    if (diff < 0) diff += 7;
     
     const targetDate = new Date(today);
     targetDate.setDate(today.getDate() + diff);
@@ -172,7 +173,7 @@ export class ClassBookingComponent implements OnInit {
           next: ({ classes, trainers, bookings }) => {
             this.myBookings = bookings;
             this.trainersList = trainers;
-            const activeClasses = classes.filter(c => c.status === 'ACTIVE');
+            const activeClasses = classes.filter(c => c.status === 'ACTIVE' && Number(c.branchId) === Number(this.member!.homeBranchId));
 
             if (activeClasses.length === 0) {
               this.classes = [];
@@ -201,14 +202,16 @@ export class ClassBookingComponent implements OnInit {
                   const classBookings = classBookingsMap.get(c.classId!) || [];
                   const confirmedCount = classBookings.filter(b => b.bookingStatus === 'CONFIRMED').length;
 
-                  const nameLower = c.className.toLowerCase();
-                  let emoji = '💪';
-                  if (nameLower.includes('yoga') || nameLower.includes('meditation')) emoji = '🧘';
-                  else if (nameLower.includes('zumba') || nameLower.includes('dance')) emoji = '🎵';
-                  else if (nameLower.includes('hiit') || nameLower.includes('box')) emoji = '🏃';
-                  else if (nameLower.includes('pilates')) emoji = '🧘';
-
                   const category = this.getCategory(c.className);
+                  let emoji = '💪';
+                  switch (category) {
+                    case 'YOGA': emoji = '🧘'; break;
+                    case 'STRENGTH': emoji = '🏋️'; break;
+                    case 'CARDIO': emoji = '🏃'; break;
+                    case 'ZUMBA': emoji = '🎵'; break;
+                    case 'HIIT': emoji = '🔥'; break;
+                    case 'PILATES': emoji = '🤸'; break;
+                  }
 
                   return {
                     id: c.classId?.toString() || '',

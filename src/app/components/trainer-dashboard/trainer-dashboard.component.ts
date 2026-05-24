@@ -197,7 +197,8 @@ export class TrainerDashboardComponent implements OnInit {
   }
 
   processDashboardState(): void {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     const memberMap = new Map<number, MemberDto>();
     this.membersList.forEach(m => memberMap.set(Number(m.memberId), m));
 
@@ -222,10 +223,9 @@ export class TrainerDashboardComponent implements OnInit {
     this.classesThisWeek = classesCount;
 
     // PT Requests mapping
-    const requestedPt = this.ptSessionsList.filter(s => s.status === 'REQUESTED');
+    const requestedPt = this.ptSessionsList.filter(s => s.status === 'REQUESTED' || s.status === 'APPROVED');
     this.ptRequests = requestedPt.map(s => {
-      const member = memberMap.get(s.memberId);
-      const mName = member?.memName || `Member #${s.memberId}`;
+      const mName = s.memberName || memberMap.get(s.memberId)?.memName || `Member #${s.memberId}`;
       const initials = mName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
       const scheduledDate = new Date(s.scheduledAt);
       return {
@@ -236,15 +236,14 @@ export class TrainerDashboardComponent implements OnInit {
         date: scheduledDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
         time: scheduledDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
         note: s.trainerNotes || '',
-        status: 'pending'
+        status: s.status === 'REQUESTED' ? 'pending' : 'accepted'
       };
     });
 
     // Completed Sessions mapping
     const completedPt = this.ptSessionsList.filter(s => s.status === 'COMPLETED');
     this.completedSessions = completedPt.map(s => {
-      const member = memberMap.get(s.memberId);
-      const mName = member?.memName || `Member #${s.memberId}`;
+      const mName = s.memberName || memberMap.get(s.memberId)?.memName || `Member #${s.memberId}`;
       const scheduledDate = new Date(s.scheduledAt);
       return {
         id: s.sessionId || 0,
@@ -378,7 +377,7 @@ export class TrainerDashboardComponent implements OnInit {
   }
 
   getPendingRequests(): number {
-    return this.ptRequests.length;
+    return this.ptRequests.filter(req => req.status === 'pending').length;
   }
 
   getRatingStars(rating: number | null): Array<number> {
@@ -756,7 +755,7 @@ export class TrainerDashboardComponent implements OnInit {
         const memberMap = new Map<number, any>();
         this.membersList.forEach(m => memberMap.set(Number(m.memberId), m));
         
-        this.frontdeskApi.getTodayAttendance(Number(this.trainer?.branchId || 1)).subscribe({
+        this.frontdeskApi.getTodayAttendance(Number(this.trainer?.branchId)).subscribe({
           next: (attendanceList) => {
             const checkedInMemberIds = new Set<number>();
             attendanceList.forEach(a => {
@@ -868,7 +867,7 @@ export class TrainerDashboardComponent implements OnInit {
   executeAttendanceMutation(bookingId: number, memberId: number, state: 'checked-in' | 'no-show' | 'excused', justification?: string): void {
     if (!this.selectedRosterClass) return;
     const classId = Number(this.selectedRosterClass.classId);
-    const branchId = Number(this.trainer?.branchId || 1);
+    const branchId = Number(this.trainer?.branchId);
 
     if (state === 'checked-in') {
       if (justification) {

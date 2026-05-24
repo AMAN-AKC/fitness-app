@@ -41,7 +41,7 @@ import { DataImportExportComponent } from './components/data-import-export/data-
 import { AuditLogViewerComponent } from './components/audit-log-viewer/audit-log-viewer.component';
 import { DunningQueuePageComponent } from './components/dunning-queue-page/dunning-queue-page.component';
 import { PlansCatalogComponent } from './components/plans-catalog/plans-catalog.component';
-import { ErrorStatesViewComponent } from './components/error-states-view/error-states-view.component';
+
 import { GlobalErrorComponent } from './components/global-error/global-error.component';
 import { PlaceholderPageComponent } from './components/placeholder-page/placeholder-page.component';
 import { ManagerScheduleComponent } from './components/manager-schedule/manager-schedule.component';
@@ -75,7 +75,6 @@ import { ManagerScheduleComponent } from './components/manager-schedule/manager-
     AuditLogViewerComponent,
     DunningQueuePageComponent,
     PlansCatalogComponent,
-    ErrorStatesViewComponent,
     GlobalErrorComponent,
     PlaceholderPageComponent,
     ManagerScheduleComponent,

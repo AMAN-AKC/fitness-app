@@ -152,9 +152,11 @@ export interface PtSessionDto {
   sessionId?: number;
   memberId: number;
   trainerId: number;
+  memberName?: string;
+  trainerName?: string;
   scheduledAt: string;
   durationMins: number;
-  status?: 'REQUESTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
+  status?: 'REQUESTED' | 'APPROVED' | 'ACCEPTED' | 'REJECTED' | 'DECLINED' | 'COMPLETED' | 'CANCELLED';
   trainerNotes?: string;
 }
 
@@ -248,6 +250,10 @@ export class FrontdeskApiService {
 
   getCurrentMember(): Observable<MemberDto> {
     return this.http.get<MemberDto>(`${this.baseUrl}/consents/me/member`);
+  }
+
+  getMemberById(memberId: number): Observable<MemberDto> {
+    return this.http.get<MemberDto>(`${this.baseUrl}/members/${memberId}`);
   }
 
   createMember(member: MemberDto): Observable<MemberDto> {

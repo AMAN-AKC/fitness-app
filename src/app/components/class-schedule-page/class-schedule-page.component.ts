@@ -24,6 +24,8 @@ export interface ScheduledClass {
   status: string;
   branchId: number;
   trainerId: number;
+  weekdays: string;
+  endDate: string;
 }
 
 @Component({
@@ -66,8 +68,9 @@ export class ClassSchedulePageComponent implements OnInit {
       classes: this.frontdeskApi.getClasses(),
       trainers: this.frontdeskApi.getTrainers(),
       branches: this.frontdeskApi.getBranches(),
+      member: this.frontdeskApi.getCurrentMember()
     }).subscribe({
-      next: ({ classes, trainers, branches }) => {
+      next: ({ classes, trainers, branches, member }) => {
         this.branches = branches;
         trainers.forEach((t) =>
           this.trainerNames.set(t.trainerId || 0, t.trainerName),
@@ -98,8 +101,14 @@ export class ClassSchedulePageComponent implements OnInit {
             status: c.status || 'ACTIVE',
             branchId: c.branchId,
             trainerId: c.trainerId,
+            weekdays: c.weekdays || '',
+            endDate: c.endDate || c.startDate,
           };
         });
+
+        if (member && member.homeBranchId) {
+          this.allClasses = this.allClasses.filter(c => Number(c.branchId) === Number(member.homeBranchId));
+        }
 
         // Load real booking counts
         this.loadBookingCounts(classes);
@@ -168,9 +177,10 @@ export class ClassSchedulePageComponent implements OnInit {
   // ---------- DAILY VIEW ----------
 
   getClassesForTime(hour: number): ScheduledClass[] {
-    return this.filteredClasses.filter((c) => {
+    const classesToday = this.getClassesForDay(this.selectedDate);
+    return classesToday.filter((c) => {
       const classHour = parseInt(c.time.split(':')[0]);
-      return classHour === hour && c.status === 'ACTIVE';
+      return classHour === hour;
     });
   }
 
@@ -198,9 +208,20 @@ export class ClassSchedulePageComponent implements OnInit {
   }
 
   getClassesForDay(dateStr: string): ScheduledClass[] {
-    return this.filteredClasses.filter(
-      (c) => c.date === dateStr && c.status === 'ACTIVE',
-    );
+    const targetDate = new Date(dateStr);
+    const dayName = targetDate.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+    
+    return this.filteredClasses.filter((c) => {
+      if (c.status !== 'ACTIVE') return false;
+      if (c.weekdays) {
+        if (dateStr >= c.date && dateStr <= c.endDate) {
+          const days = c.weekdays.split(',').map(d => d.trim().toUpperCase());
+          return days.includes(dayName);
+        }
+        return false;
+      }
+      return c.date === dateStr;
+    });
   }
 
   formatDayLabel(dateStr: string): string {
@@ -231,9 +252,41 @@ export class ClassSchedulePageComponent implements OnInit {
   }
 
   getClassCountForDay(dateStr: string): number {
-    return this.filteredClasses.filter(
-      (c) => c.date === dateStr && c.status === 'ACTIVE',
-    ).length;
+    return this.getClassesForDay(dateStr).length;
+  }
+
+  bookClass(cls: ScheduledClass): void {
+    if (this.getAvailableSeats(cls) <= 0) {
+      alert('This class is fully booked.');
+      return;
+    }
+    
+    if (confirm(`Do you want to book ${cls.name} with ${cls.trainer} at ${cls.time}?`)) {
+      this.isLoading = true;
+      this.frontdeskApi.getCurrentMember().subscribe({
+        next: (member) => {
+          const dto: ClassBookingDto = {
+            memberId: member.memberId!,
+            classId: Number(cls.id),
+            bookingStatus: 'CONFIRMED'
+          };
+          this.frontdeskApi.bookClass(dto).subscribe({
+            next: () => {
+              alert('Successfully booked the class!');
+              this.loadData();
+            },
+            error: (err) => {
+              this.errorMessage = err?.error?.message || 'Failed to book the class.';
+              this.isLoading = false;
+            }
+          });
+        },
+        error: () => {
+          this.errorMessage = 'Could not fetch current member details.';
+          this.isLoading = false;
+        }
+      });
+    }
   }
 
   getMonthLabel(): string {

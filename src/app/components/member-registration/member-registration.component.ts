@@ -238,8 +238,12 @@ export class MemberRegistrationComponent implements OnInit {
           });
       },
       error: (error) => {
-        this.errorMessage =
-          error?.error?.message || 'Unable to create member account.';
+        if (error?.error?.fieldErrors) {
+          const errors = Object.values(error.error.fieldErrors).join(' | ');
+          this.errorMessage = `Validation failed: ${errors}`;
+        } else {
+          this.errorMessage = error?.error?.message || 'Unable to create member account.';
+        }
         this.isLoading = false;
       },
     });

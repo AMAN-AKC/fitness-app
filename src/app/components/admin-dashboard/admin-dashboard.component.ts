@@ -83,34 +83,25 @@ export class AdminDashboardComponent implements OnInit {
             by: f.lastModifiedBy || 'ADMIN',
           }));
         } else {
-          this.setFallbackFlags();
+          this.flags = [];
         }
       },
-      error: () => {
-        this.setFallbackFlags();
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Failed to load feature flags';
+        this.flags = [];
       },
     });
   }
 
-  private setFallbackFlags(): void {
-    this.flags = [
-      { id: '1', name: 'DUNNING MODULE', enabled: true, lastModified: 'MAY 18', by: 'ADMIN' },
-      { id: '2', name: 'PT SESSIONS', enabled: true, lastModified: 'MAY 16', by: 'ADMIN' },
-      { id: '3', name: 'BIOMETRIC ACCESS', enabled: false, lastModified: 'MAY 15', by: 'ADMIN' },
-      { id: '4', name: 'CSV IMPORT/EXPORT', enabled: true, lastModified: 'MAY 12', by: 'SYSTEM' },
-      { id: '5', name: 'GUEST PASS', enabled: false, lastModified: 'MAY 10', by: 'ADMIN' },
-      { id: '6', name: 'PROMO CODES', enabled: true, lastModified: 'MAY 08', by: 'ADMIN' },
-      { id: '7', name: 'HEALTH FORM REQUIREMENT', enabled: true, lastModified: 'MAY 05', by: 'ADMIN' }
-    ];
-  }
+
 
   private loadRevenue(): void {
     this.adminApi.getRevenueMTD().subscribe({
       next: (rev) => {
-        this.revenueMTD = rev || 1240000;
+        this.revenueMTD = rev || 0;
       },
       error: () => {
-        this.revenueMTD = 1240000;
+        this.revenueMTD = 0;
       },
     });
   }
@@ -118,12 +109,12 @@ export class AdminDashboardComponent implements OnInit {
   private loadUsers(): void {
     this.adminApi.getUsers().subscribe({
       next: (users) => {
-        this.staffCount = users.length || 34;
-        this.lockedStaffCount = users.filter((u) => u.isActive === false).length || 2;
+        this.staffCount = users ? users.length : 0;
+        this.lockedStaffCount = users ? users.filter((u) => u.isActive === false).length : 0;
       },
       error: () => {
-        this.staffCount = 34;
-        this.lockedStaffCount = 2;
+        this.staffCount = 0;
+        this.lockedStaffCount = 0;
       },
     });
   }
@@ -131,12 +122,12 @@ export class AdminDashboardComponent implements OnInit {
   private loadPlans(): void {
     this.adminApi.getPlans().subscribe({
       next: (plans) => {
-        this.totalPlansCount = plans.length || 18;
-        this.activePlansCount = plans.filter((p) => p.isActive !== false).length || 15;
+        this.totalPlansCount = plans ? plans.length : 0;
+        this.activePlansCount = plans ? plans.filter((p) => p.isActive !== false).length : 0;
       },
       error: () => {
-        this.totalPlansCount = 18;
-        this.activePlansCount = 15;
+        this.totalPlansCount = 0;
+        this.activePlansCount = 0;
       },
     });
   }
@@ -144,8 +135,7 @@ export class AdminDashboardComponent implements OnInit {
   private loadMembers(): void {
     this.frontdeskApi.getMembers().subscribe({
       next: (list: MemberDto[]) => {
-        this.totalMembers = Array.isArray(list) ? list.length : 3847;
-        if (this.totalMembers === 0) this.totalMembers = 3847;
+        this.totalMembers = Array.isArray(list) ? list.length : 0;
         
         const byBranch = new Map<number, number>();
         (list || []).forEach((m) => {
@@ -155,16 +145,38 @@ export class AdminDashboardComponent implements OnInit {
         
         this.branches = this.branches.map((b) => ({
           ...b,
-          members: byBranch.get(Number(b.id)) || Math.floor(Math.random() * 200) + 120,
+          members: byBranch.get(Number(b.id)) || 0,
         }));
       },
       error: () => {
-        this.totalMembers = 3847;
+        this.totalMembers = 0;
         this.branches = this.branches.map((b) => ({
           ...b,
-          members: Math.floor(Math.random() * 200) + 120,
+          members: 0,
         }));
       },
+    });
+  }
+
+  private loadClassesForBranches(): void {
+    this.frontdeskApi.getClasses().subscribe({
+      next: (classes) => {
+        const byBranch = new Map<number, number>();
+        (classes || []).forEach((c) => {
+          if (c.status !== 'CANCELLED') {
+            const bid = Number(c.branchId || 0);
+            byBranch.set(bid, (byBranch.get(bid) || 0) + 1);
+          }
+        });
+        
+        this.branches = this.branches.map((b) => ({
+          ...b,
+          classes: byBranch.get(Number(b.id)) || 0,
+        }));
+      },
+      error: () => {
+        this.branches = this.branches.map((b) => ({ ...b, classes: 0 }));
+      }
     });
   }
 
@@ -184,27 +196,19 @@ export class AdminDashboardComponent implements OnInit {
             };
           });
         } else {
-          this.setFallbackAuditLogs();
+          this.auditLogs = [];
         }
         this.applyFilter();
       },
-      error: () => {
-        this.setFallbackAuditLogs();
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Failed to load audit logs';
+        this.auditLogs = [];
         this.applyFilter();
       },
     });
   }
 
-  private setFallbackAuditLogs(): void {
-    this.auditLogs = [
-      { id: '1', user: 'ADMIN', entity: 'USER', action: 'CREATE', time: '2 MINS AGO', color: '#00D26A' },
-      { id: '2', user: 'MANAGER', entity: 'CLASS', action: 'UPDATE', time: '12 MINS AGO', color: '#2563EB' },
-      { id: '3', user: 'SYSTEM', entity: 'INVOICE', action: 'CREATE', time: '1 HOUR AGO', color: '#00D26A' },
-      { id: '4', user: 'ADMIN', entity: 'PLAN', action: 'OVERRIDE', time: '3 HOURS AGO', color: '#FFB800' },
-      { id: '5', user: 'FRONT-DESK', entity: 'MEMBER', action: 'DELETE', time: '5 HOURS AGO', color: '#FF3B30' },
-      { id: '6', user: 'MANAGER', entity: 'BRANCH', action: 'UPDATE', time: '1 DAY AGO', color: '#2563EB' }
-    ];
-  }
+
 
   setFilter(filter: string): void {
     this.selectedFilter = filter;
@@ -294,27 +298,23 @@ export class AdminDashboardComponent implements OnInit {
         if (branches && branches.length > 0) {
           this.branches = branches.map((branch) => this.fromBranchDto(branch));
         } else {
-          this.setFallbackBranches();
+          this.branches = [];
         }
         this.isLoading = false;
         this.loadMembers();
+        this.loadClassesForBranches();
       },
-      error: () => {
-        this.setFallbackBranches();
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Failed to load branches';
+        this.branches = [];
         this.isLoading = false;
         this.loadMembers();
+        this.loadClassesForBranches();
       },
     });
   }
 
-  private setFallbackBranches(): void {
-    this.branches = [
-      { id: '1', name: 'INDIRANAGAR BRANCH', city: 'BANGALORE', members: 1248, classes: 12, active: true },
-      { id: '2', name: 'KORAMANGALA CLUB', city: 'BANGALORE', members: 934, classes: 8, active: true },
-      { id: '3', name: 'JAYANAGAR CENTER', city: 'BANGALORE', members: 864, classes: 6, active: true },
-      { id: '4', name: 'WHITEFIELD FITNESS', city: 'BANGALORE', members: 486, classes: 4, active: false }
-    ];
-  }
+
 
   private fromBranchDto(branch: BranchDto): Branch {
     return {
@@ -322,7 +322,7 @@ export class AdminDashboardComponent implements OnInit {
       name: branch.branchName.toUpperCase(),
       city: this.extractCity(branch.address).toUpperCase(),
       members: 0,
-      classes: 12, // Default classes
+      classes: 0,
       active: branch.isActive !== false,
     };
   }

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ManagerApiService } from '../../services/manager-api.service';
 import { FrontdeskApiService } from '../../services/frontdesk-api.service';
+import { AuthService } from '../../services/auth.service';
 
 interface FitnessClass {
   classId?: number;
@@ -33,10 +34,7 @@ export class ManagerScheduleComponent implements OnInit {
   filteredClasses: FitnessClass[] = [];
   trainers: any[] = [];
   rooms: any[] = [];
-  branches = [
-    { id: 1, name: 'DOWNTOWN BRANCH' },
-    { id: 2, name: 'UPTOWN CLUB' }
-  ];
+  branches: { id: number; name: string }[] = [];
 
   isLoading = false;
   errorMessage = '';
@@ -44,8 +42,8 @@ export class ManagerScheduleComponent implements OnInit {
 
   // Calendar View State
   viewMode: 'DAY' | 'WEEK' | 'MONTH' = 'WEEK';
-  currentWeekStart = new Date(2025, 3, 22); // Default to Apr 22, 2025 for display
-  currentWeekRangeLabel = 'WEEK OF APR 22–28, 2025';
+  currentWeekStart = new Date();
+  currentWeekRangeLabel = 'CURRENT WEEK';
 
   // Filters
   selectedBranchId = '1'; // Default Downtown
@@ -114,24 +112,43 @@ export class ManagerScheduleComponent implements OnInit {
 
   constructor(
     private managerApi: ManagerApiService,
-    private frontdeskApi: FrontdeskApiService
+    private frontdeskApi: FrontdeskApiService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
+    this.resetToToday();
     this.loadData();
   }
 
   loadData(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    this.managerApi.getClasses().subscribe({
-      next: (data) => {
-        this.classes = data;
-        this.loadTrainersAndRooms();
-        this.loadMembers();
+    
+    this.frontdeskApi.getBranches().subscribe({
+      next: (branchesData) => {
+        this.branches = branchesData.map(b => ({ id: b.branchId || 0, name: b.branchName || 'UNKNOWN BRANCH' }));
+        const session = this.authService.getCurrentSession();
+        if (session && session.branchId) {
+          this.selectedBranchId = session.branchId.toString();
+        } else if (this.branches.length > 0) {
+          this.selectedBranchId = this.branches[0].id.toString();
+        }
+
+        this.managerApi.getClasses().subscribe({
+          next: (data) => {
+            this.classes = data;
+            this.loadTrainersAndRooms();
+            this.loadMembers();
+          },
+          error: (err) => {
+            this.errorMessage = 'Failed to load classes.';
+            this.isLoading = false;
+          }
+        });
       },
-      error: (err) => {
-        this.errorMessage = 'Failed to load classes.';
+      error: () => {
+        this.errorMessage = 'Failed to load branches.';
         this.isLoading = false;
       }
     });
@@ -150,10 +167,11 @@ export class ManagerScheduleComponent implements OnInit {
   loadTrainersAndRooms(): void {
     this.managerApi.getTrainers().subscribe({
       next: (trainersData) => {
-        this.trainers = trainersData;
+        const branchNum = Number(this.selectedBranchId);
+        this.trainers = trainersData.filter(t => t.branchId === branchNum || !t.branchId);
         this.managerApi.getRooms().subscribe({
           next: (roomsData) => {
-            this.rooms = roomsData;
+            this.rooms = roomsData.filter(r => r.branchId === branchNum || r.branch?.branchId === branchNum || !r.branchId);
             this.mapNamesToClasses();
             this.isLoading = false;
           },
@@ -192,13 +210,17 @@ export class ManagerScheduleComponent implements OnInit {
   }
 
   getEmptyClass(): FitnessClass {
+    const today = new Date();
+    const nextMonth = new Date();
+    nextMonth.setMonth(today.getMonth() + 1);
+    
     return {
       className: '',
       trainerId: 0,
       roomId: 0,
-      branchId: 1,
-      startDate: '2025-04-22',
-      endDate: '2025-04-28',
+      branchId: this.selectedBranchId ? Number(this.selectedBranchId) : 1,
+      startDate: today.toISOString().split('T')[0],
+      endDate: nextMonth.toISOString().split('T')[0],
       weekdays: '',
       classTime: '08:00',
       durationMins: 60,
@@ -226,8 +248,18 @@ export class ManagerScheduleComponent implements OnInit {
   }
 
   resetToToday(): void {
-    this.currentWeekStart = new Date(2025, 3, 22); // Reset to seed week starting Apr 22
-    this.currentWeekRangeLabel = 'WEEK OF APR 22–28, 2025';
+    const today = new Date();
+    // Move to start of week (Monday)
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day == 0 ? -6 : 1);
+    this.currentWeekStart = new Date(today.setDate(diff));
+    
+    const endOfWeek = new Date(this.currentWeekStart);
+    endOfWeek.setDate(this.currentWeekStart.getDate() + 6);
+    const startStr = this.currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+    const endStr = endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+    this.currentWeekRangeLabel = `WEEK OF ${startStr}–${endStr}`;
+    
     this.applyFilters();
   }
 

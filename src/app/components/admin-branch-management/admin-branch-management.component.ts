@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AdminApiService, BranchDto } from '../../services/admin-api.service';
+import { FrontdeskApiService, MemberDto } from '../../services/frontdesk-api.service';
 
 export interface Staff {
   id: string;
@@ -86,7 +87,10 @@ export class AdminBranchManagementComponent implements OnInit {
   transferTargetBranchId = '';
   transferReason = '';
 
-  constructor(private adminApi: AdminApiService) {}
+  constructor(
+    private adminApi: AdminApiService,
+    private frontdeskApi: FrontdeskApiService
+  ) {}
 
   ngOnInit(): void {
     this.loadBranches();
@@ -101,61 +105,42 @@ export class AdminBranchManagementComponent implements OnInit {
         if (branches && branches.length > 0) {
           this.branches = branches.map((branch) => this.fromBranchDto(branch));
         } else {
-          this.setFallbackBranches();
+          this.branches = [];
         }
         this.selectedBranchId = this.branches[0]?.id || '';
         this.filterBranches();
         this.isLoading = false;
+        this.loadMembers();
       },
-      error: () => {
-        this.setFallbackBranches();
-        this.selectedBranchId = this.branches[0]?.id || '';
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Failed to load branches.';
+        this.branches = [];
+        this.selectedBranchId = '';
         this.filterBranches();
         this.isLoading = false;
       },
     });
   }
 
-  setFallbackBranches(): void {
-    this.branches = [
-      {
-        id: '1',
-        name: 'INDIRANAGAR BRANCH',
-        city: 'BANGALORE',
-        address: '80 FEET RD, INDIRANAGAR, BANGALORE, KARNATAKA 560038',
-        phone: '+91 98765 43210',
-        email: 'indiranagar@fitclub.com',
-        openTime: '06:00',
-        closeTime: '22:00',
-        timezone: 'Asia/Kolkata',
-        active: true,
-        membersCount: 1248,
-        staff: this.mockStaff(),
-        members: this.mockMembers(),
-        classes: this.mockClasses(),
-        rooms: this.mockRooms(),
-        plans: this.mockPlans()
-      },
-      {
-        id: '2',
-        name: 'KORAMANGALA CLUB',
-        city: 'BANGALORE',
-        address: '5TH BLOCK, KORAMANGALA, BANGALORE, KARNATAKA 560095',
-        phone: '+91 98765 43211',
-        email: 'koramangala@fitclub.com',
-        openTime: '06:00',
-        closeTime: '22:00',
-        timezone: 'Asia/Kolkata',
-        active: true,
-        membersCount: 934,
-        staff: this.mockStaff().slice(0, 1),
-        members: this.mockMembers().slice(0, 1),
-        classes: this.mockClasses().slice(0, 1),
-        rooms: this.mockRooms(),
-        plans: this.mockPlans()
+  private loadMembers(): void {
+    this.frontdeskApi.getMembers().subscribe({
+      next: (list: MemberDto[]) => {
+        const byBranch = new Map<number, number>();
+        (list || []).forEach((m) => {
+          const bid = Number((m as any).homeBranchId || (m as any).branchId || 0);
+          byBranch.set(bid, (byBranch.get(bid) || 0) + 1);
+        });
+        
+        this.branches = this.branches.map((b) => ({
+          ...b,
+          membersCount: byBranch.get(Number(b.id)) || 0,
+        }));
+        this.filterBranches();
       }
-    ];
+    });
   }
+
+
 
   filterBranches(): void {
     this.filteredBranches = this.branches.filter(
@@ -345,7 +330,7 @@ export class AdminBranchManagementComponent implements OnInit {
       closeTime,
       timezone: branch.timezone || 'Asia/Kolkata',
       active: branch.isActive !== false,
-      membersCount: 432,
+      membersCount: 0,
       staff: this.mockStaff(),
       members: this.mockMembers(),
       classes: this.mockClasses(),

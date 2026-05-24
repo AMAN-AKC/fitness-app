@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
 import {
   AttendanceDto,
@@ -179,16 +180,19 @@ export class FrontdeskDashboardComponent implements OnInit {
       next: ({ branches, members, classes }) => {
         this.branches = branches;
         this.members = members;
-        this.selectedBranchId = branches[0]?.branchId || 0;
+        
+        const session = this.authService.getCurrentSession();
+        this.selectedBranchId = session?.branchId || branches[0]?.branchId || 0;
+        
         this.newMembers = members.filter((m) => m.status === 'PROSPECT').length;
         this.pendingConsents = members.filter(
           (m) => m.status === 'PROSPECT',
         ).length;
         this.expiringPlans = 0;
         
-        // Load classes from API
+        // Load classes from API for the current branch
         this.todaysClasses = classes
-          .filter(c => c.status === 'ACTIVE')
+          .filter(c => c.status === 'ACTIVE' && c.branchId === this.selectedBranchId)
           .map(c => ({
             id: c.classId || 0,
             name: c.className,
@@ -196,6 +200,15 @@ export class FrontdeskDashboardComponent implements OnInit {
             enrolled: 0, 
             cap: c.capacity
           }));
+
+        // Fetch enrolled counts for each class
+        this.todaysClasses.forEach(cls => {
+           this.frontdeskApi.getBookingsByClass(cls.id).subscribe({
+              next: (bookings) => {
+                 cls.enrolled = bookings.length;
+              }
+           });
+        });
 
         this.loadTodayAttendance();
         this.isLoading = false;
@@ -238,25 +251,29 @@ export class FrontdeskDashboardComponent implements OnInit {
       return;
     }
 
-    const member = this.members.find((m) => {
+    let member = this.members.find((m) => {
       const mid = String(m.memberId);
-      const name = (m.memName || '').toLowerCase();
       const email = (m.email || '').toLowerCase();
-      const phone = (m.phone || '');
-      
-      return (
-        mid === query ||
-        `mem-${mid}` === query ||
-        `m-${mid}` === query ||
-        name.includes(query) ||
-        email.includes(query) ||
-        phone.includes(query)
-      );
+      const phone = (m.phone || '').toLowerCase();
+      return mid === query || `mem-${mid}` === query || `m-${mid}` === query || email === query || phone === query;
     });
 
     if (!member) {
+      // If no exact match, try substring match ONLY for names
+      member = this.members.find((m) => {
+        const name = (m.memName || '').toLowerCase();
+        return name.includes(query);
+      });
+    }
+
+    if (!member) {
       this.memberFound = null;
-      this.errorMessage = 'No member found for that name, ID, email, or phone.';
+      // If the query looks like an exact number (ID or Phone), warn about cross-branch
+      if (/^\d+$/.test(query) || query.startsWith('mem-') || query.startsWith('m-')) {
+         this.errorMessage = 'Member not found in your branch. They may belong to a different branch or the ID is incorrect.';
+      } else {
+         this.errorMessage = 'No member found matching that name or exact details.';
+      }
       return;
     }
 
@@ -469,13 +486,35 @@ export class FrontdeskDashboardComponent implements OnInit {
           cls.enrolled = bookings.length;
         }
 
-        this.classMembers = bookings.map(b => {
-          const member = this.members.find(m => m.memberId === b.memberId);
-          return {
-            name: member?.memName || `Member #${b.memberId}`,
-            status: b.bookingStatus === 'CONFIRMED' ? 'pending' : 'absent'
-          };
+        const memberObservables = bookings.map(b => {
+          const localMember = this.members.find(m => m.memberId === b.memberId);
+          if (localMember) {
+            return of({
+              name: localMember.memName,
+              status: b.bookingStatus === 'CONFIRMED' ? 'pending' : 'absent'
+            });
+          } else {
+            // Member is from another branch or not found, fetch them
+            return this.frontdeskApi.getMemberById(b.memberId).pipe(
+              map(m => ({
+                name: m.memName,
+                status: b.bookingStatus === 'CONFIRMED' ? 'pending' : 'absent'
+              })),
+              catchError(() => of({
+                name: `Member #${b.memberId}`,
+                status: b.bookingStatus === 'CONFIRMED' ? 'pending' : 'absent'
+              }))
+            );
+          }
         });
+
+        if (memberObservables.length > 0) {
+           forkJoin(memberObservables).subscribe(results => {
+              this.classMembers = results as ClassMember[];
+           });
+        } else {
+           this.classMembers = [];
+        }
       },
       error: (err) => {
         console.error('Failed to load bookings for class', err);

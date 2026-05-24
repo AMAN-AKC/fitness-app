@@ -129,8 +129,9 @@
       <div class="p-3 relative">
         <div
           *ngFor="let cls of getClassesForTime(hour)"
+          (click)="bookClass(cls)"
           [class]="
-            'absolute left-3 right-3 rounded-[8px] p-3 text-white text-[12px] font-bold ' +
+            'absolute left-3 right-3 rounded-[8px] p-3 text-white text-[12px] font-bold cursor-pointer hover:scale-105 transition-transform shadow-sm hover:shadow-md ' +
             cls.color
           "
           [style.height.px]="getClassHeight(cls.duration)"
@@ -169,8 +170,9 @@
       >
         <div
           *ngFor="let cls of getClassesForDay(day)"
+          (click)="bookClass(cls)"
           [class]="
-            'rounded-[6px] p-2 text-white text-[11px] font-bold ' + cls.color
+            'rounded-[6px] p-2 text-white text-[11px] font-bold cursor-pointer hover:scale-105 transition-transform shadow-sm ' + cls.color
           "
         >
           <div class="truncate">{{ cls.name }}</div>

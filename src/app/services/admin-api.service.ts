@@ -18,6 +18,9 @@ export interface SystemUserDto {
   email: string;
   role: BackendRole;
   isActive?: boolean;
+  isLocked?: boolean;
+  lastLogin?: string;
+  branchName?: string;
 }
 
 export interface BranchDto {
@@ -130,6 +133,14 @@ export class AdminApiService {
 
   deactivateUser(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/users/${id}`);
+  }
+
+  lockUser(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/users/${id}/lock`, {});
+  }
+
+  unlockUser(id: number): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/users/${id}/unlock`, {});
   }
 
   createUser(user: SystemUserDto, password: string): Observable<SystemUserDto> {

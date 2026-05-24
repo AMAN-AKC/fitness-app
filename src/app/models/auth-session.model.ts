@@ -9,6 +9,7 @@ export interface AuthSession {
   userId: string;
   username: string;
   fullName?: string;
+  branchId?: number;
 }
 
 export interface AuthErrorResponse {

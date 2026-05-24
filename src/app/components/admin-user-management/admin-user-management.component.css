@@ -848,3 +848,80 @@
 .text-center {
   text-align: center;
 }
+
+/* ── Form Validation Styles ──────────────────────────────────────────────── */
+
+/* Red border on invalid input */
+.brutal-input.input-error {
+  border-color: var(--red) !important;
+  box-shadow: 0 0 0 2px rgba(255, 59, 48, 0.25);
+}
+
+/* Inline error message below field */
+.field-error-msg {
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: Inter, Arial, sans-serif;
+  margin: 0;
+  padding: 4px 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+}
+
+/* Password strength bar */
+.password-strength-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.strength-bars {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.strength-bar-seg {
+  flex: 1;
+  height: 6px;
+  border: 1.5px solid var(--black);
+  border-radius: 0;
+  transition: background-color 200ms ease;
+}
+
+.strength-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Policy checklist hints */
+.policy-hints {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 2px solid var(--black);
+  background-color: var(--bg);
+}
+
+.policy-hints span {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hint-ok {
+  color: var(--green) !important;
+}
+
+.hint-fail {
+  color: var(--red) !important;
+}
+

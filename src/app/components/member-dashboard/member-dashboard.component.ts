@@ -9,6 +9,7 @@ import {
   InvoiceDto,
   MemberDto,
   MembershipDto,
+  PaymentMethod,
   PtSessionDto,
   TrainerDto,
 } from '../../services/frontdesk-api.service';
@@ -22,6 +23,7 @@ interface UpcomingClass {
   trainer: string;
   room: string;
   date: string;
+  rawDate: string;
   time: string;
   canCancel: boolean;
 }
@@ -82,7 +84,12 @@ export class MemberDashboardComponent implements OnInit {
     chartData: [0, 0, 0, 0],
   };
 
-  private currentMember: MemberDto | null = null;
+  private  currentMember: MemberDto | null = null;
+  
+  // Payment Modal State
+  showPaymentModal = false;
+  invoiceToPay: any = null;
+  paymentAmount: number = 0;
 
   constructor(
     private authService: AuthService,
@@ -134,12 +141,14 @@ export class MemberDashboardComponent implements OnInit {
 
   toggleClasses(showPast: boolean): void {
     this.showPastClasses = showPast;
-    this.upcomingClasses = this.allBookings.filter((b: UpcomingClass) => !this.isPast(b.date));
-    this.pastClasses = this.allBookings.filter((b: UpcomingClass) => this.isPast(b.date));
+    this.upcomingClasses = this.allBookings.filter((b: UpcomingClass) => !this.isPast(b.rawDate));
+    this.pastClasses = this.allBookings.filter((b: UpcomingClass) => this.isPast(b.rawDate));
   }
 
   private isPast(dateStr: string): boolean {
+    if (!dateStr || dateStr === 'TBD') return false;
     const d = new Date(dateStr);
+    d.setHours(23, 59, 59, 999);
     return d < new Date();
   }
 
@@ -231,14 +240,11 @@ export class MemberDashboardComponent implements OnInit {
 
   private applyMemberSummary(member: MemberDto): void {
     this.membershipStatus = member.status || 'ACTIVE';
-    this.planDescription = `Member ID ${member.memberId || 'N/A'} · Branch ${member.homeBranchId}`;
-    this.renewalDate = member.dob
-      ? this.formatDate(member.dob)
-      : this.renewalDate;
-    this.daysRemaining = member.status === 'ACTIVE' ? 30 : 0;
-    this.daysRemainingProgress = member.status === 'ACTIVE' ? 80 : 0;
-    this.expirationDate =
-      member.status === 'ACTIVE' ? '30 days from now' : 'Expired';
+    this.planDescription = `Member ID ${member.memberId || 'N/A'}`;
+    this.renewalDate = 'N/A';
+    this.daysRemaining = 0;
+    this.daysRemainingProgress = 0;
+    this.expirationDate = 'Not available';
   }
 
   private loadMemberDetails(member: MemberDto, memberId: number): void {
@@ -271,8 +277,31 @@ export class MemberDashboardComponent implements OnInit {
           trainers,
           branches,
         );
-        this.upcomingClasses = this.allBookings.filter((b: UpcomingClass) => !this.isPast(b.date)).slice(0, 5);
-        this.pastClasses = this.allBookings.filter((b: UpcomingClass) => this.isPast(b.date)).slice(0, 5);
+        
+        const mappedSessions = sessions
+          .filter((s) => s.status !== 'CANCELLED' && s.status !== 'DECLINED')
+          .map((s, index) => {
+            const tName = s.trainerName || trainers.find(t => Number(t.trainerId) === Number(s.trainerId))?.trainerName || `Trainer #${s.trainerId}`;
+            const scheduled = new Date(s.scheduledAt);
+            const statusLabel = s.status === 'REQUESTED' ? ' (Pending)' : '';
+            return {
+              bookingId: s.sessionId || 0,
+              category: 'PT',
+              categoryColor: '#94A3B8',
+              name: `Personal Training${statusLabel}`,
+              trainer: tName,
+              room: 'PT Area',
+              date: this.formatShortDate(s.scheduledAt.split('T')[0]),
+              rawDate: s.scheduledAt.split('T')[0],
+              time: scheduled.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+              canCancel: false,
+              isPtSession: true
+            };
+          });
+
+        this.allBookings = [...this.allBookings, ...mappedSessions].sort((a, b) => new Date(a.rawDate).getTime() - new Date(b.rawDate).getTime());
+        this.upcomingClasses = this.allBookings.filter((b: UpcomingClass) => !this.isPast(b.rawDate)).slice(0, 5);
+        this.pastClasses = this.allBookings.filter((b: UpcomingClass) => this.isPast(b.rawDate)).slice(0, 5);
         
         this.chartData = {
           classesCount: bookings.length,
@@ -301,7 +330,7 @@ export class MemberDashboardComponent implements OnInit {
       memberships.find((item) => item.status === 'ACTIVE') || memberships[0];
     if (!activeMembership) {
       this.currentPlan = 'No Active Plan';
-      this.planDescription = `Member ID ${member.memberId || 'N/A'} · Branch ${member.homeBranchId}`;
+      this.planDescription = `Member ID ${member.memberId || 'N/A'}`;
       this.membershipStatus = member.status || 'ACTIVE';
       return;
     }
@@ -309,33 +338,52 @@ export class MemberDashboardComponent implements OnInit {
     const plan = plans.find(
       (item) => Number(item.planId) === Number(activeMembership.planId),
     );
-    const branch = branches.find(
-      (item) =>
-        Number(item.branchId) ===
-        Number(activeMembership.branchId || member.homeBranchId),
-    );
+    const branchIdToUse = activeMembership.branchId || member.homeBranchId;
+    const branch = branchIdToUse ? branches.find(
+      (item) => Number(item.branchId) === Number(branchIdToUse),
+    ) : null;
+    
     this.membershipStatus =
       activeMembership.status || member.status || 'ACTIVE';
     this.currentPlan = plan?.planName || 'Active Membership';
+    
+    const branchText = branch ? branch.branchName : (branchIdToUse ? `Branch ${branchIdToUse}` : 'Global Access');
+    
     this.planDescription = [
       plan ? `${plan.accessStart}-${plan.accessEnd} access` : 'Plan active',
-      branch
-        ? branch.branchName
-        : `Branch ${activeMembership.branchId || member.homeBranchId}`,
+      branchText
     ]
       .filter(Boolean)
       .join(' · ');
 
+    if (activeMembership.startDate) {
+      this.renewalDate = this.formatDate(activeMembership.startDate);
+    }
+
     if (activeMembership.endDate) {
-      this.renewalDate = this.formatDate(activeMembership.endDate);
       const daysLeft = this.daysUntil(activeMembership.endDate);
       this.daysRemaining = daysLeft;
+      
+      // Attempt to calculate total days from start to end date for progress bar
+      let totalDays = 30;
+      if (activeMembership.startDate) {
+        const start = new Date(activeMembership.startDate).getTime();
+        const end = new Date(activeMembership.endDate).getTime();
+        if (!Number.isNaN(start) && !Number.isNaN(end) && end > start) {
+          totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        }
+      }
+      
       this.daysRemainingProgress = Math.max(
         0,
-        Math.min(100, Math.round((daysLeft / 30) * 100)),
+        Math.min(100, Math.round((daysLeft / Math.max(1, totalDays)) * 100)),
       );
       this.expirationDate =
         daysLeft > 0 ? `${daysLeft} days remaining` : 'Expired';
+    } else {
+      this.daysRemaining = 0;
+      this.daysRemainingProgress = 0;
+      this.expirationDate = 'No expiry date';
     }
   }
 
@@ -386,6 +434,13 @@ export class MemberDashboardComponent implements OnInit {
     return targetDate;
   }
 
+  private formatDateLocal(date: Date): string {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
   private mapUpcomingClasses(
     bookings: ClassBookingDto[],
     classes: ClassesDto[],
@@ -419,7 +474,7 @@ export class MemberDashboardComponent implements OnInit {
         
         const scheduledDate = classItem
           ? (classItem.status === 'ACTIVE' && classItem.weekdays
-              ? this.getClassDateInCurrentWeek(classItem.weekdays).toISOString().split('T')[0]
+              ? this.formatDateLocal(this.getClassDateInCurrentWeek(classItem.weekdays))
               : classItem.endDate || classItem.startDate || '')
           : '';
 
@@ -432,6 +487,7 @@ export class MemberDashboardComponent implements OnInit {
             trainer?.trainerName || `Trainer #${classItem?.trainerId || ''}`,
           room: `Room ${classItem?.roomId || '—'}`,
           date: scheduledDate ? this.formatShortDate(scheduledDate) : 'TBD',
+          rawDate: scheduledDate || 'TBD',
           time: classItem?.classTime || 'TBD',
           canCancel: booking.bookingStatus === 'CONFIRMED',
         };
@@ -598,6 +654,57 @@ export class MemberDashboardComponent implements OnInit {
     // Download all as PDFs sequentially
     this.invoices.forEach((invoice, index) => {
       setTimeout(() => this.downloadInvoicePdf(invoice), index * 500);
+    });
+  }
+  
+  goToCheckout(): void {
+    this.router.navigate(['/member/checkout']);
+  }
+
+  payInvoice(invoiceToPay?: any): void {
+    const pendingInvoice = invoiceToPay || this.invoices.find(inv => inv.status === 'ISSUED' || inv.status === 'PENDING' || inv.status === 'OVERDUE' || inv.status === 'UNPAID');
+    if (!pendingInvoice || !pendingInvoice.invoiceId) {
+      this.errorMessage = 'No pending invoice found to pay.';
+      return;
+    }
+    this.invoiceToPay = pendingInvoice;
+    this.paymentAmount = parseFloat(pendingInvoice.amount.replace(/[^0-9.-]+/g, '')) || 0;
+    this.showPaymentModal = true;
+  }
+
+  cancelPaymentModal(): void {
+    this.showPaymentModal = false;
+    this.invoiceToPay = null;
+  }
+
+  confirmPaymentModal(): void {
+    if (!this.invoiceToPay) return;
+    
+    const parsedAmount = this.paymentAmount;
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      alert('Invalid amount entered.');
+      return;
+    }
+
+    const paymentDto = {
+      invoiceId: this.invoiceToPay.invoiceId,
+      memberId: this.currentMember?.memberId || 0,
+      paymentMethod: 'CARD' as PaymentMethod,
+      amountPaid: parsedAmount,
+    };
+    
+    this.isLoading = true;
+    this.showPaymentModal = false;
+    this.frontdeskApi.processPayment(paymentDto).subscribe({
+      next: () => {
+        this.invoiceToPay = null;
+        this.loadMemberSummary();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Payment failed.';
+        this.invoiceToPay = null;
+        this.isLoading = false;
+      }
     });
   }
 }

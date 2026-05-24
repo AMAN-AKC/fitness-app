@@ -37,6 +37,7 @@ export class CheckoutComponent implements OnInit {
   showPaymentGateway = false;
   isSuccess = false;
   isUpgrade = false;
+  paymentAmount: number = 0;
 
   paymentMethods: PaymentMethod[] = [
     { id: 'CARD', type: 'CARD', label: '💳 Credit/Debit Card' },
@@ -163,6 +164,7 @@ export class CheckoutComponent implements OnInit {
       next: (createdInvoice) => {
         if (createdInvoice.invoiceId) {
           this.isProcessing = false;
+          this.paymentAmount = this.breakdown?.finalAmount || 0;
           this.showPaymentGateway = true;
           this.successMessage = `Invoice ${createdInvoice.invoiceNumber || createdInvoice.invoiceId} generated.`;
           // We'll use the createdInvoice ID in the next step
@@ -189,7 +191,7 @@ export class CheckoutComponent implements OnInit {
     const payment: PaymentDto = {
       invoiceId: this.createdInvoiceId,
       memberId: this.currentMemberId,
-      amountPaid: this.breakdown.finalAmount,
+      amountPaid: this.paymentAmount,
       paymentMethod: this.selectedPaymentMethod,
     };
 
