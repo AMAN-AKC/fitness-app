@@ -329,7 +329,7 @@ export class MemberRegistrationComponent implements OnInit {
       id: Number(branch.branchId),
       name: branch.branchName,
       address: branch.address,
-      active: 0,
+      active: branch.activeMembersCount || 0,
     };
   }
 

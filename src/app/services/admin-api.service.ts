@@ -31,6 +31,7 @@ export interface BranchDto {
   opHours: string;
   timezone: string;
   isActive?: boolean;
+  activeMembersCount?: number;
 }
 
 export interface PlanDto {

@@ -321,7 +321,7 @@ export class AdminDashboardComponent implements OnInit {
       id: String(branch.branchId),
       name: branch.branchName.toUpperCase(),
       city: this.extractCity(branch.address).toUpperCase(),
-      members: 0,
+      members: branch.activeMembersCount || 0,
       classes: 0,
       active: branch.isActive !== false,
     };
