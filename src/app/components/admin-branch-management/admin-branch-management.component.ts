@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 import { AdminApiService, BranchDto } from '../../services/admin-api.service';
 import { FrontdeskApiService, MemberDto } from '../../services/frontdesk-api.service';
 
@@ -63,7 +65,8 @@ export interface BranchDetails {
   selector: 'app-admin-branch-management',
   templateUrl: './admin-branch-management.component.html',
   styleUrls: ['./admin-branch-management.component.css'],
-  standalone: false
+  standalone: true,
+  imports: [FormsModule, CommonModule],
 })
 export class AdminBranchManagementComponent implements OnInit {
   branches: BranchDetails[] = [];

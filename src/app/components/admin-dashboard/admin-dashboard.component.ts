@@ -1,13 +1,13 @@
 import { Component, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 import {
   AdminApiService,
   BranchDto,
-  AuditLogDto,
 } from '../../services/admin-api.service';
-import {
-  FrontdeskApiService,
-  MemberDto,
-} from '../../services/frontdesk-api.service';
+import { FrontdeskApiService, MemberDto } from '../../services/frontdesk-api.service';
+import { PasswordPolicyService, PasswordPolicy } from '../../services/password-policy.service';
+import { ToastService } from '../../services/toast.service';
 
 export interface FeatureFlag {
   id: string;
@@ -17,7 +17,7 @@ export interface FeatureFlag {
   by: string;
 }
 
-export interface AuditLog {
+export interface ConfigAuditLog {
   id: string;
   user: string;
   entity: string;
@@ -35,86 +35,154 @@ export interface Branch {
   active: boolean;
 }
 
+export interface MemberTransfer {
+  memberId: number;
+  targetBranchId: number;
+  reason: string;
+}
+
+export interface BranchInventory {
+  itemName: string;
+  quantity: number;
+}
+
 @Component({
   selector: 'app-admin-dashboard',
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css'],
-  standalone: false
+  standalone: true,
+  imports: [FormsModule, CommonModule],
 })
 export class AdminDashboardComponent implements OnInit {
+  activeTab = 'SECURITY';
+  tabs = ['GENERAL', 'SECURITY', 'BILLING', 'FEATURE_FLAGS', 'BRANDING', 'POLICIES', 'BRANCHES', 'AUDIT_LOGS'];
+
   flags: FeatureFlag[] = [];
-  auditLogs: AuditLog[] = [];
+  auditLogs: ConfigAuditLog[] = [];
   branches: Branch[] = [];
-  staffCount = 0;
-  lockedStaffCount = 0;
-  activePlansCount = 0;
-  totalPlansCount = 0;
-  totalMembers = 0;
-  Math = Math;
+  
+  systemConfigs: { [key: string]: string } = {
+    'session.timeout': '30',
+    'password.minLength': '8',
+    'billing.currency': 'INR',
+    'billing.dateFormat': 'DD/MM/YYYY',
+    'branding.primaryColor': '#2563EB',
+    'branding.logoUrl': '',
+    'policy.cancellationWindowHours': '2'
+  };
+
   isLoading = false;
   errorMessage = '';
-  revenueMTD = 0;
+  successMessage = '';
+
+  // Stats
+  totalPlansCount = 0;
+  activePlansCount = 0;
+  totalMembers = 0;
+
+  // Audit log filter
   selectedFilter = 'ALL';
-  filteredLogs: AuditLog[] = [];
+  filteredLogs: any[] = [];
+
+  transferData: MemberTransfer = { memberId: 0, targetBranchId: 0, reason: '' };
+  newInventory: BranchInventory = { itemName: '', quantity: 1 };
+  selectedBranchId: string = '';
+  branchInventory: BranchInventory[] = [];
+
+  // Password Policy
+  passwordPolicy!: PasswordPolicy;
 
   constructor(
-    private adminApi: AdminApiService,
+    private adminApi: AdminApiService, 
     private frontdeskApi: FrontdeskApiService,
+    private policyService: PasswordPolicyService,
+    private toastService: ToastService
   ) {}
 
   ngOnInit(): void {
+    // Sync local copy from service
+    this.passwordPolicy = { ...this.policyService.policy };
+    this.policyService.policy$.subscribe(p => this.passwordPolicy = { ...p });
+
     this.loadBranches();
-    this.loadAuditLogs();
-    this.loadUsers();
-    this.loadPlans();
+    this.loadSystemConfigs();
     this.loadFeatureFlags();
-    this.loadRevenue();
+    this.loadAuditLogs();
+  }
+
+  switchTab(tab: string) {
+    this.activeTab = tab;
+    this.errorMessage = '';
+    this.successMessage = '';
+  }
+
+  private loadSystemConfigs(): void {
+    this.adminApi.getSystemConfigs().subscribe({
+      next: (configs) => {
+        configs.forEach((c: any) => {
+          this.systemConfigs[c.configKey] = c.configValue;
+        });
+        this.applyBranding();
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
+  saveConfigs(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    
+    this.adminApi.updateSystemConfigs(this.systemConfigs).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.successMessage = 'SYSTEM CONFIGURATION UPDATED SUCESSFULLY.';
+        this.applyBranding();
+        this.loadAuditLogs();
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err?.error?.message || 'FAILED TO UPDATE CONFIGURATION.';
+      }
+    });
+  }
+
+  applyBranding(): void {
+    if (this.systemConfigs['branding.primaryColor']) {
+      document.documentElement.style.setProperty('--primary-color', this.systemConfigs['branding.primaryColor']);
+      document.documentElement.style.setProperty('--blue', this.systemConfigs['branding.primaryColor']);
+    }
   }
 
   private loadFeatureFlags(): void {
     this.adminApi.getFeatureFlags().subscribe({
       next: (flags) => {
         if (flags && flags.length > 0) {
-          this.flags = flags.map((f) => ({
-            id: String(f.flagId),
-            name: f.flagName.toUpperCase(),
-            enabled: f.enabled,
-            lastModified: f.updatedAt ? new Date(f.updatedAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }).toUpperCase() : 'N/A',
-            by: f.lastModifiedBy || 'ADMIN',
-          }));
+          this.flags = flags.map((f: any) => {
+            let parsedDate = 'N/A';
+            if (f.updatedAt) {
+              let dateObj;
+              if (Array.isArray(f.updatedAt)) {
+                // Handle Spring Boot LocalDateTime array [YYYY, MM, DD, HH, mm, ss]
+                dateObj = new Date(f.updatedAt[0], f.updatedAt[1] - 1, f.updatedAt[2], f.updatedAt[3] || 0, f.updatedAt[4] || 0, f.updatedAt[5] || 0);
+              } else {
+                dateObj = new Date(f.updatedAt);
+              }
+              if (!isNaN(dateObj.getTime())) {
+                parsedDate = dateObj.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+              }
+            }
+            return {
+              id: String(f.flagId),
+              name: f.flagName.toUpperCase(),
+              enabled: f.enabled,
+              lastModified: parsedDate,
+              by: f.lastModifiedBy || 'ADMIN',
+            };
+          });
         } else {
           this.flags = [];
         }
-      },
-      error: (err) => {
-        this.errorMessage = err?.error?.message || 'Failed to load feature flags';
-        this.flags = [];
-      },
-    });
-  }
-
-
-
-  private loadRevenue(): void {
-    this.adminApi.getRevenueMTD().subscribe({
-      next: (rev) => {
-        this.revenueMTD = rev || 0;
-      },
-      error: () => {
-        this.revenueMTD = 0;
-      },
-    });
-  }
-
-  private loadUsers(): void {
-    this.adminApi.getUsers().subscribe({
-      next: (users) => {
-        this.staffCount = users ? users.length : 0;
-        this.lockedStaffCount = users ? users.filter((u) => u.isActive === false).length : 0;
-      },
-      error: () => {
-        this.staffCount = 0;
-        this.lockedStaffCount = 0;
       },
     });
   }
@@ -259,18 +327,18 @@ export class AdminDashboardComponent implements OnInit {
     return '#555';
   }
 
-  toggleFlag(id: string): void {
-    const flag = this.flags.find((f) => f.id === id);
+  toggleFlag(name: string, currentEnabled: boolean): void {
+    const flag = this.flags.find((f) => f.name === name.toUpperCase());
     if (flag) {
-      const newStatus = !flag.enabled;
-      this.adminApi.updateFeatureFlag(Number(id), newStatus, 'ADMIN').subscribe({
-        next: (updated) => {
-          flag.enabled = updated.enabled;
+      const newStatus = !currentEnabled;
+      this.adminApi.updateFeatureFlag(name, newStatus).subscribe({
+        next: () => {
+          flag.enabled = newStatus;
           flag.lastModified = 'JUST NOW';
           flag.by = 'ADMIN';
         },
         error: () => {
-          // Local fallback toggle in case API doesn't exist
+          // Local fallback toggle
           flag.enabled = newStatus;
           flag.lastModified = 'JUST NOW';
           flag.by = 'ADMIN';
@@ -331,5 +399,106 @@ export class AdminDashboardComponent implements OnInit {
     if (!address) return 'BANGALORE';
     const parts = address.split(',').map((part) => part.trim());
     return parts.length > 1 ? parts[parts.length - 2] : address;
+  }
+
+  // Multi-Branch Transfers & Inventory integration
+  transferMember(): void {
+    if (!this.transferData.memberId || !this.transferData.targetBranchId) {
+      this.errorMessage = 'PLEASE PROVIDE MEMBER ID AND TARGET BRANCH.';
+      return;
+    }
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    
+    this.adminApi.transferMember(this.transferData.memberId, this.transferData.targetBranchId, this.transferData.reason || 'Requested by Admin').subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.successMessage = `MEMBER ${this.transferData.memberId} TRANSFERRED SUCCESSFULLY.`;
+        this.transferData = { memberId: 0, targetBranchId: 0, reason: '' };
+        this.loadMembers(); // Refresh branch member counts
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err?.error?.message || 'FAILED TO TRANSFER MEMBER.';
+      }
+    });
+  }
+
+  loadInventory(): void {
+    if (!this.selectedBranchId) {
+      this.branchInventory = [];
+      return;
+    }
+    this.adminApi.getBranchInventory(this.selectedBranchId).subscribe({
+      next: (inventory) => {
+        this.branchInventory = inventory || [];
+      },
+      error: () => {
+        this.branchInventory = [];
+      }
+    });
+  }
+
+  addInventory(): void {
+    if (!this.selectedBranchId) {
+      this.errorMessage = 'PLEASE SELECT A BRANCH FIRST.';
+      return;
+    }
+    if (!this.newInventory.itemName || this.newInventory.quantity <= 0) {
+      this.errorMessage = 'PLEASE PROVIDE A VALID ITEM NAME AND QUANTITY.';
+      return;
+    }
+    
+    this.isLoading = true;
+    const inventoryPayload = {
+      itemName: this.newInventory.itemName,
+      quantity: this.newInventory.quantity,
+      branch: { branchId: Number(this.selectedBranchId) }
+    };
+
+    this.adminApi.addBranchInventory(this.selectedBranchId, inventoryPayload).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.successMessage = `ADDED ${this.newInventory.quantity} ${this.newInventory.itemName.toUpperCase()} TO INVENTORY.`;
+        this.newInventory = { itemName: '', quantity: 1 };
+        this.loadInventory(); // Refresh the list from the DB
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err?.error?.message || 'FAILED TO ADD INVENTORY.';
+      }
+    });
+  }
+
+  decrementFailedAttempts(): void {
+    this.passwordPolicy.maxFailedAttempts = Math.max(
+      1,
+      this.passwordPolicy.maxFailedAttempts - 1,
+    );
+  }
+
+  incrementFailedAttempts(): void {
+    this.passwordPolicy.maxFailedAttempts = Math.min(
+      20,
+      this.passwordPolicy.maxFailedAttempts + 1,
+    );
+  }
+
+  savePasswordPolicy(): void {
+    this.policyService.savePolicy({ ...this.passwordPolicy }).subscribe({
+      next: (saved) => {
+        this.toastService.success(
+          `PASSWORD POLICY SAVED — MIN ${saved.minPasswordLength} CHARS, ` +
+          `SESSION TIMEOUT ${saved.sessionTimeoutMin} MIN, ` +
+          `MAX ATTEMPTS ${saved.maxFailedAttempts}.`
+        );
+      },
+      error: (err) => {
+        this.toastService.error(
+          err?.error?.message || 'FAILED TO SAVE PASSWORD POLICY TO SERVER.'
+        );
+      }
+    });
   }
 }

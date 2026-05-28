@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { ManagerApiService } from '../../services/manager-api.service';
 import { FrontdeskApiService } from '../../services/frontdesk-api.service';
 import { AuthService } from '../../services/auth.service';
+import { Observable, forkJoin, of } from 'rxjs';
+import { concatMap } from 'rxjs/operators';
 
 interface FitnessClass {
   classId?: number;
@@ -643,28 +645,95 @@ export class ManagerScheduleComponent implements OnInit {
   }
 
   cancelOverlappingClass(cls: FitnessClass): void {
-    if (!confirm('Are you sure you want to cancel this class?')) return;
-    this.managerApi.cancelClass(cls.classId!, 'ROOM MAINTENANCE OVERRIDE: ' + this.maintenanceReason).subscribe({
+    if (!confirm('Are you sure you want to cancel only the maintenance-window sessions for this class?')) return;
+    this.resolveMaintenanceClassSlice(cls, 'CANCEL').subscribe({
       next: () => {
-        cls.status = 'CANCELLED';
+        this.removeClassFromMaintenanceList(cls);
         this.checkMaintenanceOverlap();
-        this.successMessage = 'CLASS CANCELLATION COMPLETED!';
+        this.successMessage = 'MAINTENANCE-WINDOW CLASS SESSIONS CANCELLED!';
+        this.loadData();
         setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (err) => {
+        alert(err.error?.message || 'Failed to cancel maintenance-window sessions.');
       }
     });
   }
 
   migrateClass(cls: FitnessClass, newRoomIdStr: string | number): void {
     const newRoomId = Number(newRoomIdStr);
-    const updated = { ...cls, roomId: newRoomId };
-    this.managerApi.updateClass(cls.classId!, updated).subscribe({
+    this.resolveMaintenanceClassSlice(cls, 'MIGRATE', newRoomId).subscribe({
       next: () => {
-        cls.roomId = newRoomId;
+        this.removeClassFromMaintenanceList(cls);
         this.checkMaintenanceOverlap();
-        this.successMessage = 'SESSION MIGRATED SUCCESSFULLY!';
+        this.successMessage = 'MAINTENANCE-WINDOW CLASS SESSIONS MIGRATED!';
+        this.loadData();
         setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (err) => {
+        alert(err.error?.message || 'Failed to migrate maintenance-window sessions.');
       }
     });
+  }
+
+  private resolveMaintenanceClassSlice(cls: FitnessClass, action: 'CANCEL' | 'MIGRATE', newRoomId?: number): Observable<any> {
+    const affectedStart = this.maxDate(cls.startDate, this.maintenanceStartDate);
+    const affectedEnd = this.minDate(cls.endDate, this.maintenanceEndDate);
+    const beforeEnd = this.addDays(affectedStart, -1);
+    const afterStart = this.addDays(affectedEnd, 1);
+    const beforeSlice = cls.startDate <= beforeEnd ? { ...cls, endDate: beforeEnd } : null;
+    const afterSlice = afterStart <= cls.endDate ? { ...cls, classId: undefined, startDate: afterStart } : null;
+    const affectedSlice = {
+      ...cls,
+      classId: undefined,
+      startDate: affectedStart,
+      endDate: affectedEnd,
+      roomId: action === 'MIGRATE' && newRoomId ? newRoomId : cls.roomId
+    };
+
+    const replacementForOriginal = beforeSlice || afterSlice;
+    const extraPreservedSlice = beforeSlice && afterSlice ? afterSlice : null;
+
+    const rewriteOriginal$ = replacementForOriginal
+      ? this.managerApi.updateClass(cls.classId!, { ...replacementForOriginal, classId: cls.classId })
+      : this.managerApi.cancelClass(cls.classId!, 'ROOM MAINTENANCE OVERRIDE: ' + this.maintenanceReason);
+
+    return rewriteOriginal$.pipe(
+      concatMap(() => {
+        const creates: Observable<any>[] = [];
+        if (extraPreservedSlice) {
+          creates.push(this.managerApi.createClass(extraPreservedSlice));
+        }
+        if (action === 'MIGRATE') {
+          creates.push(this.managerApi.createClass(affectedSlice));
+        } else if (replacementForOriginal) {
+          creates.push(
+            this.managerApi.createClass(affectedSlice).pipe(
+              concatMap(created => this.managerApi.cancelClass(created.classId, 'ROOM MAINTENANCE OVERRIDE: ' + this.maintenanceReason))
+            )
+          );
+        }
+        return creates.length ? forkJoin(creates) : of([]);
+      })
+    );
+  }
+
+  private removeClassFromMaintenanceList(cls: FitnessClass): void {
+    this.overlappingClasses = this.overlappingClasses.filter(c => c.classId !== cls.classId);
+  }
+
+  private maxDate(a: string, b: string): string {
+    return a > b ? a : b;
+  }
+
+  private minDate(a: string, b: string): string {
+    return a < b ? a : b;
+  }
+
+  private addDays(dateStr: string, days: number): string {
+    const date = new Date(`${dateStr}T12:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().split('T')[0];
   }
 
   // Export & Import

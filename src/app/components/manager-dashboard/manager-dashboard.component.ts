@@ -34,6 +34,12 @@ export interface RevenueData {
   standalone: false
 })
 export class ManagerDashboardComponent implements OnInit {
+  // Global Filters
+  filterStartDate: string = '';
+  filterEndDate: string = '';
+  filterBranchId: number | null = null;
+  filterPlanId: number | null = null;
+
   chartMetric = 'REVENUE';
   chartMetrics = ['REVENUE', 'NEW JOINS', 'CHURN'];
 
@@ -41,11 +47,28 @@ export class ManagerDashboardComponent implements OnInit {
   isLoading = true;
   errorMessage = '';
 
-  revenueData: RevenueData[] = [];
+  // Chart Data (pure data structures, no external chart lib dependency)
+  public lineChartData: any = {
+    labels: [],
+    datasets: []
+  };
+  public lineChartOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false
+  };
+
+  public barChartData: any = {
+    labels: [],
+    datasets: []
+  };
+  public barChartOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y'
+  };
+
   classData: ClassUtilization[] = [];
   dunningMembers: DunningMember[] = [];
-  
-  hoveredPoint: { x: number, y: number, value: number, month: string } | null = null;
 
   upcomingCancellations: any[] = [];
 
@@ -84,19 +107,31 @@ export class ManagerDashboardComponent implements OnInit {
   loadDashboardData(): void {
     this.isLoading = true;
     this.errorMessage = '';
-    this.managerApi.getDashboardStats().subscribe({
+
+    const filterPayload = {
+      startDate: this.filterStartDate ? this.filterStartDate + "T00:00:00" : null,
+      endDate: this.filterEndDate ? this.filterEndDate + "T23:59:59" : null,
+      branchId: this.filterBranchId,
+      planId: this.filterPlanId
+    };
+
+    // Replace basic getDashboardStats with Analytics Controller call
+    // Assuming ManagerApiService is updated or we just post to /api/v1/analytics/dashboard
+    this.managerApi.getAnalyticsDashboard(filterPayload).subscribe({
       next: (data) => {
         this.stats = data;
         this.updateChartData();
         
-        this.classData = data.topClasses.map(c => ({ 
+        this.classData = data.topClasses.map((c: any) => ({ 
           id: c.classId, 
           name: c.name, 
           occupancy: Math.round(c.occupancy), 
           fill: this.getBarColor(c.occupancy)
         }));
 
-        this.dunningMembers = data.dunningQueue.map(d => ({
+        this.updateBarChartData();
+
+        this.dunningMembers = data.dunningQueue.map((d: any) => ({
           id: d.invoiceId.toString(),
           name: d.name,
           email: d.email,
@@ -115,15 +150,58 @@ export class ManagerDashboardComponent implements OnInit {
     });
   }
 
+  applyFilters(): void {
+    this.loadDashboardData();
+  }
+
   updateChartData(): void {
     if (!this.stats || !this.stats.revenueAnalytics) return;
+    
+    const labels = this.stats.revenueAnalytics.map((p: any) => p.month.toUpperCase());
+    let dataValues = [];
+    let labelName = '';
+
     if (this.chartMetric === 'REVENUE') {
-      this.revenueData = this.stats.revenueAnalytics.map(p => ({ name: p.month.toUpperCase(), value: p.revenue }));
+      dataValues = this.stats.revenueAnalytics.map((p: any) => p.revenue);
+      labelName = 'Monthly Revenue (₹)';
     } else if (this.chartMetric === 'NEW JOINS') {
-      this.revenueData = this.stats.revenueAnalytics.map(p => ({ name: p.month.toUpperCase(), value: Number(p.newJoins) }));
+      dataValues = this.stats.revenueAnalytics.map((p: any) => Number(p.newJoins));
+      labelName = 'New Joins';
     } else {
-      this.revenueData = this.stats.revenueAnalytics.map(p => ({ name: p.month.toUpperCase(), value: Number(p.churn) }));
+      dataValues = this.stats.revenueAnalytics.map((p: any) => Number(p.churn));
+      labelName = 'Churned Members';
     }
+
+    this.lineChartData = {
+      labels: labels,
+      datasets: [
+        {
+          data: dataValues,
+          label: labelName,
+          fill: true,
+          tension: 0.4,
+          borderColor: '#2563EB',
+          backgroundColor: 'rgba(37,99,235,0.2)'
+        }
+      ]
+    };
+  }
+
+  updateBarChartData(): void {
+    if (!this.classData) return;
+    const labels = this.classData.map(c => c.name);
+    const dataValues = this.classData.map(c => c.occupancy);
+
+    this.barChartData = {
+      labels: labels,
+      datasets: [
+        {
+          data: dataValues,
+          label: 'Class Occupancy %',
+          backgroundColor: '#00D26A'
+        }
+      ]
+    };
   }
 
   setChartMetric(metric: string): void {
@@ -132,54 +210,17 @@ export class ManagerDashboardComponent implements OnInit {
   }
 
   get chartTotal(): number {
-    return this.revenueData.reduce((sum, d) => sum + d.value, 0);
+    if (!this.lineChartData.datasets[0]) return 0;
+    return this.lineChartData.datasets[0].data.reduce((sum: number, val: any) => sum + Number(val), 0);
   }
 
   get chartTrend(): number {
-    if (this.revenueData.length < 2) return 0;
-    const current = this.revenueData[this.revenueData.length - 1].value;
-    const prev = this.revenueData[this.revenueData.length - 2].value;
+    if (!this.lineChartData.datasets[0] || this.lineChartData.datasets[0].data.length < 2) return 0;
+    const data = this.lineChartData.datasets[0].data;
+    const current = Number(data[data.length - 1]);
+    const prev = Number(data[data.length - 2]);
     if (prev === 0) return current > 0 ? 100 : 0;
     return ((current - prev) / prev) * 100;
-  }
-
-  get svgLinePoints(): string {
-    if (this.revenueData.length === 0) return '';
-    const width = 450;
-    const height = 180;
-    const padding = 30;
-    const values = this.revenueData.map(d => d.value);
-    const minVal = Math.min(...values) * 0.9;
-    const maxVal = Math.max(...values) * 1.1;
-    const valRange = maxVal - minVal || 1;
-    
-    return this.revenueData.map((d, i) => {
-      const x = padding + i * (width - 2 * padding) / (this.revenueData.length - 1);
-      const y = height - padding - ((d.value - minVal) / valRange) * (height - 2 * padding);
-      return `${x},${y}`;
-    }).join(' ');
-  }
-
-  get svgDataPoints() {
-    if (this.revenueData.length === 0) return [];
-    const width = 450;
-    const height = 180;
-    const padding = 30;
-    const values = this.revenueData.map(d => d.value);
-    const minVal = Math.min(...values) * 0.9;
-    const maxVal = Math.max(...values) * 1.1;
-    const valRange = maxVal - minVal || 1;
-    
-    return this.revenueData.map((d, i) => {
-      const x = padding + i * (width - 2 * padding) / (this.revenueData.length - 1);
-      const y = height - padding - ((d.value - minVal) / valRange) * (height - 2 * padding);
-      return {
-        x: x - 4,
-        y: y - 4,
-        value: d.value,
-        month: d.name
-      };
-    });
   }
 
   getBarColor(occupancy: number): string {

@@ -60,9 +60,7 @@ import { ManagerScheduleComponent } from './components/manager-schedule/manager-
     FrontdeskDashboardComponent,
     MemberRegistrationComponent,
     TrainerDashboardComponent,
-    AdminDashboardComponent,
     AdminUserManagementComponent,
-    AdminBranchManagementComponent,
     AdminPlancatalogComponent,
     ManagerDashboardComponent,
     TrainerProfileComponent,
@@ -85,6 +83,8 @@ import { ManagerScheduleComponent } from './components/manager-schedule/manager-
     ReactiveFormsModule,
     FormsModule,
     CommonModule,
+    AdminBranchManagementComponent,
+    AdminDashboardComponent,
   ],
   providers: [
     provideClientHydration(),

@@ -106,22 +106,31 @@ export class AdminApiService {
   // Existing methods ... (getUsers, getBranches, etc.)
 
   getFeatureFlags(): Observable<FeatureFlagDto[]> {
-    return this.http.get<FeatureFlagDto[]>(`${this.baseUrl}/admin/feature-flags`);
+    return this.http.get<FeatureFlagDto[]>(`${this.baseUrl}/config/features`);
   }
 
   updateFeatureFlag(
-    id: number,
-    enabled: boolean,
-    modifiedBy: string,
-  ): Observable<FeatureFlagDto> {
-    const params = new HttpParams()
-      .set('enabled', enabled)
-      .set('modifiedBy', modifiedBy);
-    return this.http.put<FeatureFlagDto>(
-      `${this.baseUrl}/admin/feature-flags/${id}`,
+    name: string,
+    enabled: boolean
+  ): Observable<void> {
+    const params = new HttpParams().set('enabled', enabled);
+    return this.http.put<void>(
+      `${this.baseUrl}/config/features/${name}/toggle`,
       {},
       { params },
     );
+  }
+
+  getSystemConfigs(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/config/all`);
+  }
+
+  updateSystemConfigs(configs: { [key: string]: string }): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/config/update`, configs);
+  }
+
+  getConfigAuditLogs(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/config/audit`);
   }
 
   getUsers(): Observable<SystemUserDto[]> {
@@ -165,6 +174,22 @@ export class AdminApiService {
 
   deactivateBranch(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/branches/${id}`);
+  }
+
+  transferMember(memberId: number, targetBranchId: number, reason: string): Observable<void> {
+    const params = new HttpParams()
+      .set('memberId', memberId.toString())
+      .set('targetBranchId', targetBranchId.toString())
+      .set('reason', reason);
+    return this.http.post<void>(`${this.baseUrl}/branches/transfer-member`, {}, { params });
+  }
+
+  getBranchInventory(branchId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/branches/${branchId}/inventory`);
+  }
+
+  addBranchInventory(branchId: string, inventory: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/branches/${branchId}/inventory`, inventory);
   }
 
   getPlans(): Observable<PlanDto[]> {

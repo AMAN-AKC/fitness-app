@@ -194,7 +194,7 @@ export class AuthService {
 
   private storeSession(session: AuthSession): void {
     if (isPlatformBrowser(this.platformId)) {
-      localStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
+      sessionStorage.setItem(this.SESSION_KEY, JSON.stringify(session));
     }
   }
 
@@ -203,7 +203,7 @@ export class AuthService {
       return null;
     }
 
-    const stored = localStorage.getItem(this.SESSION_KEY);
+    const stored = sessionStorage.getItem(this.SESSION_KEY);
     if (!stored) {
       return null;
     }
@@ -217,7 +217,7 @@ export class AuthService {
 
   private clearSession(): void {
     if (isPlatformBrowser(this.platformId)) {
-      localStorage.removeItem(this.SESSION_KEY);
+      sessionStorage.removeItem(this.SESSION_KEY);
     }
   }
 

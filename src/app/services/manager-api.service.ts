@@ -53,6 +53,10 @@ export class ManagerApiService {
     return this.http.get<ManagerDashboardDto>(`${this.baseUrl}/manager/dashboard/stats`);
   }
 
+  getAnalyticsDashboard(filter: any): Observable<ManagerDashboardDto> {
+    return this.http.post<ManagerDashboardDto>(`${this.baseUrl}/analytics/dashboard`, filter);
+  }
+
   getClasses(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/classes`);
   }
@@ -110,6 +114,18 @@ export class ManagerApiService {
 
   suspendDunning(membershipId: number, reason: string): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/dunning/suspend/${membershipId}?reason=${encodeURIComponent(reason)}`, {});
+  }
+
+  recordFollowUp(invoiceId: number, notes: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/dunning/follow-up/${invoiceId}?notes=${encodeURIComponent(notes)}`, {});
+  }
+
+  setPromiseToPay(invoiceId: number, promiseDate: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/dunning/promise-to-pay/${invoiceId}?promiseDate=${encodeURIComponent(promiseDate)}`, {});
+  }
+
+  exportDunningListCsv(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/dunning/export-csv`, { responseType: 'blob' });
   }
 
   toggleMaintenance(facilityId: number, underMaintenance: boolean, reason?: string): Observable<any> {

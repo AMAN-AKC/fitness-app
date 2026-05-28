@@ -12,16 +12,31 @@
     </div>
   </div>
 
-  <!-- ALERT BANNER -->
+  <!-- ALERT BANNER FOR HEALTH FORMS -->
   <div *ngIf="showAlert" class="alert-banner">
     <div class="alert-content">
       <span class="alert-icon">⚠</span>
       <span class="alert-text">
         {{ consentAlertText }}
       </span>
-      <button type="button" class="alert-link" (click)="openHealthForms()">Update Now</button>
+      <button type="button" class="alert-link" (click)="openConsentModal()">Update Now</button>
     </div>
     <button class="alert-close" (click)="closeAlert()">×</button>
+  </div>
+
+  <!-- ALERT BANNER FOR SUSPENDED/DUNNING (US11) -->
+  <div *ngIf="membershipStatus === 'SUSPENDED'" class="alert-banner" style="background-color: #FEF2F2; border: 1px solid #FCA5A5; border-left: 4px solid #DC2626; margin-bottom: 20px;">
+    <div class="alert-content" style="width: 100%; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="alert-icon" style="color: #DC2626;">⚠️</span>
+        <span class="alert-text font-bold" style="color: #991B1B;">
+          Your membership has been suspended due to unpaid dues.
+        </span>
+      </div>
+      <button type="button" (click)="payOutstandingBalance()" style="background-color: #DC2626; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 12px;">
+        Pay Outstanding Balance
+      </button>
+    </div>
   </div>
 
   <!-- KPI CARDS ROW -->
@@ -272,6 +287,55 @@
       <button (click)="cancelPaymentModal()" class="secondary-btn" [disabled]="isLoading">Cancel</button>
       <button (click)="confirmPaymentModal()" class="primary-btn" [disabled]="isLoading">
         <span *ngIf="!isLoading">Confirm Payment</span>
+        <span *ngIf="isLoading">Processing...</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- HEALTH CONSENT MODAL -->
+<div *ngIf="showConsentModal" class="overlay" style="z-index: 1000;">
+  <div class="gateway-card neo-card" style="max-width: 600px;">
+    <div class="gateway-header">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span class="gateway-badge" style="background: #DC2626;">REQUIRED</span>
+        <h2 style="font-weight: 900; font-size: 1.25rem; text-transform: uppercase; margin: 0;">Health Consent & Waiver</h2>
+      </div>
+      <button (click)="closeConsentModal()" [disabled]="requiresConsent" style="font-size: 1.875rem; font-weight: 900; background: none; border: none; cursor: pointer;">×</button>
+    </div>
+    
+    <div class="gateway-body" style="max-height: 60vh; overflow-y: auto;">
+      <h3 style="font-weight: 900; text-transform: uppercase; margin-bottom: 1rem;">PAR-Q Questionnaire</h3>
+      <p style="font-size: 0.85rem; margin-bottom: 1rem; color: #4B5563;">
+        Please read and confirm the following health waivers. This is required for safety and legal compliance.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+          <input type="checkbox" [(ngModel)]="consentForm.medicalAcknowledged" style="margin-top: 4px; transform: scale(1.2);">
+          <span style="font-weight: 700; font-size: 0.9rem;">I acknowledge the physical risks of exercise and confirm I am in suitable health to participate.</span>
+        </label>
+
+        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+          <input type="checkbox" [(ngModel)]="consentForm.liabilityAcknowledged" style="margin-top: 4px; transform: scale(1.2);">
+          <span style="font-weight: 700; font-size: 0.9rem;">I agree to the Gym Liability Waiver and release the facility from claims of injury.</span>
+        </label>
+
+        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+          <input type="checkbox" [(ngModel)]="consentForm.privacyAcknowledged" style="margin-top: 4px; transform: scale(1.2);">
+          <span style="font-weight: 700; font-size: 0.9rem;">I consent to the Privacy Policy regarding the storage of this health data.</span>
+        </label>
+      </div>
+
+      <div *ngIf="errorMessage" style="margin-top: 1rem; color: #DC2626; font-weight: 700; font-size: 0.875rem;">
+        {{ errorMessage }}
+      </div>
+    </div>
+
+    <div class="gateway-footer">
+      <button *ngIf="!requiresConsent" (click)="closeConsentModal()" class="secondary-btn" [disabled]="isLoading">Cancel</button>
+      <button (click)="submitConsent()" class="primary-btn" [disabled]="isLoading || !consentForm.medicalAcknowledged || !consentForm.liabilityAcknowledged || !consentForm.privacyAcknowledged">
+        <span *ngIf="!isLoading">Submit Consent</span>
         <span *ngIf="isLoading">Processing...</span>
       </button>
     </div>

@@ -83,7 +83,7 @@ export class TrainerProfileComponent implements OnInit {
 
         this.trainers = activeTrainers.map((t, idx) => {
           let emoji = '🧘';
-          const nameLower = t.trainerName.toLowerCase();
+          const nameLower = (t.trainerName || '').toLowerCase();
           if (nameLower.includes('priya') || nameLower.includes('sharma') || nameLower.includes('neha')) {
             emoji = '👩‍🏫';
           } else if (nameLower.includes('amit') || nameLower.includes('singh') || nameLower.includes('raj')) {

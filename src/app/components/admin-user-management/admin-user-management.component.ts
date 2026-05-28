@@ -407,6 +407,7 @@ export class AdminUserManagementComponent implements OnInit {
       name: this.drawerUsername,
       email: this.drawerEmail,
       role: this.drawerRole,
+      branch: this.drawerBranch,
       status: this.drawerActive ? (this.editingUser.status === 'Locked' ? 'Locked' : 'Active') : 'Deactivated',
     };
 
@@ -430,36 +431,7 @@ export class AdminUserManagementComponent implements OnInit {
       });
   }
 
-  decrementFailedAttempts(): void {
-    this.passwordPolicy.maxFailedAttempts = Math.max(
-      1,
-      this.passwordPolicy.maxFailedAttempts - 1,
-    );
-  }
 
-  incrementFailedAttempts(): void {
-    this.passwordPolicy.maxFailedAttempts = Math.min(
-      20,
-      this.passwordPolicy.maxFailedAttempts + 1,
-    );
-  }
-
-  savePasswordPolicy(): void {
-    this.policyService.savePolicy({ ...this.passwordPolicy }).subscribe({
-      next: (saved) => {
-        this.toastService.success(
-          `PASSWORD POLICY SAVED — MIN ${saved.minPasswordLength} CHARS, ` +
-          `SESSION TIMEOUT ${saved.sessionTimeoutMin} MIN, ` +
-          `MAX ATTEMPTS ${saved.maxFailedAttempts}.`
-        );
-      },
-      error: (err) => {
-        this.toastService.error(
-          err?.error?.message || 'FAILED TO SAVE PASSWORD POLICY TO SERVER.'
-        );
-      }
-    });
-  }
 
   triggerCsvUpload(): void {
     const input = document.createElement('input');
@@ -541,7 +513,8 @@ export class AdminUserManagementComponent implements OnInit {
       email: user.email,
       role: this.toBackendRole(user.role),
       isActive: user.status === 'Active' || user.status === 'Locked',
-      isLocked: user.status === 'Locked'
+      isLocked: user.status === 'Locked',
+      branchName: (user.branch === 'ALL' || user.branch === 'System HQ' || user.branch === 'Unassigned') ? undefined : user.branch
     };
   }
 

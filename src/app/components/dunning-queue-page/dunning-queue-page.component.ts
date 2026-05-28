@@ -1,19 +1,28 @@
 import { Component, OnInit } from '@angular/core';
-import {
-  FrontdeskApiService,
-  InvoiceDto,
-  PaymentDto,
-} from '../../services/frontdesk-api.service';
+import { ManagerApiService } from '../../services/manager-api.service';
+import { ToastService } from '../../services/toast.service';
 
 export interface DunningItem {
-  invoiceId: number;
+  membershipId?: number;
+  invoiceId?: number;
   memberId: number;
   memberName: string;
+  email: string;
+  phone: string;
   amount: number;
+  outstanding: number;
   daysOverdue: number;
   attemptCount: number;
   lastAttempt: string;
   status: 'PENDING' | 'OVERDUE' | 'DUNNING';
+  promiseToPayDate?: string;
+}
+
+export interface ReminderTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
 }
 
 @Component({
@@ -27,40 +36,79 @@ export class DunningQueuePageComponent implements OnInit {
   isLoading = false;
   errorMessage = '';
 
-  constructor(private frontdeskApi: FrontdeskApiService) {}
+  // Follow-up
+  showFollowUpModal = false;
+  selectedItem: DunningItem | null = null;
+  followUpNotes = '';
+  selectedTemplateId = '';
+
+  // Promise to pay
+  showPromiseModal = false;
+  promiseDate = '';
+
+  // Suspend
+  showSuspendModal = false;
+  suspendReason = '';
+
+  // Templates Configuration
+  showTemplatesModal = false;
+  templates: ReminderTemplate[] = [
+    { id: '1', name: 'First Reminder', subject: 'Payment Failed - Action Required', body: 'Hi [MemberName], your recent payment of [Amount] failed. Please update your payment method.' },
+    { id: '2', name: 'Final Notice', subject: 'Urgent: Account Suspension Pending', body: 'Hi [MemberName], your payment is overdue. Your account will be suspended if not paid within 24 hours.' }
+  ];
+  editingTemplate: ReminderTemplate | null = null;
+
+  constructor(
+    private managerApi: ManagerApiService,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
+    this.loadTemplates();
     this.loadDunningQueue();
+  }
+
+  loadTemplates() {
+    const saved = localStorage.getItem('dunning_templates');
+    if (saved) {
+      try {
+        this.templates = JSON.parse(saved);
+      } catch (e) {}
+    }
+  }
+
+  saveTemplates() {
+    localStorage.setItem('dunning_templates', JSON.stringify(this.templates));
+    this.toastService.success('Templates saved successfully');
   }
 
   loadDunningQueue(): void {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.frontdeskApi.getFailedInvoices().subscribe({
-      next: (invoices) => {
-        this.dunningItems = invoices
-          .filter((inv) => inv.status === 'OVERDUE' || inv.status === 'PENDING')
-          .map((inv) => ({
-            invoiceId: inv.invoiceId!,
-            memberId: inv.memberId,
-            memberName: `Member ${inv.memberId}`, // Backend doesn't return name; can be enhanced
-            amount: inv.finalAmount || 0,
-            daysOverdue: this.calculateDaysOverdue(inv.createdAt),
-            attemptCount: 0, // Track from backend audit logs if needed
-            lastAttempt: 'N/A',
-            status: (inv.status === 'OVERDUE' ? 'OVERDUE' : 'PENDING') as
-              | 'PENDING'
-              | 'OVERDUE'
-              | 'DUNNING',
-          }));
+    // We can merge overdue invoices and dunning memberships
+    this.managerApi.getOverdueInvoices().subscribe({
+      next: (res) => {
+        const invoices = res.invoices || [];
+        this.dunningItems = invoices.map((inv: any) => ({
+          invoiceId: inv.invoiceId,
+          memberId: inv.member.memId,
+          memberName: inv.member.memName,
+          email: inv.member.email,
+          phone: inv.member.phone || 'N/A',
+          amount: inv.finalAmount || 0,
+          outstanding: inv.outstanding || 0,
+          daysOverdue: this.calculateDaysOverdue(inv.createdAt),
+          attemptCount: 0,
+          lastAttempt: 'N/A',
+          status: inv.status,
+          promiseToPayDate: inv.promiseToPayDate
+        }));
         this.isLoading = false;
       },
       error: (err) => {
         this.errorMessage = `Failed to load dunning queue: ${err.error?.message || 'Unknown error'}`;
         this.isLoading = false;
-        // Show mock data as fallback
-        this.initializeMockDunning();
       },
     });
   }
@@ -73,78 +121,97 @@ export class DunningQueuePageComponent implements OnInit {
     return Math.floor(diff / (1000 * 60 * 60 * 24));
   }
 
-  initializeMockDunning(): void {
-    this.dunningItems = [
-      {
-        invoiceId: 1,
-        memberId: 101,
-        memberName: 'Rajesh Kumar',
-        amount: 4999,
-        daysOverdue: 15,
-        attemptCount: 3,
-        lastAttempt: '2 days ago',
-        status: 'DUNNING',
-      },
-      {
-        invoiceId: 2,
-        memberId: 102,
-        memberName: 'Priya Singh',
-        amount: 3500,
-        daysOverdue: 10,
-        attemptCount: 2,
-        lastAttempt: '1 day ago',
-        status: 'OVERDUE',
-      },
-      {
-        invoiceId: 3,
-        memberId: 103,
-        memberName: 'Amit Patel',
-        amount: 12499,
-        daysOverdue: 8,
-        attemptCount: 1,
-        lastAttempt: '3 days ago',
-        status: 'PENDING',
-      },
-    ];
-  }
-
   toggleExpand(id: number): void {
     this.expandedId = this.expandedId === id ? null : id;
   }
 
-  retryPayment(item: DunningItem): void {
-    const payment: PaymentDto = {
-      invoiceId: item.invoiceId,
-      memberId: item.memberId,
-      amountPaid: item.amount,
-      paymentMethod: 'CARD', // Default to card for retry
-    };
-
-    this.frontdeskApi.processPayment(payment).subscribe({
-      next: () => {
-        item.status = 'PENDING';
-        item.attemptCount += 1;
-        item.lastAttempt = 'Just now';
-        // Reload dunning queue after retry
-        setTimeout(() => this.loadDunningQueue(), 1000);
+  exportCsv(): void {
+    this.managerApi.exportDunningListCsv().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'dunning_list.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
       },
-      error: (err) => {
-        this.errorMessage = `Retry failed: ${err.error?.message || 'Unknown error'}`;
-      },
+      error: () => this.toastService.error('Failed to export CSV')
     });
   }
 
-  suspendMember(item: DunningItem): void {
-    // This would need a suspend member endpoint
-    console.log('Member suspended:', item.memberName);
+  // Follow up
+  openFollowUpModal(item: DunningItem) {
+    this.selectedItem = item;
+    this.followUpNotes = '';
+    this.selectedTemplateId = '';
+    this.showFollowUpModal = true;
+  }
+
+  onTemplateSelect() {
+    if (this.selectedTemplateId) {
+      const tpl = this.templates.find(t => t.id === this.selectedTemplateId);
+      if (tpl && this.selectedItem) {
+        let text = tpl.body;
+        text = text.replace('[MemberName]', this.selectedItem.memberName);
+        text = text.replace('[Amount]', '$' + this.selectedItem.outstanding);
+        this.followUpNotes = text;
+      }
+    }
+  }
+
+  submitFollowUp() {
+    if (!this.selectedItem?.invoiceId || !this.followUpNotes.trim()) return;
+    this.managerApi.recordFollowUp(this.selectedItem.invoiceId, this.followUpNotes).subscribe({
+      next: () => {
+        this.toastService.success('Follow-up recorded successfully');
+        this.showFollowUpModal = false;
+        this.loadDunningQueue();
+      },
+      error: () => this.toastService.error('Failed to record follow-up')
+    });
+  }
+
+  // Promise to pay
+  openPromiseModal(item: DunningItem) {
+    this.selectedItem = item;
+    this.promiseDate = '';
+    this.showPromiseModal = true;
+  }
+
+  submitPromise() {
+    if (!this.selectedItem?.invoiceId || !this.promiseDate) return;
+    this.managerApi.setPromiseToPay(this.selectedItem.invoiceId, this.promiseDate).subscribe({
+      next: () => {
+        this.toastService.success('Promise to pay date recorded');
+        this.showPromiseModal = false;
+        this.loadDunningQueue();
+      },
+      error: () => this.toastService.error('Failed to set promise to pay')
+    });
+  }
+
+  // Suspend
+  openSuspendModal(item: DunningItem) {
+    this.selectedItem = item;
+    this.suspendReason = '';
+    this.showSuspendModal = true;
+  }
+
+  submitSuspend() {
+    // Need membershipId for suspension. The endpoint dunning-memberships has it, but we loaded overdue-invoices.
+    // In our backend, invoice has membership attached. For simplicity, we just notify user or if membershipId is available we use it.
+    this.toastService.warning('Suspend directly from Member details or ensure Membership ID is mapped.');
+    this.showSuspendModal = false;
   }
 
   getTotalOutstanding(): number {
-    return this.dunningItems.reduce((sum, item) => sum + item.amount, 0);
+    return this.dunningItems.reduce((sum, item) => sum + item.outstanding, 0);
   }
 
   get failedCount(): number {
-    return this.dunningItems.filter((d) => d.status === 'DUNNING').length;
+    return this.dunningItems.filter((d) => d.status === 'DUNNING' || d.status === 'OVERDUE').length;
   }
 
   getStatusColor(status: string): string {

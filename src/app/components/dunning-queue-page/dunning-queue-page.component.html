@@ -1,7 +1,23 @@
-<div class="max-w-[1000px] mx-auto pb-10">
-  <div class="mb-8">
-    <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Dunning Queue</h1>
-    <p class="text-[#475569] text-[14px]">Manage failed payment recovery</p>
+<div class="max-w-[1200px] mx-auto pb-10">
+  <div class="flex justify-between items-end mb-8">
+    <div>
+      <h1 class="font-bold text-[28px] text-[#0F172A] mb-2">Dunning Queue</h1>
+      <p class="text-[#475569] text-[14px]">Manage failed payment recovery and follow-ups</p>
+    </div>
+    <div class="flex gap-3">
+      <button
+        (click)="showTemplatesModal = true"
+        class="px-4 h-10 bg-white border border-[#E8ECF4] text-[#475569] font-bold text-[14px] rounded-[8px] hover:bg-[#F8F9FC]"
+      >
+        Manage Templates
+      </button>
+      <button
+        (click)="exportCsv()"
+        class="px-4 h-10 bg-[#2563EB] text-white font-bold text-[14px] rounded-[8px] hover:bg-[#1D4ED8]"
+      >
+        Export CSV
+      </button>
+    </div>
   </div>
 
   <!-- STATS -->
@@ -21,7 +37,7 @@
       </p>
     </div>
     <div class="bg-white border border-[#E8ECF4] rounded-[12px] p-4 shadow-sm">
-      <p class="text-[12px] text-[#94A3B8] font-bold mb-1">Failed Attempts</p>
+      <p class="text-[12px] text-[#94A3B8] font-bold mb-1">Failed/Overdue</p>
       <p class="font-bold text-[24px] text-[#D97706]">
         {{ failedCount }}
       </p>
@@ -32,31 +48,33 @@
   <div
     class="bg-white border border-[#E8ECF4] rounded-[12px] overflow-hidden shadow-sm"
   >
+    <div *ngIf="isLoading" class="p-8 text-center text-[#94A3B8]">Loading queue...</div>
+    <div *ngIf="!isLoading && dunningItems.length === 0" class="p-8 text-center text-[#94A3B8]">Queue is empty.</div>
+
     <div
       *ngFor="let item of dunningItems"
       class="border-b border-[#E8ECF4] last:border-b-0"
     >
       <div
-        (click)="toggleExpand(item.invoiceId)"
+        (click)="toggleExpand(item.invoiceId || 0)"
         class="p-6 cursor-pointer hover:bg-[#F8F9FC] flex items-center justify-between"
       >
         <div class="flex-1">
-          <h3 class="font-bold text-[14px] text-[#0F172A] mb-2">
+          <h3 class="font-bold text-[16px] text-[#0F172A] mb-2 flex items-center gap-2">
             {{ item.memberName }}
+            <span *ngIf="item.promiseToPayDate" class="px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#059669] text-[10px] uppercase font-bold">
+              Promise: {{ item.promiseToPayDate }}
+            </span>
           </h3>
-          <div class="flex gap-4 text-[12px] text-[#475569]">
-            <span
-              >Outstanding:
-              <strong class="text-[#DC2626]"
-                >₹{{ item.amount | number }}</strong
-              ></span
-            >
-            <span
-              >Overdue: <strong>{{ item.daysOverdue }} days</strong></span
-            >
-            <span
-              >Attempts: <strong>{{ item.attemptCount }}</strong></span
-            >
+          <div class="flex flex-wrap gap-4 text-[12px] text-[#475569]">
+            <span>Email: <strong>{{ item.email }}</strong></span>
+            <span>Phone: <strong>{{ item.phone }}</strong></span>
+            <span>Total Invoice: <strong>₹{{ item.amount | number }}</strong></span>
+            <span>
+              Outstanding:
+              <strong class="text-[#DC2626]">₹{{ item.outstanding | number }}</strong>
+            </span>
+            <span>Overdue: <strong>{{ item.daysOverdue }} days</strong></span>
           </div>
         </div>
         <span
@@ -73,26 +91,112 @@
 
       <div
         *ngIf="expandedId === item.invoiceId"
-        class="px-6 py-4 bg-[#F8F9FC] border-t border-[#E8ECF4] flex gap-3"
+        class="px-6 py-4 bg-[#F8F9FC] border-t border-[#E8ECF4] flex gap-3 justify-end items-center"
       >
-        <div class="flex-1 text-[12px] text-[#475569]">
-          Last attempt: {{ item.lastAttempt }}
-        </div>
         <div class="flex gap-2">
           <button
-            (click)="retryPayment(item)"
-            class="px-4 h-9 bg-[#2563EB] text-white font-bold text-[12px] rounded-[6px] hover:bg-[#1D4ED8]"
+            (click)="openFollowUpModal(item)"
+            class="px-4 h-9 bg-[#F1F5F9] border border-[#E2E8F0] text-[#0F172A] font-bold text-[12px] rounded-[6px] hover:bg-[#E2E8F0]"
           >
-            Retry Payment
+            Log Follow-Up
           </button>
           <button
-            (click)="suspendMember(item)"
+            (click)="openPromiseModal(item)"
+            class="px-4 h-9 bg-[#F1F5F9] border border-[#E2E8F0] text-[#0F172A] font-bold text-[12px] rounded-[6px] hover:bg-[#E2E8F0]"
+          >
+            Set Promise to Pay
+          </button>
+          <button
+            (click)="openSuspendModal(item)"
             class="px-4 h-9 bg-white border border-[#E8ECF4] text-[#DC2626] font-bold text-[12px] rounded-[6px] hover:bg-[#FEF2F2]"
           >
             Suspend Member
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Follow Up Modal -->
+<div *ngIf="showFollowUpModal" class="fixed inset-0 bg-[#0F172A]/40 flex items-center justify-center z-50">
+  <div class="bg-white w-[500px] rounded-[12px] shadow-xl p-6">
+    <h3 class="text-[18px] font-bold text-[#0F172A] mb-4">Record Follow-Up</h3>
+    <p class="text-[#475569] text-[13px] mb-4">Select a template or type a manual note for <strong>{{ selectedItem?.memberName }}</strong>.</p>
+    
+    <label class="block text-[12px] font-bold text-[#475569] mb-1">Use Template</label>
+    <select [(ngModel)]="selectedTemplateId" (change)="onTemplateSelect()" class="w-full h-10 border border-[#E8ECF4] rounded-[8px] px-3 text-[14px] text-[#0F172A] mb-4 outline-none focus:border-[#2563EB]">
+      <option value="">-- No Template --</option>
+      <option *ngFor="let tpl of templates" [value]="tpl.id">{{ tpl.name }}</option>
+    </select>
+
+    <label class="block text-[12px] font-bold text-[#475569] mb-1">Follow-Up Notes / Message</label>
+    <textarea [(ngModel)]="followUpNotes" rows="4" class="w-full border border-[#E8ECF4] rounded-[8px] p-3 text-[14px] text-[#0F172A] mb-6 outline-none focus:border-[#2563EB] resize-none" placeholder="Enter details of the call or email sent..."></textarea>
+
+    <div class="flex justify-end gap-3">
+      <button (click)="showFollowUpModal = false" class="px-4 h-10 text-[14px] font-bold text-[#475569] hover:bg-[#F8F9FC] rounded-[8px]">Cancel</button>
+      <button (click)="submitFollowUp()" class="px-4 h-10 bg-[#2563EB] text-white font-bold text-[14px] rounded-[8px] hover:bg-[#1D4ED8]">Save Follow-Up</button>
+    </div>
+  </div>
+</div>
+
+<!-- Promise to Pay Modal -->
+<div *ngIf="showPromiseModal" class="fixed inset-0 bg-[#0F172A]/40 flex items-center justify-center z-50">
+  <div class="bg-white w-[400px] rounded-[12px] shadow-xl p-6">
+    <h3 class="text-[18px] font-bold text-[#0F172A] mb-4">Set Promise to Pay</h3>
+    <p class="text-[#475569] text-[13px] mb-4">Record the date by which <strong>{{ selectedItem?.memberName }}</strong> promised to clear the dues.</p>
+    
+    <label class="block text-[12px] font-bold text-[#475569] mb-1">Promise Date</label>
+    <input type="date" [(ngModel)]="promiseDate" class="w-full h-10 border border-[#E8ECF4] rounded-[8px] px-3 text-[14px] text-[#0F172A] mb-6 outline-none focus:border-[#2563EB]">
+
+    <div class="flex justify-end gap-3">
+      <button (click)="showPromiseModal = false" class="px-4 h-10 text-[14px] font-bold text-[#475569] hover:bg-[#F8F9FC] rounded-[8px]">Cancel</button>
+      <button (click)="submitPromise()" class="px-4 h-10 bg-[#2563EB] text-white font-bold text-[14px] rounded-[8px] hover:bg-[#1D4ED8]">Save Date</button>
+    </div>
+  </div>
+</div>
+
+<!-- Suspend Modal -->
+<div *ngIf="showSuspendModal" class="fixed inset-0 bg-[#0F172A]/40 flex items-center justify-center z-50">
+  <div class="bg-white w-[450px] rounded-[12px] shadow-xl p-6 border-t-4 border-[#DC2626]">
+    <h3 class="text-[18px] font-bold text-[#0F172A] mb-4 flex items-center gap-2">
+      <span class="text-[#DC2626]">⚠️</span> Suspend Member
+    </h3>
+    <p class="text-[#475569] text-[13px] mb-4">You are about to suspend <strong>{{ selectedItem?.memberName }}</strong>. They will lose access to the gym and classes.</p>
+    
+    <label class="block text-[12px] font-bold text-[#475569] mb-1">Reason for Suspension</label>
+    <input type="text" [(ngModel)]="suspendReason" placeholder="e.g. Failure to pay after 30 days" class="w-full h-10 border border-[#E8ECF4] rounded-[8px] px-3 text-[14px] text-[#0F172A] mb-6 outline-none focus:border-[#2563EB]">
+
+    <div class="flex justify-end gap-3">
+      <button (click)="showSuspendModal = false" class="px-4 h-10 text-[14px] font-bold text-[#475569] hover:bg-[#F8F9FC] rounded-[8px]">Cancel</button>
+      <button (click)="submitSuspend()" class="px-4 h-10 bg-[#DC2626] text-white font-bold text-[14px] rounded-[8px] hover:bg-[#B91C1C]">Confirm Suspension</button>
+    </div>
+  </div>
+</div>
+
+<!-- Templates Configuration Modal -->
+<div *ngIf="showTemplatesModal" class="fixed inset-0 bg-[#0F172A]/40 flex items-center justify-center z-50">
+  <div class="bg-white w-[600px] max-h-[80vh] overflow-y-auto rounded-[12px] shadow-xl p-6">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-[18px] font-bold text-[#0F172A]">Reminder Templates</h3>
+      <button (click)="showTemplatesModal = false" class="text-[#94A3B8] hover:text-[#0F172A]">✕</button>
+    </div>
+    
+    <div class="space-y-4 mb-6">
+      <div *ngFor="let tpl of templates" class="p-4 border border-[#E8ECF4] rounded-[8px] bg-[#F8F9FC]">
+        <div class="flex justify-between items-start mb-2">
+          <h4 class="font-bold text-[14px] text-[#0F172A]">{{ tpl.name }}</h4>
+        </div>
+        <p class="text-[12px] font-bold text-[#475569] mb-1">Subject: <span class="font-normal">{{ tpl.subject }}</span></p>
+        <p class="text-[13px] text-[#475569]">{{ tpl.body }}</p>
+      </div>
+    </div>
+    <div class="bg-[#EFF6FF] p-4 rounded-[8px] text-[13px] text-[#1E3A8A]">
+      <strong>Note:</strong> Templates are currently configured locally. Use placeholders like [MemberName] and [Amount] to auto-populate data when following up.
+    </div>
+
+    <div class="flex justify-end gap-3 mt-6">
+      <button (click)="showTemplatesModal = false" class="px-4 h-10 bg-[#2563EB] text-white font-bold text-[14px] rounded-[8px] hover:bg-[#1D4ED8]">Done</button>
     </div>
   </div>
 </div>

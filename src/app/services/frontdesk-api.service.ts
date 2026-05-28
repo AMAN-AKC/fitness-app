@@ -21,6 +21,8 @@ export interface MemberDto {
   emgPhone: string;
   referralCode?: string;
   corporateCode?: string;
+  myReferralCode?: string;
+  walletBalance?: number;
   notes?: string;
   status?: MemberStatus;
   homeBranchId: number;
@@ -169,6 +171,7 @@ export interface PaymentDto {
   status?: PaymentStatus;
   gatewayReference?: string;
   failureReason?: string;
+  walletCreditApplied?: number;
   createdAt?: string;
   transactionId?: string;
 }
@@ -296,6 +299,13 @@ export class FrontdeskApiService {
   getMembershipsByMember(memberId: number): Observable<MembershipDto[]> {
     return this.http.get<MembershipDto[]>(
       `${this.baseUrl}/memberships/member/${memberId}`,
+    );
+  }
+
+  changePlanForPending(membershipId: number, newPlanId: number): Observable<MembershipDto> {
+    return this.http.post<MembershipDto>(
+      `${this.baseUrl}/memberships/${membershipId}/change-pending?newPlanId=${newPlanId}`,
+      {}
     );
   }
 
@@ -641,6 +651,5 @@ export class FrontdeskApiService {
   cancelClassBooking(bookingId: number): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/bookings/${bookingId}/cancel`, {});
   }
-
 
 }

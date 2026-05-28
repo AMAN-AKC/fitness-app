@@ -38,6 +38,16 @@ export class CheckoutComponent implements OnInit {
   isSuccess = false;
   isUpgrade = false;
   paymentAmount: number = 0;
+  
+  // Wallet
+  walletBalance: number = 0;
+  useWallet: boolean = false;
+  walletAppliedAmount: number = 0;
+  
+  // Pending Flow
+  pendingMembershipId: number | null = null;
+  isPendingInvoiceFlow = false;
+  private createdInvoiceId: number | null = null;
 
   paymentMethods: PaymentMethod[] = [
     { id: 'CARD', type: 'CARD', label: '💳 Credit/Debit Card' },
@@ -55,22 +65,64 @@ export class CheckoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.isLoadingBreakdown = true;
-    this.frontdeskApi.getCurrentMember().subscribe({
-      next: (member) => {
-        this.currentMemberId = Number(member.memberId);
-        this.loadPlans();
-        
-        // Read planId and upgrade flag from URL
-        this.route.queryParams.subscribe(params => {
-          this.isUpgrade = params['upgrade'] === 'true';
-          if (params['planId']) {
-            this.selectPlan(Number(params['planId']));
+
+    this.route.queryParams.subscribe(params => {
+      this.isUpgrade = params['upgrade'] === 'true';
+      
+      if (params['pendingInvoice'] === 'true' && params['memberId']) {
+        this.currentMemberId = Number(params['memberId']);
+        this.isPendingInvoiceFlow = true;
+        this.handlePendingInvoiceFlow();
+      } else {
+        // Normal flow
+        this.frontdeskApi.getCurrentMember().subscribe({
+          next: (member) => {
+            this.currentMemberId = Number(member.memberId);
+            this.walletBalance = member.walletBalance || 0;
+            this.loadPlans();
+            if (params['planId']) {
+              this.selectPlan(Number(params['planId']));
+            } else {
+              this.isLoadingBreakdown = false;
+            }
+          },
+          error: () => {
+            this.errorMessage = 'Unable to identify current member profile.';
+            this.isLoadingBreakdown = false;
           }
         });
+      }
+    });
+  }
+
+  handlePendingInvoiceFlow(): void {
+    // We need both the member profile (for wallet) and their memberships
+    this.frontdeskApi.getMemberById(this.currentMemberId).subscribe(m => {
+      this.walletBalance = m.walletBalance || 0;
+    });
+
+    this.frontdeskApi.getMembershipsByMember(this.currentMemberId).subscribe(memberships => {
+      const pendingMembership = memberships.find(m => m.status === 'PENDING');
+      if (pendingMembership && pendingMembership.memId) {
+        this.pendingMembershipId = pendingMembership.memId;
+        this.selectPlan(pendingMembership.planId);
+      }
+      this.loadPlans();
+    });
+
+    this.frontdeskApi.getInvoicesByMember(this.currentMemberId).subscribe({
+      next: (invoices) => {
+        const pending = invoices.find(inv => inv.status === 'ISSUED');
+        if (pending && pending.invoiceId) {
+          this.createdInvoiceId = pending.invoiceId;
+          this.paymentAmount = pending.finalAmount || 0;
+          this.successMessage = `You have a pending invoice for activation.`;
+        } else {
+          this.errorMessage = 'No pending invoices found for activation.';
+        }
       },
       error: () => {
-        this.errorMessage = 'Unable to identify current member profile.';
-        this.isLoadingBreakdown = false;
+        this.errorMessage = 'Failed to load pending invoices.';
       }
     });
   }
@@ -104,6 +156,7 @@ export class CheckoutComponent implements OnInit {
     request.subscribe({
         next: (bd) => {
           this.breakdown = bd;
+          this.calculateFinalPaymentAmount();
           this.isLoadingBreakdown = false;
         },
         error: (err) => {
@@ -112,6 +165,30 @@ export class CheckoutComponent implements OnInit {
           this.isLoadingBreakdown = false;
         },
       });
+  }
+
+  toggleWallet(): void {
+    this.useWallet = !this.useWallet;
+    this.calculateFinalPaymentAmount();
+  }
+
+  calculateFinalPaymentAmount(): void {
+    if (!this.breakdown) return;
+    let amount = this.breakdown.finalAmount;
+    
+    if (this.useWallet && this.walletBalance > 0) {
+      if (this.walletBalance >= amount) {
+        this.walletAppliedAmount = amount;
+        amount = 0;
+      } else {
+        this.walletAppliedAmount = this.walletBalance;
+        amount -= this.walletBalance;
+      }
+    } else {
+      this.walletAppliedAmount = 0;
+    }
+    
+    this.paymentAmount = amount;
   }
 
   applyPromoCode(): void {
@@ -147,8 +224,32 @@ export class CheckoutComponent implements OnInit {
     this.isProcessing = true;
     this.errorMessage = '';
     this.successMessage = '';
+    
+    if (this.isPendingInvoiceFlow && this.pendingMembershipId) {
+      // User is changing a pending plan
+      this.frontdeskApi.changePlanForPending(this.pendingMembershipId, this.selectedPlanId!).subscribe({
+        next: (membership) => {
+          // Re-fetch invoices to get the new one
+          this.frontdeskApi.getInvoicesByMember(this.currentMemberId).subscribe({
+            next: (invoices) => {
+              const pending = invoices.find(inv => inv.status === 'ISSUED');
+              if (pending && pending.invoiceId) {
+                this.createdInvoiceId = pending.invoiceId;
+                this.isProcessing = false;
+                this.showPaymentGateway = true;
+              }
+            }
+          });
+        },
+        error: (err) => {
+          this.isProcessing = false;
+          this.errorMessage = `Failed to update plan: ${err.error?.message || 'Unknown error'}`;
+        }
+      });
+      return;
+    }
 
-    // Step 1: Create Invoice
+    // Step 1: Create Invoice (Normal Flow)
     const invoice: InvoiceDto = {
       memberId: this.currentMemberId,
       planName: this.plans.find(p => p.planId === this.selectedPlanId)?.planName || 'Membership Plan',
@@ -164,7 +265,6 @@ export class CheckoutComponent implements OnInit {
       next: (createdInvoice) => {
         if (createdInvoice.invoiceId) {
           this.isProcessing = false;
-          this.paymentAmount = this.breakdown?.finalAmount || 0;
           this.showPaymentGateway = true;
           this.successMessage = `Invoice ${createdInvoice.invoiceNumber || createdInvoice.invoiceId} generated.`;
           // We'll use the createdInvoice ID in the next step
@@ -182,10 +282,8 @@ export class CheckoutComponent implements OnInit {
     this.router.navigate(['/member/dashboard']);
   }
 
-  private createdInvoiceId: number | null = null;
-
   completePayment(): void {
-    if (!this.createdInvoiceId || !this.breakdown) return;
+    if (!this.createdInvoiceId) return;
     
     this.isProcessing = true;
     const payment: PaymentDto = {
@@ -193,6 +291,7 @@ export class CheckoutComponent implements OnInit {
       memberId: this.currentMemberId,
       amountPaid: this.paymentAmount,
       paymentMethod: this.selectedPaymentMethod,
+      walletCreditApplied: this.walletAppliedAmount > 0 ? this.walletAppliedAmount : undefined
     };
 
     this.frontdeskApi.processPayment(payment).subscribe({

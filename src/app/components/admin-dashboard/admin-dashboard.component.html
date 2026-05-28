@@ -1,262 +1,357 @@
 <div class="admin-dashboard-container pb-10">
   <!-- LOADING OVERLAY -->
   <div *ngIf="isLoading" class="loading-overlay">
-    <div class="brutal-loader">FETCHING SYSTEM METRICS...</div>
+    <div class="brutal-loader">SYNCING CONFIGURATIONS...</div>
   </div>
 
   <div *ngIf="!isLoading">
     <!-- HEADER -->
-    <header class="dashboard-header mb-8">
-      <h1 class="font-heading font-black text-2xl uppercase">SYSTEM ADMINISTRATION</h1>
-      <p class="font-body text-muted uppercase">Global oversight, systems toggles, and compliance logs</p>
+    <header class="dashboard-header mb-6 flex justify-between items-center" style="display: flex; justify-content: space-between;">
+      <div>
+        <h1 class="font-heading font-black text-2xl uppercase">SYSTEM CONFIGURATION</h1>
+        <p class="font-body text-muted uppercase">Central Control Panel & Feature Toggles</p>
+      </div>
+      <button (click)="saveConfigs()" class="btn-primary font-heading font-black px-6" style="height: 48px; border: 3px solid #000;">
+        💾 SAVE CONFIGURATIONS
+      </button>
     </header>
 
-    <!-- KPI TILES (6-column layout) -->
-    <section class="kpi-grid mb-8">
-      <!-- Tile 1: Total Members -->
-      <div class="kpi-card" style="border-left: 8px solid #2563EB;">
-        <span class="kpi-title font-heading font-bold">TOTAL MEMBERS</span>
-        <h2 class="kpi-value font-heading font-black">{{ formatNumber(totalMembers) }}</h2>
-        <span class="kpi-subtitle font-heading font-bold" style="color: #2563EB;">REGISTERED ACCOUNTS</span>
-      </div>
+    <!-- SUCCESS / ERROR -->
+    <div *ngIf="successMessage" class="brutal-alert brutal-alert-success mb-6" style="background: #00D26A; color: #FFF; padding: 12px; border: 3px solid #000; font-weight: bold;">
+      {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="brutal-alert brutal-alert-error mb-6" style="background: #FF3B30; color: #FFF; padding: 12px; border: 3px solid #000; font-weight: bold;">
+      {{ errorMessage }}
+    </div>
 
-      <!-- Tile 2: Active Memberships -->
-      <div class="kpi-card" style="border-left: 8px solid #00D26A;">
-        <span class="kpi-title font-heading font-bold">ACTIVE PLANS</span>
-        <h2 class="kpi-value font-heading font-black">{{ activePlansCount }}</h2>
-        <span class="kpi-subtitle font-heading font-bold" style="color: #555;">
-          {{ totalPlansCount ? Math.round((activePlansCount / totalPlansCount) * 100) : 83 }}% OF TOTAL
-        </span>
-      </div>
+    <!-- TABS -->
+    <div class="tabs-container mb-6 flex gap-2 border-b-4 border-black pb-2" style="display: flex; gap: 8px; border-bottom: 4px solid #000; padding-bottom: 8px; overflow-x: auto;">
+      <button *ngFor="let tab of tabs" 
+              (click)="switchTab(tab)" 
+              [style.background]="activeTab === tab ? 'var(--yellow)' : '#fff'" 
+              class="tab-btn font-heading font-black px-4 py-2 uppercase" 
+              style="border: 3px solid #000; white-space: nowrap;">
+        {{ tab.replace('_', ' ') }}
+      </button>
+    </div>
 
-      <!-- Tile 3: Revenue MTD (Sparkline) -->
-      <div class="kpi-card" style="border-left: 8px solid #00D26A;">
-        <span class="kpi-title font-heading font-bold">REVENUE MTD</span>
-        <h2 class="kpi-value font-heading font-black" style="font-size: 26px;">{{ formatCurrency(revenueMTD) }}</h2>
-        <div class="sparkline-wrapper">
-          <div class="spark-bar" style="height: 12px;"></div>
-          <div class="spark-bar" style="height: 18px;"></div>
-          <div class="spark-bar" style="height: 15px;"></div>
-          <div class="spark-bar" style="height: 24px;"></div>
-          <div class="spark-bar" style="height: 28px;"></div>
-          <div class="spark-bar" style="height: 38px;"></div>
+    <!-- TAB CONTENTS -->
+    <div class="fade-in">
+    
+    <!-- 1. GENERAL -->
+    <div *ngIf="activeTab === 'GENERAL'" class="brutal-card p-6" style="border: 4px solid #000; background: #fff;">
+      <h3 class="font-heading font-black text-xl mb-4 uppercase">GENERAL SETTINGS</h3>
+      <div class="form-group mb-4">
+        <label class="font-heading font-bold uppercase block mb-1">SESSION TIMEOUT (MINUTES)</label>
+        <input type="number" [(ngModel)]="systemConfigs['session.timeout']" class="brutal-input w-full p-2" style="border: 2px solid #000;">
+        <small class="font-mono text-muted">Auto logout duration for idle users.</small>
+      </div>
+    </div>
+
+
+
+    <!-- 2. SECURITY -->
+    <div *ngIf="activeTab === 'SECURITY'" class="brutal-card p-6 fade-in" style="border: 4px solid #000; background: #fff;">
+      <h3 class="font-heading font-black text-xl mb-4 uppercase">PASSWORD & SESSION POLICY</h3>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 font-body">
+        <!-- Left Column -->
+        <div class="flex flex-col gap-6">
+          <!-- Min Password Length -->
+          <div class="form-group">
+            <div class="flex justify-between items-center mb-2">
+              <label class="font-heading font-bold uppercase">MINIMUM PASSWORD LENGTH</label>
+              <span class="px-2 py-1 font-heading font-bold text-xs uppercase" style="background-color: var(--yellow); color: #000; border: 2px solid #000;">
+                {{ passwordPolicy.minPasswordLength }} CHARS
+              </span>
+            </div>
+            <input
+              type="range"
+              min="8"
+              max="20"
+              [(ngModel)]="passwordPolicy.minPasswordLength"
+              class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer border-2 border-black"
+            />
+          </div>
+
+          <!-- Checkbox switches -->
+          <div class="flex flex-col gap-4 mt-2">
+            <!-- Uppercase -->
+            <div class="flex justify-between items-center bg-gray-50 p-3 border-2 border-black">
+              <span class="font-bold uppercase text-sm">REQUIRE UPPERCASE LETTER</span>
+              <button
+                (click)="passwordPolicy.requireUppercase = !passwordPolicy.requireUppercase"
+                class="brutal-toggle-switch"
+                [class.active]="passwordPolicy.requireUppercase"
+              >
+              </button>
+            </div>
+
+            <!-- Numbers -->
+            <div class="flex justify-between items-center bg-gray-50 p-3 border-2 border-black">
+              <span class="font-bold uppercase text-sm">REQUIRE NUMBER</span>
+              <button
+                (click)="passwordPolicy.requireNumber = !passwordPolicy.requireNumber"
+                class="brutal-toggle-switch"
+                [class.active]="passwordPolicy.requireNumber"
+              >
+              </button>
+            </div>
+
+            <!-- Specials -->
+            <div class="flex justify-between items-center bg-gray-50 p-3 border-2 border-black">
+              <span class="font-bold uppercase text-sm">REQUIRE SPECIAL CHARACTER</span>
+              <button
+                (click)="passwordPolicy.requireSpecialChar = !passwordPolicy.requireSpecialChar"
+                class="brutal-toggle-switch"
+                [class.active]="passwordPolicy.requireSpecialChar"
+              >
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="flex flex-col gap-6">
+          <!-- Session timeout -->
+          <div class="form-group">
+            <label class="font-heading font-bold uppercase block mb-2">SESSION TIMEOUT</label>
+            <select
+              [(ngModel)]="passwordPolicy.sessionTimeoutMin"
+              [ngModelOptions]="{standalone: true}"
+              class="brutal-input w-full p-2 uppercase" style="border: 2px solid #000;"
+            >
+              <option [ngValue]="15">15 MINUTES</option>
+              <option [ngValue]="30">30 MINUTES</option>
+              <option [ngValue]="60">60 MINUTES</option>
+              <option [ngValue]="120">120 MINUTES</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Max failed attempts counter -->
+            <div class="form-group">
+              <label class="font-heading font-bold uppercase block mb-2 text-sm">MAX FAILED ATTEMPTS</label>
+              <div class="flex items-center border-2 border-black bg-white">
+                <button (click)="decrementFailedAttempts()" class="px-4 py-2 hover:bg-gray-200 font-bold border-r-2 border-black">−</button>
+                <div class="flex-1 text-center font-heading font-black text-lg">
+                  {{ passwordPolicy.maxFailedAttempts }}
+                </div>
+                <button (click)="incrementFailedAttempts()" class="px-4 py-2 hover:bg-gray-200 font-bold border-l-2 border-black">+</button>
+              </div>
+            </div>
+
+            <!-- Lockout duration -->
+            <div class="form-group">
+              <label class="font-heading font-bold uppercase block mb-2 text-sm">LOCKOUT DURATION (MIN)</label>
+              <input
+                type="number"
+                [(ngModel)]="passwordPolicy.lockoutDurationMin"
+                [ngModelOptions]="{standalone: true}"
+                class="brutal-input w-full p-2 text-center" style="border: 2px solid #000;"
+              />
+            </div>
+          </div>
+
+          <div class="mt-auto pt-4">
+            <button (click)="savePasswordPolicy()" class="btn-action btn-primary w-full text-lg h-12">
+              SAVE POLICY
+            </button>
+          </div>
         </div>
       </div>
-
-      <!-- Tile 4: Branches -->
-      <div class="kpi-card" style="border-left: 8px solid #00D9FF;">
-        <span class="kpi-title font-heading font-bold">BRANCHES</span>
-        <h2 class="kpi-value font-heading font-black">{{ branches.length }}</h2>
-        <button (click)="onAddBranch()" class="kpi-action-link font-heading font-bold text-blue">
-          VIEW ALL →
-        </button>
+    </div>
+    <div *ngIf="activeTab === 'BILLING'" class="brutal-card p-6" style="border: 4px solid #000; background: #fff;">
+      <h3 class="font-heading font-black text-xl mb-4 uppercase">BILLING RULES</h3>
+      <div class="grid grid-cols-2 gap-6">
+        <div class="form-group mb-4">
+          <label class="font-heading font-bold uppercase block mb-1">CURRENCY CODE</label>
+          <select [(ngModel)]="systemConfigs['billing.currency']" class="brutal-input w-full p-2" style="border: 2px solid #000;">
+            <option value="INR">INR</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </div>
+        <div class="form-group mb-4">
+          <label class="font-heading font-bold uppercase block mb-1">DATE FORMAT</label>
+          <select [(ngModel)]="systemConfigs['billing.dateFormat']" class="brutal-input w-full p-2" style="border: 2px solid #000;">
+            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+          </select>
+        </div>
       </div>
+    </div>
 
-      <!-- Tile 5: Staff Accounts -->
-      <div class="kpi-card" style="border-left: 8px solid #7C3AED;">
-        <span class="kpi-title font-heading font-bold">STAFF ACCOUNTS</span>
-        <h2 class="kpi-value font-heading font-black">{{ staffCount }}</h2>
-        <span class="brutal-badge font-heading font-bold staff-badge" style="background-color: #FFB800; color: #111;">
-          {{ lockedStaffCount }} LOCKED
-        </span>
+    <!-- 4. FEATURE FLAGS -->
+    <div *ngIf="activeTab === 'FEATURE_FLAGS'" class="brutal-card p-6" style="border: 4px solid #000; background: #fff;">
+      <h3 class="font-heading font-black text-xl mb-4 uppercase">FEATURE TOGGLES</h3>
+      <p class="font-body font-bold mb-6">Enable or disable core system modules dynamically without deployments.</p>
+      
+      <div class="flags-list-container flex flex-col gap-4">
+        <div *ngFor="let flag of flags" class="flag-row brutal-card flex justify-between items-center p-4" style="border: 3px solid #000; background: #f9f9f9;">
+          <div class="flag-info flex flex-col">
+            <span class="flag-label font-heading font-black text-lg uppercase">{{ flag.name }}</span>
+            <span class="flag-modified font-mono text-sm text-muted">MODIFIED {{ flag.lastModified }} BY {{ flag.by }}</span>
+          </div>
+          
+          <div class="toggle-switch-wrapper flex items-center gap-3">
+            <span class="toggle-label font-heading font-black" [style.color]="flag.enabled ? '#00D26A' : '#555'">
+              {{ flag.enabled ? 'ON' : 'OFF' }}
+            </span>
+            <button (click)="toggleFlag(flag.name, flag.enabled)" class="brutal-toggle-switch" [class.active]="flag.enabled" style="width: 50px; height: 26px; border: 3px solid #000; border-radius: 13px; position: relative; background: {{ flag.enabled ? '#00D26A' : '#ccc' }}; cursor: pointer; transition: 0.3s;">
+              <div class="toggle-thumb" style="width: 16px; height: 16px; background: #000; border-radius: 50%; position: absolute; top: 2px; left: {{ flag.enabled ? '26px' : '2px' }}; transition: 0.3s;"></div>
+            </button>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <!-- Tile 6: Pending Audit Items (#FFFBEB card bg) -->
-      <div class="kpi-card kpi-card-tint" style="border-left: 8px solid #FFB800;">
-        <span class="kpi-title font-heading font-bold" style="color: #FFB800;">PENDING AUDITS</span>
-        <h2 class="kpi-value font-heading font-black" style="color: #111;">6</h2>
-        <span class="kpi-subtitle font-heading font-bold" style="color: #FFB800;">REVIEWS REQUIRED</span>
+    <!-- 5. BRANDING -->
+    <div *ngIf="activeTab === 'BRANDING'" class="brutal-card p-6" style="border: 4px solid #000; background: #fff;">
+      <h3 class="font-heading font-black text-xl mb-4 uppercase">BRANDING CONFIGURATION</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="form-group mb-4">
+          <label class="font-heading font-bold uppercase block mb-1">PRIMARY BRAND COLOR</label>
+          <div class="flex gap-2">
+            <input type="color" [(ngModel)]="systemConfigs['branding.primaryColor']" class="brutal-input p-1" style="height: 48px; width: 64px; border: 2px solid #000; cursor: pointer;">
+            <input type="text" [(ngModel)]="systemConfigs['branding.primaryColor']" class="brutal-input flex-1 p-2 font-mono uppercase" style="border: 2px solid #000;">
+          </div>
+        </div>
+        <div class="form-group mb-4">
+          <label class="font-heading font-bold uppercase block mb-1">LOGO URL</label>
+          <input type="text" [(ngModel)]="systemConfigs['branding.logoUrl']" placeholder="https://..." class="brutal-input w-full p-2" style="border: 2px solid #000;">
+          <div class="mt-4 p-4 flex items-center justify-center h-32" style="border: 2px dashed #000; background: #f9f9f9;">
+            <img *ngIf="systemConfigs['branding.logoUrl']" [src]="systemConfigs['branding.logoUrl']" alt="Logo Preview" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+            <span *ngIf="!systemConfigs['branding.logoUrl']" class="font-mono text-muted text-sm uppercase">NO LOGO URL PROVIDED</span>
+          </div>
+        </div>
       </div>
-    </section>
+    </div>
 
-    <!-- THREE-COLUMN MIDDLE ROW -->
-    <section class="middle-row-grid mb-8">
-      <!-- LEFT: Feature Flags -->
-      <div class="brutal-card system-flags-card">
-        <header class="card-header-row">
-          <h3 class="font-heading font-black text-md uppercase">FEATURE FLAGS</h3>
-          <span class="status-indicator font-heading font-bold text-green">
-            ● ALL SYSTEMS OPERATIONAL
-          </span>
-        </header>
+    <!-- 6. POLICIES -->
+    <div *ngIf="activeTab === 'POLICIES'" class="brutal-card p-6" style="border: 4px solid #000; background: #fff;">
+      <h3 class="font-heading font-black text-xl mb-4 uppercase">OPERATIONAL POLICIES</h3>
+      <div class="form-group mb-4 max-w-sm">
+        <label class="font-heading font-bold uppercase block mb-1">CANCELLATION WINDOW (HOURS)</label>
+        <input type="number" [(ngModel)]="systemConfigs['policy.cancellationWindowHours']" class="brutal-input w-full p-2" style="border: 2px solid #000;">
+        <small class="font-mono text-muted block mt-2">Minimum hours before a class to allow free cancellation.</small>
+      </div>
+    </div>
 
-        <div class="flags-list-container">
-          <div *ngFor="let flag of flags" class="flag-row">
-            <div class="flag-info">
-              <span class="flag-label font-body font-bold uppercase">{{ flag.name }}</span>
-              <span class="flag-modified font-body">MODIFIED {{ flag.lastModified }} BY {{ flag.by }}</span>
+    <!-- 6. AUDIT LOGS -->
+    <div *ngIf="activeTab === 'AUDIT_LOGS'" class="brutal-card p-6" style="border: 4px solid #000; background: #fff;">
+      <h3 class="font-heading font-black text-xl mb-4 uppercase">CONFIGURATION AUDIT TRAIL</h3>
+      <div class="table-wrapper">
+        <table class="brutal-table-grid w-full text-left" style="border-collapse: collapse;">
+          <thead class="font-heading border-b-4 border-black">
+            <tr>
+              <th class="p-2">ENTITY</th>
+              <th class="p-2">ACTION</th>
+              <th class="p-2">PERFORMED BY</th>
+              <th class="p-2">TIME</th>
+            </tr>
+          </thead>
+          <tbody class="font-body">
+            <tr *ngFor="let log of auditLogs" style="border-bottom: 2px solid #ccc;">
+              <td class="p-2 font-bold">{{ log.entity }}</td>
+              <td class="p-2 font-mono text-sm" [style.color]="log.color">{{ log.action }}</td>
+              <td class="p-2 font-bold">{{ log.user }}</td>
+              <td class="p-2 font-mono text-xs">{{ log.time }}</td>
+            </tr>
+            <tr *ngIf="auditLogs.length === 0">
+              <td colspan="4" class="p-4 text-center font-bold uppercase text-muted">No audit logs found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- 7. BRANCHES -->
+    <div *ngIf="activeTab === 'BRANCHES'" class="flex flex-col gap-6">
+      
+      <!-- Branch Overview -->
+      <div class="brutal-card p-6" style="border: 4px solid #000; background: #fff;">
+        <div class="flex justify-between mb-4">
+          <h3 class="font-heading font-black text-xl uppercase">BRANCH OVERVIEW</h3>
+          <span class="brutal-badge font-heading font-bold" style="background-color: #2563EB; color: #FFF; padding: 4px 8px; border: 2px solid #000;">{{ branches.length }} TOTAL</span>
+        </div>
+        
+        <div class="branches-list grid grid-cols-2 gap-4">
+          <div *ngFor="let b of branches" class="brutal-card p-4" style="border: 3px solid #000; background: #f9f9f9;">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-heading font-black text-lg uppercase">{{ b.name }}</span>
+              <div class="w-3 h-3 rounded-full border-2 border-black" [style.background]="b.active ? '#00D26A' : '#555'" [title]="b.active ? 'ACTIVE' : 'INACTIVE'"></div>
             </div>
-            
-            <div class="toggle-switch-wrapper">
-              <span
-                class="toggle-label font-heading font-bold"
-                [style.color]="flag.enabled ? '#00D26A' : '#555'"
-              >
-                {{ flag.enabled ? 'ON' : 'OFF' }}
-              </span>
-              <button
-                (click)="toggleFlag(flag.id)"
-                class="brutal-toggle-switch"
-                [class.active]="flag.enabled"
-              >
-                <div class="toggle-thumb"></div>
-              </button>
+            <p class="font-mono text-sm text-muted uppercase mb-3">{{ b.city }}</p>
+            <div class="flex gap-2">
+              <span class="brutal-chip font-bold text-xs" style="background: #2563EB; color: #FFF; padding: 2px 6px; border: 2px solid #000;">{{ b.members }} MEMBERS</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- CENTER: Recent Audit Log -->
-      <div class="brutal-card recent-audit-card">
-        <header class="card-header-row">
-          <h3 class="font-heading font-black text-md uppercase">RECENT AUDIT LOG</h3>
-          <button class="btn-link font-body font-bold">VIEW ALL →</button>
-        </header>
+      <!-- Member Transfers -->
+      <div class="brutal-card p-6" style="border: 4px solid #000; background: #fff;">
+        <h3 class="font-heading font-black text-xl mb-4 uppercase">MEMBER TRANSFER PORTAL</h3>
+        <div class="flex gap-4 items-end">
+          <div class="flex-1">
+            <label class="font-heading font-bold uppercase block mb-1">MEMBER ID</label>
+            <input type="number" [(ngModel)]="transferData.memberId" class="brutal-input w-full p-2" style="border: 2px solid #000;">
+          </div>
+          <div class="flex-1">
+            <label class="font-heading font-bold uppercase block mb-1">TARGET BRANCH</label>
+            <select [(ngModel)]="transferData.targetBranchId" class="brutal-input w-full p-2" style="border: 2px solid #000;">
+              <option *ngFor="let b of branches" [value]="b.id">{{ b.name }}</option>
+            </select>
+          </div>
+          <div class="flex-[2]">
+            <label class="font-heading font-bold uppercase block mb-1">REASON</label>
+            <input type="text" [(ngModel)]="transferData.reason" placeholder="e.g. Relocation" class="brutal-input w-full p-2" style="border: 2px solid #000;">
+          </div>
+          <button (click)="transferMember()" class="btn-primary font-heading font-black px-6" style="height: 42px; border: 3px solid #000;">TRANSFER</button>
+        </div>
+      </div>
 
-        <!-- Filters -->
-        <div class="audit-filters-bar mb-4">
-          <button
-            (click)="setFilter('ALL')"
-            [class.active]="selectedFilter === 'ALL'"
-            class="filter-pill font-heading"
-          >
-            ALL
-          </button>
-          <button
-            (click)="setFilter('SECURITY')"
-            [class.active]="selectedFilter === 'SECURITY'"
-            class="filter-pill font-heading"
-          >
-            SECURITY
-          </button>
-          <button
-            (click)="setFilter('BILLING')"
-            [class.active]="selectedFilter === 'BILLING'"
-            class="filter-pill font-heading"
-          >
-            BILLING
-          </button>
+      <!-- Branch Inventory -->
+      <div class="brutal-card p-6" style="border: 4px solid #000; background: #fff;">
+        <h3 class="font-heading font-black text-xl mb-4 uppercase">BRANCH INVENTORY</h3>
+        
+        <div class="mb-4">
+          <label class="font-heading font-bold uppercase block mb-1">SELECT BRANCH</label>
+          <select [(ngModel)]="selectedBranchId" (ngModelChange)="loadInventory()" class="brutal-input w-full p-2 max-w-sm" style="border: 2px solid #000;">
+            <option *ngFor="let b of branches" [value]="b.id">{{ b.name }}</option>
+          </select>
         </div>
 
-        <!-- Audit Table -->
-        <div class="table-wrapper">
-          <table class="brutal-table-grid">
-            <thead class="font-heading">
+        <div *ngIf="selectedBranchId" class="flex gap-4 items-end mb-6">
+          <div class="flex-[2]">
+            <label class="font-heading font-bold uppercase block mb-1">ITEM NAME</label>
+            <input type="text" [(ngModel)]="newInventory.itemName" placeholder="e.g. Treadmill" class="brutal-input w-full p-2" style="border: 2px solid #000;">
+          </div>
+          <div class="flex-1">
+            <label class="font-heading font-bold uppercase block mb-1">QUANTITY</label>
+            <input type="number" [(ngModel)]="newInventory.quantity" class="brutal-input w-full p-2" style="border: 2px solid #000;">
+          </div>
+          <button (click)="addInventory()" class="btn-secondary font-heading font-black px-6" style="height: 42px; border: 3px solid #000; background: #FFB800;">ADD STOCK</button>
+        </div>
+
+        <div *ngIf="selectedBranchId && branchInventory.length > 0">
+          <table class="brutal-table-grid w-full text-left" style="border-collapse: collapse; border: 2px solid #000;">
+            <thead class="font-heading border-b-2 border-black" style="background: #eee;">
               <tr>
-                <th>USER</th>
-                <th>ENTITY</th>
-                <th>ACTION</th>
-                <th>TIMESTAMP</th>
+                <th class="p-2 border-r-2 border-black">ITEM NAME</th>
+                <th class="p-2">QUANTITY</th>
               </tr>
             </thead>
             <tbody class="font-body">
-              <tr *ngFor="let log of filteredLogs">
-                <td class="font-bold uppercase">{{ log.user }}</td>
-                <td class="uppercase">{{ log.entity }}</td>
-                <td>
-                  <span
-                    class="brutal-badge font-heading font-bold action-badge"
-                    [style.background-color]="log.color"
-                    style="color: #FFF;"
-                  >
-                    {{ log.action }}
-                  </span>
-                </td>
-                <td class="font-mono text-muted">{{ log.time }}</td>
-              </tr>
-              <!-- Last row implying more entries -->
-              <tr class="table-more-row">
-                <td colspan="4" class="text-center font-body text-muted uppercase">
-                  ... VISIT AUDIT LOG CONSOLE FOR COMPLETE AUDIT HISTORY ...
-                </td>
+              <tr *ngFor="let item of branchInventory" class="border-b-2 border-black">
+                <td class="p-2 border-r-2 border-black font-bold uppercase">{{ item.itemName }}</td>
+                <td class="p-2 font-mono">{{ item.quantity }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-
-      <!-- RIGHT: Branch Overview -->
-      <div class="brutal-card branch-overview-card">
-        <header class="card-header-row">
-          <h3 class="font-heading font-black text-md uppercase">BRANCH OVERVIEW</h3>
-          <span class="brutal-badge font-heading font-bold" style="background-color: #2563EB; color: #FFF;">
-            {{ branches.length }} TOTAL
-          </span>
-        </header>
-
-        <div class="branches-list">
-          <div *ngFor="let b of branches" class="branch-row-item">
-            <div class="branch-meta">
-              <span class="branch-name font-heading font-bold uppercase">{{ b.name }}</span>
-              <span class="branch-city font-body text-muted uppercase">{{ b.city }}</span>
-            </div>
-
-            <!-- Chips -->
-            <div class="branch-chips">
-              <span class="brutal-chip font-heading font-bold" style="background-color: #2563EB; color: #FFF;">
-                {{ b.members }} MEMBERS
-              </span>
-              <span class="brutal-chip font-heading font-bold" style="background-color: #00D9FF; color: #111;">
-                {{ b.classes }} CLASSES TODAY
-              </span>
-            </div>
-
-            <!-- Status Dot -->
-            <div
-              class="status-square-dot"
-              [style.background-color]="b.active ? '#00D26A' : '#555'"
-              [title]="b.active ? 'ACTIVE' : 'INACTIVE'"
-            ></div>
-          </div>
-        </div>
-
-        <button (click)="onAddBranch()" class="btn-action btn-secondary mt-auto w-full">
-          + ADD BRANCH
-        </button>
-      </div>
-    </section>
-
-    <!-- BOTTOM: Code Quality Strip -->
-    <section class="brutal-card quality-strip-card">
-      <h3 class="quality-title font-heading font-bold">CODE QUALITY METRICS</h3>
-      
-      <div class="quality-grid">
-        <!-- Metric 1: Security -->
-        <div class="quality-metric-item">
-          <span class="metric-value font-heading font-black text-green">A</span>
-          <span class="metric-label font-body font-bold">SECURITY</span>
-        </div>
-
-        <!-- Metric 2: Reliability -->
-        <div class="quality-metric-item">
-          <span class="metric-value font-heading font-black text-green">A</span>
-          <span class="metric-label font-body font-bold">RELIABILITY</span>
-        </div>
-
-        <!-- Metric 3: Issues -->
-        <div class="quality-metric-item">
-          <span class="metric-value font-heading font-black text-red">3</span>
-          <span class="metric-label font-body font-bold">ISSUES</span>
-        </div>
-
-        <!-- Metric 4: Coverage -->
-        <div class="quality-metric-item">
-          <span class="metric-value font-heading font-black text-green">84%</span>
-          <span class="metric-label font-body font-bold">COVERAGE</span>
-        </div>
-
-        <!-- Metric 5: Duplications -->
-        <div class="quality-metric-item">
-          <span class="metric-value font-heading font-black text-green">1.2%</span>
-          <span class="metric-label font-body font-bold">DUPLICATIONS</span>
-        </div>
-
-        <!-- Metric 6: Security Hotspots -->
-        <div class="quality-metric-item">
-          <span class="metric-value font-heading font-black text-green">A</span>
-          <span class="metric-label font-body font-bold">SECURITY HOTSPOTS</span>
-        </div>
-      </div>
-    </section>
+    </div> <!-- END fade-in wrapper -->
   </div>
 </div>

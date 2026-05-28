@@ -76,7 +76,7 @@
     <div class="lg:col-span-2 space-y-10">
       
       <!-- PLAN SELECTOR -->
-      <section class="neo-card overflow-hidden">
+      <section *ngIf="!isPendingInvoiceFlow" class="neo-card overflow-hidden">
         <div class="card-header-accented">
           <h2 class="card-title">Choose Your Plan</h2>
           <span class="card-badge">{{ plans.length }} Options</span>
@@ -155,8 +155,14 @@
       <div class="summary-card neo-card sticky top-24">
         <h3 class="summary-title">Order Summary</h3>
         
-        <div *ngIf="!breakdown && !isLoadingBreakdown" class="text-center py-12">
+        <div *ngIf="!breakdown && !isLoadingBreakdown && !isPendingInvoiceFlow" class="text-center py-12">
           <p class="font-black uppercase text-lg">Select a plan to continue</p>
+        </div>
+        
+        <div *ngIf="!breakdown && !isLoadingBreakdown && isPendingInvoiceFlow" class="text-center py-12">
+          <p class="font-black uppercase text-lg text-red-600 mb-4">Payment Required for Activation</p>
+          <p class="font-bold text-sm mb-6">Total Due: ₹{{ paymentAmount }}</p>
+          <button (click)="placeOrder()" class="place-order-btn">CONTINUE TO PAY →</button>
         </div>
 
         <div *ngIf="isLoadingBreakdown" class="p-8 space-y-4">
@@ -189,9 +195,19 @@
           </div>
 
           <div class="mt-8">
+            <div *ngIf="walletBalance > 0" class="p-4 border-2 border-black bg-gray-100 mb-4">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" [checked]="useWallet" (change)="toggleWallet()" class="w-5 h-5 border-2 border-black" />
+                <span class="font-bold">Use Wallet Balance (₹{{ walletBalance }})</span>
+              </label>
+              <div *ngIf="useWallet && walletAppliedAmount > 0" class="mt-2 text-green-600 font-bold text-sm text-right">
+                -₹{{ walletAppliedAmount | number }} Applied
+              </div>
+            </div>
+
             <div class="flex justify-between items-center mb-6">
-              <span class="font-black uppercase text-xl">Total</span>
-              <span class="total-amount">₹{{ breakdown.finalAmount | number }}</span>
+              <span class="font-black uppercase text-xl">Total To Pay</span>
+              <span class="total-amount">₹{{ paymentAmount | number }}</span>
             </div>
           </div>
 
