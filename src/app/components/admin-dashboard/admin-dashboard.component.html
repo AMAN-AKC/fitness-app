@@ -199,8 +199,8 @@
             <span class="toggle-label font-heading font-black" [style.color]="flag.enabled ? '#00D26A' : '#555'">
               {{ flag.enabled ? 'ON' : 'OFF' }}
             </span>
-            <button (click)="toggleFlag(flag.name, flag.enabled)" class="brutal-toggle-switch" [class.active]="flag.enabled" style="width: 50px; height: 26px; border: 3px solid #000; border-radius: 13px; position: relative; background: {{ flag.enabled ? '#00D26A' : '#ccc' }}; cursor: pointer; transition: 0.3s;">
-              <div class="toggle-thumb" style="width: 16px; height: 16px; background: #000; border-radius: 50%; position: absolute; top: 2px; left: {{ flag.enabled ? '26px' : '2px' }}; transition: 0.3s;"></div>
+            <button (click)="toggleFlag(flag.name, flag.enabled)" class="brutal-toggle-switch" [class.active]="flag.enabled" [style.background]="flag.enabled ? '#00D26A' : '#ccc'" style="width: 50px; height: 26px; border: 3px solid #000; border-radius: 13px; position: relative; cursor: pointer; transition: 0.3s;">
+              <div class="toggle-thumb" [style.left]="flag.enabled ? '26px' : '2px'" style="width: 16px; height: 16px; background: #000; border-radius: 50%; position: absolute; top: 2px; transition: 0.3s;"></div>
             </button>
           </div>
         </div>

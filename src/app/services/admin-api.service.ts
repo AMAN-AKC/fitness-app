@@ -109,10 +109,7 @@ export class AdminApiService {
     return this.http.get<FeatureFlagDto[]>(`${this.baseUrl}/config/features`);
   }
 
-  updateFeatureFlag(
-    name: string,
-    enabled: boolean
-  ): Observable<void> {
+  updateFeatureFlag(name: string, enabled: boolean): Observable<void> {
     const params = new HttpParams().set('enabled', enabled);
     return this.http.put<void>(
       `${this.baseUrl}/config/features/${name}/toggle`,
@@ -176,20 +173,33 @@ export class AdminApiService {
     return this.http.delete<void>(`${this.baseUrl}/branches/${id}`);
   }
 
-  transferMember(memberId: number, targetBranchId: number, reason: string): Observable<void> {
+  transferMember(
+    memberId: number,
+    targetBranchId: number,
+    reason: string,
+  ): Observable<void> {
     const params = new HttpParams()
       .set('memberId', memberId.toString())
       .set('targetBranchId', targetBranchId.toString())
       .set('reason', reason);
-    return this.http.post<void>(`${this.baseUrl}/branches/transfer-member`, {}, { params });
+    return this.http.post<void>(
+      `${this.baseUrl}/branches/transfer-member`,
+      {},
+      { params },
+    );
   }
 
   getBranchInventory(branchId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/branches/${branchId}/inventory`);
+    return this.http.get<any[]>(
+      `${this.baseUrl}/branches/${branchId}/inventory`,
+    );
   }
 
   addBranchInventory(branchId: string, inventory: any): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/branches/${branchId}/inventory`, inventory);
+    return this.http.post<any>(
+      `${this.baseUrl}/branches/${branchId}/inventory`,
+      inventory,
+    );
   }
 
   getPlans(): Observable<PlanDto[]> {
@@ -204,7 +214,7 @@ export class AdminApiService {
     return this.http.put<PlanDto>(`${this.baseUrl}/plans/${id}`, plan);
   }
 
-  deactivatePlan(id: number): Observable<void> {
+  deletePlan(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/plans/${id}`);
   }
 
@@ -239,7 +249,9 @@ export class AdminApiService {
   }
 
   validatePromoCode(code: string): Observable<PromoCodeDto> {
-    return this.http.get<PromoCodeDto>(`${this.baseUrl}/promo-codes/validate/${code}`);
+    return this.http.get<PromoCodeDto>(
+      `${this.baseUrl}/promo-codes/validate/${code}`,
+    );
   }
 
   deactivatePromoCode(id: number): Observable<void> {

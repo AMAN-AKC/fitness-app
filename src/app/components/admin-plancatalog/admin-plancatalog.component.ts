@@ -49,7 +49,7 @@ export class AdminPlancatalogComponent implements OnInit {
   expandedRows = new Set<string>();
   isDrawerOpen = false;
   editingPlan: Plan | null = null;
-  deactivatingPlan: Plan | null = null;
+  deletingPlan: Plan | null = null;
 
   eligibilityColors: Record<EligibilityType, string> = {
     General: 'bg-[#EFF5FF] text-[#2563EB] border-[#2563EB]/20',
@@ -153,37 +153,36 @@ export class AdminPlancatalogComponent implements OnInit {
     this.isDrawerOpen = true;
   }
 
-  handleDeactivate(plan: Plan): void {
-    if (plan.status) {
-      this.deactivatingPlan = plan;
-    } else {
-      this.savePlanStatus({ ...plan, status: true });
-    }
+  handleDelete(plan: Plan): void {
+    this.deletingPlan = plan;
   }
 
-  confirmDeactivate(): void {
-    if (!this.deactivatingPlan) {
+  confirmDelete(): void {
+    if (!this.deletingPlan) {
       return;
     }
 
-    const plan = this.deactivatingPlan;
-    this.adminApi.deactivatePlan(Number(plan.id)).subscribe({
+    const plan = this.deletingPlan;
+    this.adminApi.deletePlan(Number(plan.id)).subscribe({
       next: () => {
-        plan.status = false;
-        this.deactivatingPlan = null;
+        this.plans = this.plans.filter((p) => p.id !== plan.id);
+        this.deletingPlan = null;
         this.filterPlans();
       },
       error: (error) => {
         this.errorMessage =
-          error?.error?.message || 'Unable to deactivate plan.';
-        this.deactivatingPlan = null;
+          error?.error?.message ||
+          error?.error?.error ||
+          'Unable to delete plan.';
+        this.deletingPlan = null;
       },
     });
   }
 
   togglePlanStatus(plan: Plan): void {
     if (plan.status) {
-      this.deactivatingPlan = plan;
+      // Just toggle status instead of deleting via toggle
+      this.savePlanStatus({ ...plan, status: false });
     } else {
       this.savePlanStatus({ ...plan, status: true });
     }
@@ -308,7 +307,9 @@ export class AdminPlancatalogComponent implements OnInit {
     return map[eligibility] || 'General';
   }
 
-  private toBackendEligibility(eligibility: EligibilityType): BackendEligibility {
+  private toBackendEligibility(
+    eligibility: EligibilityType,
+  ): BackendEligibility {
     const map: Record<EligibilityType, BackendEligibility> = {
       General: 'GENERAL',
       Student: 'STUDENT',

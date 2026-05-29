@@ -11,7 +11,10 @@
       <button class="btn-brutal btn-secondary font-heading font-bold uppercase">
         ADD ADD-ON
       </button>
-      <button (click)="handleCreate()" class="btn-brutal btn-primary font-heading font-bold uppercase">
+      <button
+        (click)="handleCreate()"
+        class="btn-brutal btn-primary font-heading font-bold uppercase"
+      >
         CREATE NEW PLAN +
       </button>
     </div>
@@ -20,7 +23,9 @@
   <!-- ERROR / WARNING ALERTS -->
   <div *ngIf="errorMessage" class="brutal-alert brutal-alert-danger mb-4">
     <span class="alert-icon">⚠️</span>
-    <span class="alert-text font-body font-bold uppercase">{{ errorMessage }}</span>
+    <span class="alert-text font-body font-bold uppercase">{{
+      errorMessage
+    }}</span>
     <button (click)="errorMessage = ''" class="btn-close-alert">✕</button>
   </div>
 
@@ -78,9 +83,7 @@
       </div>
     </div>
 
-    <button class="btn-export-csv" title="EXPORT CSV ↓">
-      📥
-    </button>
+    <button class="btn-export-csv" title="EXPORT CSV ↓">📥</button>
   </section>
 
   <!-- PLANS TABLE -->
@@ -107,14 +110,20 @@
             <tr [class.row-expanded-header]="isRowExpanded(plan.id)">
               <td class="text-center">
                 <button (click)="toggleRow(plan.id)" class="btn-expand-row">
-                  {{ isRowExpanded(plan.id) ? '▼' : '▶' }}
+                  {{ isRowExpanded(plan.id) ? "▼" : "▶" }}
                 </button>
               </td>
-              <td class="font-heading font-bold text-black uppercase">{{ plan.name }}</td>
-              <td>
-                <span class="flat-chip uppercase font-bold">{{ plan.duration }} DAYS</span>
+              <td class="font-heading font-bold text-black uppercase">
+                {{ plan.name }}
               </td>
-              <td class="font-heading font-black text-black">₹{{ formatPrice(plan.price) }}</td>
+              <td>
+                <span class="flat-chip uppercase font-bold"
+                  >{{ plan.duration }} DAYS</span
+                >
+              </td>
+              <td class="font-heading font-black text-black">
+                ₹{{ formatPrice(plan.price) }}
+              </td>
               <td>
                 <span
                   class="elig-chip font-heading font-bold"
@@ -127,14 +136,22 @@
                 </span>
               </td>
               <td class="font-mono text-muted">{{ plan.version }}</td>
-              <td class="text-muted font-bold uppercase">{{ plan.effectiveFrom }}</td>
+              <td class="text-muted font-bold uppercase">
+                {{ plan.effectiveFrom }}
+              </td>
               <td>
                 <span
                   class="branch-chip font-heading font-bold"
-                  [style.background-color]="plan.branches === 'All' ? '#2563EB' : '#F3F3F1'"
+                  [style.background-color]="
+                    plan.branches === 'All' ? '#2563EB' : '#F3F3F1'
+                  "
                   [style.color]="plan.branches === 'All' ? '#FFF' : '#111'"
                 >
-                  {{ plan.branches === 'All' ? 'ALL' : plan.branches + ' BRANCHES' }}
+                  {{
+                    plan.branches === "All"
+                      ? "ALL"
+                      : plan.branches + " BRANCHES"
+                  }}
                 </span>
               </td>
               <td>
@@ -146,8 +163,11 @@
                   >
                     <div class="toggle-thumb"></div>
                   </button>
-                  <span class="toggle-text font-heading font-bold" [style.color]="plan.status ? '#00D26A' : '#555'">
-                    {{ plan.status ? 'ACTIVE' : 'INACTIVE' }}
+                  <span
+                    class="toggle-text font-heading font-bold"
+                    [style.color]="plan.status ? '#00D26A' : '#555'"
+                  >
+                    {{ plan.status ? "ACTIVE" : "INACTIVE" }}
                   </span>
                 </div>
               </td>
@@ -155,13 +175,21 @@
                 <div class="actions-wrapper">
                   <!-- Edit Action -->
                   <div class="tooltip-container">
-                    <button (click)="handleEdit(plan)" class="btn-icon-action">✏</button>
+                    <button (click)="handleEdit(plan)" class="btn-icon-action">
+                      ✏
+                    </button>
                     <span class="tooltip-text font-heading">EDIT</span>
                   </div>
-                  <!-- Deactivate Action -->
+                  <!-- Delete Action -->
                   <div class="tooltip-container">
-                    <button (click)="handleDeactivate(plan)" class="btn-icon-action">⊘</button>
-                    <span class="tooltip-text font-heading">DEACTIVATE</span>
+                    <button
+                      (click)="handleDelete(plan)"
+                      class="btn-icon-action"
+                      style="color: #ff3b30"
+                    >
+                      🗑
+                    </button>
+                    <span class="tooltip-text font-heading">DELETE</span>
                   </div>
                 </div>
               </td>
@@ -173,35 +201,52 @@
                 <div class="expanded-inner-box">
                   <!-- Facilities -->
                   <div class="expanded-group">
-                    <span class="expanded-group-title font-heading font-bold">FACILITIES INCLUDED</span>
+                    <span class="expanded-group-title font-heading font-bold"
+                      >FACILITIES INCLUDED</span
+                    >
                     <div class="facilities-pills">
                       <span
                         *ngFor="let fac of plan.facilities"
                         class="facility-flat-pill font-heading font-bold"
                         [class.facility-excluded]="!fac.included"
                       >
-                        {{ fac.name }} {{ fac.included ? '✓' : '✕' }}
+                        {{ fac.name }} {{ fac.included ? "✓" : "✕" }}
                       </span>
                     </div>
                   </div>
 
                   <!-- Add-ons -->
                   <div class="expanded-group">
-                    <span class="expanded-group-title font-heading font-bold">LINKED ADD-ONS</span>
+                    <span class="expanded-group-title font-heading font-bold"
+                      >LINKED ADD-ONS</span
+                    >
                     <div class="addons-pills">
-                      <span *ngFor="let addon of plan.addons" class="addon-flat-pill font-heading font-bold">
+                      <span
+                        *ngFor="let addon of plan.addons"
+                        class="addon-flat-pill font-heading font-bold"
+                      >
                         {{ addon }}
                       </span>
-                      <span *ngIf="plan.addons.length === 0" class="no-addons-text font-body">NO ADD-ONS REGISTERED</span>
+                      <span
+                        *ngIf="plan.addons.length === 0"
+                        class="no-addons-text font-body"
+                        >NO ADD-ONS REGISTERED</span
+                      >
                     </div>
                   </div>
 
                   <!-- Proration & Tax -->
                   <div class="expanded-group">
-                    <span class="expanded-group-title font-heading font-bold">BILLING VARIABLES</span>
+                    <span class="expanded-group-title font-heading font-bold"
+                      >BILLING VARIABLES</span
+                    >
                     <div class="billing-details-row">
-                      <span class="billing-pill font-heading font-bold">TAX: {{ plan.tax }}% GST</span>
-                      <span class="billing-pill font-heading font-bold">PRORATION: {{ plan.proration }}</span>
+                      <span class="billing-pill font-heading font-bold"
+                        >TAX: {{ plan.tax }}% GST</span
+                      >
+                      <span class="billing-pill font-heading font-bold"
+                        >PRORATION: {{ plan.proration }}</span
+                      >
                     </div>
                   </div>
                 </div>
@@ -210,7 +255,10 @@
           </ng-container>
 
           <tr *ngIf="filteredPlans.length === 0">
-            <td colspan="10" class="empty-table-cell font-body font-bold text-muted uppercase">
+            <td
+              colspan="10"
+              class="empty-table-cell font-body font-bold text-muted uppercase"
+            >
               NO PLANS MATCH YOUR SELECTION CRITERIA.
             </td>
           </tr>
@@ -220,11 +268,15 @@
   </section>
 
   <!-- CREATE / EDIT PLAN DRAWER -->
-  <div *ngIf="isDrawerOpen" class="drawer-overlay" (click)="closeDrawer()"></div>
+  <div
+    *ngIf="isDrawerOpen"
+    class="drawer-overlay"
+    (click)="closeDrawer()"
+  ></div>
   <div *ngIf="isDrawerOpen" class="drawer-panel">
     <header class="drawer-header">
       <h2 class="font-heading font-black uppercase">
-        {{ editingPlan!.id ? 'EDIT: ' + editingPlan!.name : 'CREATE NEW PLAN' }}
+        {{ editingPlan!.id ? "EDIT: " + editingPlan!.name : "CREATE NEW PLAN" }}
       </h2>
       <button (click)="closeDrawer()" class="btn-close-drawer">✕</button>
     </header>
@@ -354,15 +406,31 @@
             <input
               type="checkbox"
               [checked]="editingPlan!.branches === 'All'"
-              (change)="editingPlan!.branches = editingPlan!.branches === 'All' ? 1 : 'All'"
+              (change)="
+                editingPlan!.branches =
+                  editingPlan!.branches === 'All' ? 1 : 'All'
+              "
             />
             <span class="custom-checkbox"></span>
             ALL BRANCHES MASTER TOGGLE
           </label>
 
           <div class="visibility-branches-rows mt-2 pl-4">
-            <label *ngFor="let b of ['DOWNTOWN MAIN', 'WESTSIDE FLEX', 'KORAMANGALA ELITE', 'PUNE EAST']" class="checkbox-container">
-              <input type="checkbox" [checked]="editingPlan!.branches === 'All'" />
+            <label
+              *ngFor="
+                let b of [
+                  'DOWNTOWN MAIN',
+                  'WESTSIDE FLEX',
+                  'KORAMANGALA ELITE',
+                  'PUNE EAST',
+                ]
+              "
+              class="checkbox-container"
+            >
+              <input
+                type="checkbox"
+                [checked]="editingPlan!.branches === 'All'"
+              />
               <span class="custom-checkbox"></span>
               {{ b }}
             </label>
@@ -374,8 +442,15 @@
       <div class="form-field">
         <label class="form-label">FACILITIES</label>
         <div class="facilities-checkbox-grid">
-          <label *ngFor="let fac of editingPlan!.facilities" class="checkbox-container">
-            <input type="checkbox" [(ngModel)]="fac.included" [name]="'fac-' + fac.name" />
+          <label
+            *ngFor="let fac of editingPlan!.facilities"
+            class="checkbox-container"
+          >
+            <input
+              type="checkbox"
+              [(ngModel)]="fac.included"
+              [name]="'fac-' + fac.name"
+            />
             <span class="custom-checkbox"></span>
             {{ fac.name | uppercase }}
           </label>
@@ -385,8 +460,12 @@
       <!-- IS_ACTIVE TOGGLE -->
       <div class="form-field brutal-active-toggle-row">
         <div class="toggle-info">
-          <span class="toggle-title font-heading font-bold">PLAN IS ACTIVE</span>
-          <span class="toggle-desc font-body">AVAILABLE FOR MEMBERSHIP PURCHASE</span>
+          <span class="toggle-title font-heading font-bold"
+            >PLAN IS ACTIVE</span
+          >
+          <span class="toggle-desc font-body"
+            >AVAILABLE FOR MEMBERSHIP PURCHASE</span
+          >
         </div>
         <button
           (click)="editingPlan!.status = !editingPlan!.status"
@@ -399,33 +478,49 @@
     </form>
 
     <footer class="drawer-footer">
-      <button (click)="savePlan()" class="btn-brutal btn-primary w-full mb-3 font-heading font-black">
+      <button
+        (click)="savePlan()"
+        class="btn-brutal btn-primary w-full mb-3 font-heading font-black"
+      >
         SAVE PLAN
       </button>
-      <button (click)="discardChanges()" class="btn-brutal btn-secondary w-full font-heading font-bold">
+      <button
+        (click)="discardChanges()"
+        class="btn-brutal btn-secondary w-full font-heading font-bold"
+      >
         DISCARD
       </button>
     </footer>
   </div>
 
-  <!-- DEACTIVATION WARNING MODAL -->
-  <div *ngIf="deactivatingPlan" class="modal-overlay" (click)="deactivatingPlan = null"></div>
-  <div *ngIf="deactivatingPlan" class="warning-modal">
-    <div class="modal-alert-icon-box">
-      ⚠️
-    </div>
+  <!-- DELETION WARNING MODAL -->
+  <div
+    *ngIf="deletingPlan"
+    class="modal-overlay"
+    (click)="deletingPlan = null"
+  ></div>
+  <div *ngIf="deletingPlan" class="warning-modal">
+    <div class="modal-alert-icon-box">⚠️</div>
     <h3 class="modal-title font-heading font-black">
-      DEACTIVATE {{ deactivatingPlan.name | uppercase }} PLAN?
+      DELETE {{ deletingPlan.name | uppercase }} PLAN?
     </h3>
     <p class="modal-desc font-body">
-      {{ deactivatingPlan.activeMembers }} ACTIVE MEMBERS ARE ON THIS PLAN. DEACTIVATION WILL NOT AFFECT THEIR CURRENT MEMBERSHIP — THEY WILL RETAIN ACCESS UNTIL EXPIRY.
+      THIS WILL PERMANENTLY REMOVE THE PLAN IF IT IS NOT IN USE. IF IT HAS
+      ACTIVE MEMBERS, DELETION WILL BE PREVENTED.
     </p>
     <div class="modal-actions">
-      <button (click)="deactivatingPlan = null" class="btn-brutal btn-secondary font-heading font-bold uppercase">
+      <button
+        (click)="deletingPlan = null"
+        class="btn-brutal btn-secondary font-heading font-bold uppercase"
+      >
         CANCEL
       </button>
-      <button (click)="confirmDeactivate()" class="btn-brutal font-heading font-bold uppercase" style="background-color: #FFB800; color: #111;">
-        DEACTIVATE PLAN
+      <button
+        (click)="confirmDelete()"
+        class="btn-brutal font-heading font-bold uppercase"
+        style="background-color: #ff3b30; color: #fff"
+      >
+        DELETE PLAN
       </button>
     </div>
   </div>

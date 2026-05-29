@@ -65,14 +65,14 @@ describe('AdminPlancatalogComponent', () => {
   it('should open drawer for creating new plan', () => {
     component.handleCreate();
     expect(component.isDrawerOpen).toBe(true);
-    expect(component.editingPlan).toBe(null);
+    expect(component.editingPlan).toBeNull();
   });
 
   it('should close drawer', () => {
     component.isDrawerOpen = true;
     component.closeDrawer();
     expect(component.isDrawerOpen).toBe(false);
-    expect(component.editingPlan).toBe(null);
+    expect(component.editingPlan).toBeNull();
   });
 
   it('should toggle plan status', () => {
@@ -91,7 +91,7 @@ describe('AdminPlancatalogComponent', () => {
     const initialStatus = plan.status;
     component.confirmDeactivate();
 
-    expect(component.deactivatingPlan).toBe(null);
+    expect(component.deactivatingPlan).toBeNull();
     if (initialStatus) {
       const updatedPlan = component.plans.find((p) => p.id === plan.id);
       expect(updatedPlan?.status).toBe(false);
@@ -145,6 +145,8 @@ describe('AdminPlancatalogComponent', () => {
       addons: [],
       tax: 18,
       proration: 'Daily',
+      accessStart: '06:00',
+      accessEnd: '22:00'
     };
     component.savePlan();
 
