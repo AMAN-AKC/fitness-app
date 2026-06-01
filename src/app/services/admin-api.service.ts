@@ -161,6 +161,18 @@ export class AdminApiService {
     return this.http.get<BranchDto[]>(`${this.baseUrl}/branches`);
   }
 
+  getFacilities(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/facilities`);
+  }
+
+  createFacility(facility: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/facilities`, facility);
+  }
+
+  updateFacility(facility: any): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/facilities/${facility.facilityId}`, facility);
+  }
+
   createBranch(branch: BranchDto): Observable<BranchDto> {
     return this.http.post<BranchDto>(`${this.baseUrl}/branches`, branch);
   }
@@ -248,9 +260,14 @@ export class AdminApiService {
     return this.http.post<PromoCodeDto>(`${this.baseUrl}/promo-codes`, promo);
   }
 
-  validatePromoCode(code: string): Observable<PromoCodeDto> {
+  validatePromoCode(code: string, memberId?: number): Observable<PromoCodeDto> {
+    let params = new HttpParams();
+    if (memberId) {
+      params = params.set('memberId', memberId.toString());
+    }
     return this.http.get<PromoCodeDto>(
       `${this.baseUrl}/promo-codes/validate/${code}`,
+      { params }
     );
   }
 

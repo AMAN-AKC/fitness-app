@@ -156,7 +156,7 @@
                   <option value="Asia/Dubai">ASIA/DUBAI (GST)</option>
                   <option value="UTC">UTC (GMT)</option>
                 </select>
-                <span class="select-arrow">▼</span>
+                <span class="select-arrow">â–¼</span>
               </div>
             </div>
           </div>
@@ -181,9 +181,7 @@
       <section *ngIf="activeTab === 'Staff'" class="tab-content-panel">
         <header class="tab-section-header mb-4">
           <h3 class="font-heading font-black text-md">ASSIGNED STAFF ACCOUNTS</h3>
-          <button (click)="onAssignStaff()" class="btn-brutal btn-primary font-heading font-bold">
-            ASSIGN STAFF +
-          </button>
+          
         </header>
 
         <div class="table-scroll-wrapper">
@@ -195,7 +193,7 @@
                 <th>ROLE BADGE</th>
                 <th>EMAIL</th>
                 <th>BRANCH SINCE</th>
-                <th>ACTION</th>
+                
               </tr>
             </thead>
             <tbody class="font-body">
@@ -213,11 +211,7 @@
                 </td>
                 <td class="font-mono text-muted">{{ s.email }}</td>
                 <td class="font-bold text-muted">{{ s.since }}</td>
-                <td>
-                  <button (click)="unassignStaff(s.id)" class="btn-action-unassign font-heading font-bold">
-                    UNASSIGN
-                  </button>
-                </td>
+                
               </tr>
               <tr *ngIf="selectedBranch.staff.length === 0">
                 <td colspan="6" class="empty-table-cell font-body font-bold text-muted uppercase">
@@ -234,7 +228,7 @@
         <header class="tab-section-header mb-4">
           <h3 class="font-heading font-black text-md">ENROLLED MEMBERS</h3>
           <button (click)="onTransferMember()" class="btn-brutal btn-secondary font-heading font-bold">
-            TRANSFER MEMBER ⇄
+            TRANSFER MEMBER â‡„
           </button>
         </header>
 
@@ -320,19 +314,6 @@
       <section *ngIf="activeTab === 'Settings'" class="tab-content-panel">
         <div class="settings-sections-wrapper font-body">
           
-          <!-- PLAN VISIBILITY checklist -->
-          <div class="settings-group">
-            <h4 class="settings-title font-heading font-black">PLAN VISIBILITY</h4>
-            <p class="settings-subtitle">CHOOSE WHICH MEMBERSHIP PLANS ARE PURCHASEABLE AT THIS BRANCH.</p>
-            <div class="visibility-checklist-grid mt-3">
-              <label *ngFor="let p of selectedBranch.plans" class="checkbox-container">
-                <input type="checkbox" [(ngModel)]="p.visible" (change)="togglePlanVisibility(p.id)" />
-                <span class="custom-checkbox"></span>
-                {{ p.name }}
-              </label>
-            </div>
-          </div>
-
           <!-- ROOMS SECTION -->
           <div class="settings-group mt-6">
             <div class="settings-section-header mb-4">
@@ -361,7 +342,7 @@
                     <td>
                       <div class="toggle-switch-wrapper">
                         <button
-                          (click)="toggleRoomStatus(r.id)"
+                          (click)="toggleRoomStatus(r)"
                           class="brutal-toggle-switch"
                           [class.active]="r.active"
                         >
@@ -388,52 +369,20 @@
     </main>
   </div>
 
-  <!-- ASSIGN STAFF MODAL -->
-  <div *ngIf="isAssignStaffOpen" class="modal-overlay" (click)="closeAssignStaffModal()"></div>
-  <div *ngIf="isAssignStaffOpen" class="assign-staff-modal">
-    <h3 class="modal-title font-heading font-black uppercase">ASSIGN STAFF TO BRANCH</h3>
-    
-    <div class="form-field mb-4">
-      <label class="form-label">SEARCH STAFF ACCOUNTS</label>
-      <input
-        type="text"
-        placeholder="SEARCH BY NAME OR EMAIL..."
-        [(ngModel)]="staffSearchQuery"
-        class="brutal-input"
-      />
-    </div>
-
-    <!-- Live results box -->
-    <div class="modal-search-results">
-      <div class="search-result-row">
-        <span class="result-name font-body font-bold">TINA SEN (TRAINER)</span>
-        <button (click)="executeAssignStaff()" class="btn-brutal btn-primary font-heading font-bold">ASSIGN</button>
-      </div>
-      <div class="search-result-row">
-        <span class="result-name font-body font-bold">RAGHAV ROY (MANAGER)</span>
-        <button (click)="executeAssignStaff()" class="btn-brutal btn-primary font-heading font-bold">ASSIGN</button>
-      </div>
-    </div>
-
-    <button (click)="closeAssignStaffModal()" class="btn-brutal btn-secondary w-full mt-4 font-heading font-bold uppercase">
-      CLOSE
-    </button>
-  </div>
-
   <!-- TRANSFER MEMBER MODAL -->
   <div *ngIf="isTransferMemberOpen" class="modal-overlay" (click)="closeTransferMemberModal()"></div>
   <div *ngIf="isTransferMemberOpen" class="transfer-member-modal">
     <h3 class="modal-title font-heading font-black uppercase">TRANSFER MEMBER</h3>
 
     <form (submit)="$event.preventDefault()" class="font-body">
-      <div class="form-field mb-4">
-        <label class="form-label">SEARCH MEMBER TO TRANSFER</label>
-        <input
-          type="text"
-          placeholder="SEARCH BY NAME OR ID..."
-          [(ngModel)]="memberSearchQuery"
-          class="brutal-input"
-        />
+            <div class="form-field mb-4">
+        <label class="form-label">SELECT MEMBER TO TRANSFER</label>
+        <div class="select-wrapper">
+          <select [(ngModel)]="transferMemberId" name="transferMemberId" class="brutal-select w-full">
+            <option *ngFor="let m of selectedBranch.members" [value]="m.id">{{ m.name }} (ID: {{ m.id }})</option>
+          </select>
+          <span class="select-arrow">-</span>
+        </div>
       </div>
 
       <div class="form-field mb-4">
@@ -455,7 +404,7 @@
               {{ b.name }}
             </option>
           </select>
-          <span class="select-arrow">▼</span>
+          <span class="select-arrow">â–¼</span>
         </div>
       </div>
 
@@ -480,3 +429,5 @@
     </form>
   </div>
 </div>
+
+

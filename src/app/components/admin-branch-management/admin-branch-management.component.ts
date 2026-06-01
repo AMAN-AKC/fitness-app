@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { AdminApiService, BranchDto } from '../../services/admin-api.service';
-import { FrontdeskApiService, MemberDto } from '../../services/frontdesk-api.service';
+import { AdminApiService, BranchDto, SystemUserDto, PlanDto } from '../../services/admin-api.service';
+import { FrontdeskApiService, MemberDto, ClassesDto } from '../../services/frontdesk-api.service';
+import { forkJoin } from 'rxjs';
 
 export interface Staff {
   id: string;
@@ -34,12 +35,7 @@ export interface Room {
   name: string;
   capacity: number;
   active: boolean;
-}
-
-export interface PlanVisibility {
-  id: string;
-  name: string;
-  visible: boolean;
+  underMaintenance?: boolean;
 }
 
 export interface BranchDetails {
@@ -58,7 +54,6 @@ export interface BranchDetails {
   members: Member[];
   classes: ClassItem[];
   rooms: Room[];
-  plans: PlanVisibility[];
 }
 
 @Component({
@@ -78,17 +73,15 @@ export class AdminBranchManagementComponent implements OnInit {
   selectedBranchId = '';
   activeTab: 'Details' | 'Staff' | 'Members' | 'Classes' | 'Settings' = 'Details';
 
-  isAssignStaffOpen = false;
   isTransferMemberOpen = false;
 
   tabs = ['Details', 'Staff', 'Members', 'Classes', 'Settings'] as const;
 
   // Modals properties
-  staffSearchQuery = '';
-  memberSearchQuery = '';
   transferSourceBranch = '';
   transferTargetBranchId = '';
   transferReason = '';
+  transferMemberId = '';
 
   constructor(
     private adminApi: AdminApiService,
@@ -103,20 +96,80 @@ export class AdminBranchManagementComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.adminApi.getBranches().subscribe({
-      next: (branches) => {
-        if (branches && branches.length > 0) {
-          this.branches = branches.map((branch) => this.fromBranchDto(branch));
+    forkJoin({
+      branches: this.adminApi.getBranches(),
+      users: this.adminApi.getUsers(),
+      members: this.frontdeskApi.getMembers(),
+      classes: this.frontdeskApi.getClasses(),
+      facilities: this.adminApi.getFacilities()
+    }).subscribe({
+      next: (data) => {
+        if (data.branches && data.branches.length > 0) {
+          this.branches = data.branches.map((branch) => {
+            const b = this.fromBranchDto(branch);
+            
+            // Map Staff
+            b.staff = data.users
+              .filter(u => u.branchName === branch.branchName && (u.role === 'TRAINER' || u.role === 'FRONT_DESK' || u.role === 'MANAGER'))
+              .map(u => ({
+                id: String(u.userId),
+                name: u.username.toUpperCase(),
+                role: u.role,
+                email: u.email,
+                since: u.lastLogin || 'N/A',
+                initials: u.username.substring(0, 2).toUpperCase()
+              }));
+            
+            // Map Members
+            b.members = data.members
+              .filter(m => m.homeBranchId === branch.branchId)
+              .map(m => ({
+                id: String(m.memberId),
+                name: m.memName.toUpperCase(),
+                plan: m.status || 'N/A',
+                initials: m.memName.substring(0, 2).toUpperCase()
+              }));
+            
+            b.membersCount = b.members.length;
+
+            // Map Classes
+            b.classes = data.classes
+              .filter(c => c.branchId === branch.branchId)
+              .map(c => ({
+                id: String(c.classId),
+                name: c.className.toUpperCase(),
+                category: c.prerequisites || 'GENERAL',
+                trainer: `TRAINER ${c.trainerId}`,
+                schedule: `${c.weekdays} ${c.classTime}`,
+                status: c.status === 'ACTIVE'
+              }));
+
+            // Map Rooms
+            b.rooms = data.facilities
+              .filter(f => f.branchId === branch.branchId)
+              .map(f => ({
+                id: String(f.facilityId),
+                name: f.facilityName.toUpperCase(),
+                capacity: f.capacity,
+                active: f.isActive,
+                underMaintenance: f.underMaintenance
+              }));
+
+            return b;
+          });
         } else {
           this.branches = [];
         }
-        this.selectedBranchId = this.branches[0]?.id || '';
+        
+        // Retain selection if possible
+        if (!this.selectedBranchId || !this.branches.find(b => b.id === this.selectedBranchId)) {
+          this.selectedBranchId = this.branches[0]?.id || '';
+        }
         this.filterBranches();
         this.isLoading = false;
-        this.loadMembers();
       },
       error: (err) => {
-        this.errorMessage = err?.error?.message || 'Failed to load branches.';
+        this.errorMessage = err?.error?.message || 'Failed to load branch data.';
         this.branches = [];
         this.selectedBranchId = '';
         this.filterBranches();
@@ -124,26 +177,6 @@ export class AdminBranchManagementComponent implements OnInit {
       },
     });
   }
-
-  private loadMembers(): void {
-    this.frontdeskApi.getMembers().subscribe({
-      next: (list: MemberDto[]) => {
-        const byBranch = new Map<number, number>();
-        (list || []).forEach((m) => {
-          const bid = Number((m as any).homeBranchId || (m as any).branchId || 0);
-          byBranch.set(bid, (byBranch.get(bid) || 0) + 1);
-        });
-        
-        this.branches = this.branches.map((b) => ({
-          ...b,
-          membersCount: byBranch.get(Number(b.id)) || 0,
-        }));
-        this.filterBranches();
-      }
-    });
-  }
-
-
 
   filterBranches(): void {
     this.filteredBranches = this.branches.filter(
@@ -177,27 +210,8 @@ export class AdminBranchManagementComponent implements OnInit {
 
     this.adminApi.createBranch(this.toDto(branch)).subscribe({
       next: (created) => {
-        const createdBranch = this.fromBranchDto(created);
-        this.branches = [createdBranch, ...this.branches];
-        this.selectedBranchId = createdBranch.id;
-        this.filterBranches();
-      },
-      error: () => {
-        // Fallback create
-        const localId = String(this.branches.length + 1);
-        const createdBranch: BranchDetails = {
-          ...branch,
-          id: localId,
-          staff: this.mockStaff(),
-          members: this.mockMembers(),
-          classes: this.mockClasses(),
-          rooms: this.mockRooms(),
-          plans: this.mockPlans()
-        };
-        this.branches = [createdBranch, ...this.branches];
-        this.selectedBranchId = createdBranch.id;
-        this.filterBranches();
-      },
+        this.loadBranches();
+      }
     });
   }
 
@@ -217,21 +231,13 @@ export class AdminBranchManagementComponent implements OnInit {
       staff: [],
       members: [],
       classes: [],
-      rooms: [],
-      plans: [],
+      rooms: []
     };
-  }
-
-  onAssignStaff(): void {
-    this.isAssignStaffOpen = true;
-  }
-
-  closeAssignStaffModal(): void {
-    this.isAssignStaffOpen = false;
   }
 
   onTransferMember(): void {
     this.transferSourceBranch = this.selectedBranch.name;
+    this.transferMemberId = this.selectedBranch.members.length > 0 ? this.selectedBranch.members[0].id : '';
     this.isTransferMemberOpen = true;
   }
 
@@ -249,29 +255,8 @@ export class AdminBranchManagementComponent implements OnInit {
 
     this.adminApi.updateBranch(Number(branch.id), this.toDto(branch)).subscribe({
       next: (savedBranch) => {
-        const index = this.branches.findIndex((b) => b.id === branch.id);
-        if (index !== -1) {
-          this.branches[index] = {
-            ...this.fromBranchDto(savedBranch),
-            staff: branch.staff,
-            members: branch.members,
-            classes: branch.classes,
-            rooms: branch.rooms,
-            plans: branch.plans,
-            membersCount: branch.membersCount
-          };
-          this.selectedBranchId = this.branches[index].id;
-        }
-        this.filterBranches();
-      },
-      error: () => {
-        // Fallback update locally
-        const index = this.branches.findIndex((b) => b.id === branch.id);
-        if (index !== -1) {
-          this.branches[index] = { ...branch };
-        }
-        this.filterBranches();
-      },
+        alert('Branch updated successfully!');
+      }
     });
   }
 
@@ -280,44 +265,54 @@ export class AdminBranchManagementComponent implements OnInit {
     this.saveChanges();
   }
 
-  unassignStaff(staffId: string): void {
-    const branch = this.selectedBranch;
-    branch.staff = branch.staff.filter((s) => s.id !== staffId);
-  }
-
-  toggleRoomStatus(roomId: string): void {
-    const room = this.selectedBranch.rooms.find((r) => r.id === roomId);
-    if (room) {
-      room.active = !room.active;
-    }
-  }
-
-  togglePlanVisibility(planId: string): void {
-    const plan = this.selectedBranch.plans.find((p) => p.id === planId);
-    if (plan) {
-      plan.visible = !plan.visible;
-    }
+  toggleRoomStatus(room: Room): void {
+    const payload = {
+      facilityId: Number(room.id),
+      facilityName: room.name,
+      branchId: Number(this.selectedBranch.id),
+      capacity: room.capacity,
+      isActive: !room.active,
+      underMaintenance: room.underMaintenance
+    };
+    this.adminApi.updateFacility(payload).subscribe(() => {
+      this.loadBranches();
+    });
   }
 
   onAddRoom(): void {
-    const branch = this.selectedBranch;
-    const nextRoomId = String(branch.rooms.length + 1);
-    branch.rooms.push({
-      id: nextRoomId,
-      name: `STUDIO ${String.fromCharCode(65 + branch.rooms.length)}`,
-      capacity: 25,
-      active: true
+    const newRoomName = prompt("Enter new room name:");
+    if (!newRoomName) return;
+    const capacityStr = prompt("Enter capacity:");
+    const capacity = parseInt(capacityStr || '20', 10);
+    
+    const payload = {
+      facilityName: newRoomName,
+      branchId: Number(this.selectedBranch.id),
+      capacity: capacity,
+      isActive: true,
+      underMaintenance: false
+    };
+    this.adminApi.createFacility(payload).subscribe(() => {
+      this.loadBranches();
     });
   }
 
   executeTransferMember(): void {
-    alert(`TRANSFERRING MEMBER TO TARGET BRANCH REASON: ${this.transferReason.toUpperCase()}`);
-    this.closeTransferMemberModal();
-  }
-
-  executeAssignStaff(): void {
-    alert(`ASSIGNING STAFF ACCOUNT TO THE BRANCH.`);
-    this.closeAssignStaffModal();
+    if (!this.transferMemberId || !this.transferTargetBranchId || !this.transferReason) {
+      alert("Please fill in all fields.");
+      return;
+    }
+    
+    this.adminApi.transferMember(Number(this.transferMemberId), Number(this.transferTargetBranchId), this.transferReason).subscribe({
+      next: () => {
+        alert('Member transferred successfully!');
+        this.closeTransferMemberModal();
+        this.loadBranches();
+      },
+      error: (err) => {
+        alert('Failed to transfer member: ' + (err.error?.message || 'Unknown error'));
+      }
+    });
   }
 
   private fromBranchDto(branch: BranchDto): BranchDetails {
@@ -334,11 +329,10 @@ export class AdminBranchManagementComponent implements OnInit {
       timezone: branch.timezone || 'Asia/Kolkata',
       active: branch.isActive !== false,
       membersCount: 0,
-      staff: this.mockStaff(),
-      members: this.mockMembers(),
-      classes: this.mockClasses(),
-      rooms: this.mockRooms(),
-      plans: this.mockPlans(),
+      staff: [],
+      members: [],
+      classes: [],
+      rooms: []
     };
   }
 
@@ -364,45 +358,5 @@ export class AdminBranchManagementComponent implements OnInit {
     if (!address) return 'BANGALORE';
     const parts = address.split(',').map((part) => part.trim());
     return parts.length > 1 ? parts[parts.length - 2] : address;
-  }
-
-  private mockStaff(): Staff[] {
-    return [
-      { id: '1', name: 'KARAN SHARMA', role: 'TRAINER', email: 'KARAN@FITCLUB.COM', since: '2024-01-10', initials: 'KS' },
-      { id: '2', name: 'POOJA NAIR', role: 'FRONT-DESK', email: 'POOJA@FITCLUB.COM', since: '2024-03-15', initials: 'PN' },
-      { id: '3', name: 'ADITYA ROY', role: 'TRAINER', email: 'ADITYA@FITCLUB.COM', since: '2023-11-01', initials: 'AR' }
-    ];
-  }
-
-  private mockMembers(): Member[] {
-    return [
-      { id: '1', name: 'AMIT PATEL', plan: 'GOLD ANNUAL', initials: 'AP' },
-      { id: '2', name: 'ROHAN JOSHI', plan: 'VIP MONTHLY', initials: 'RJ' },
-      { id: '3', name: 'SNEHA REDDY', plan: 'STUDENT SPECIAL', initials: 'SR' }
-    ];
-  }
-
-  private mockClasses(): ClassItem[] {
-    return [
-      { id: '1', name: 'POWER YOGA', category: 'YOGA', trainer: 'KARAN SHARMA', schedule: 'MON/WED/FRI 07:00', status: true },
-      { id: '2', name: 'ZUMBA CARDIO', category: 'DANCE', trainer: 'TINA SEN', schedule: 'TUE/THU 18:00', status: true },
-      { id: '3', name: 'SPIN BLITZ', category: 'CARDIO', trainer: 'ADITYA ROY', schedule: 'SAT 09:00', status: false }
-    ];
-  }
-
-  private mockRooms(): Room[] {
-    return [
-      { id: '1', name: 'STUDIO A', capacity: 30, active: true },
-      { id: '2', name: 'SPIN STUDIO', capacity: 20, active: true },
-      { id: '3', name: 'POOL ZONE', capacity: 15, active: false }
-    ];
-  }
-
-  private mockPlans(): PlanVisibility[] {
-    return [
-      { id: '1', name: 'GOLD ANNUAL', visible: true },
-      { id: '2', name: 'VIP MONTHLY', visible: true },
-      { id: '3', name: 'STUDENT SPECIAL', visible: false }
-    ];
   }
 }

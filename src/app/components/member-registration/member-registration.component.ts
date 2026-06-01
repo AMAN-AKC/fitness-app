@@ -223,9 +223,9 @@ export class MemberRegistrationComponent implements OnInit {
           })
           .subscribe({
             next: () => {
-              // Registration complete. The user has a PENDING membership and an ISSUED invoice.
-              // Navigate directly to the checkout screen to pay and activate the account.
-              this.router.navigate(['/member/checkout'], { queryParams: { memberId: createdMember.memberId, pendingInvoice: 'true' } });
+              // Registration complete. Show the completion screen.
+              this.createdMember = createdMember;
+              this.complete = true;
               this.isLoading = false;
             },
             error: (error) => {

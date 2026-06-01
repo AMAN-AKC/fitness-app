@@ -90,16 +90,7 @@ export class MemberDashboardComponent implements OnInit {
   invoiceToPay: any = null;
   paymentAmount: number = 0;
 
-  // Health Consent State
-  showConsentModal = false;
-  requiresConsent = false;
   consentAlertText = 'You must complete your Health Consent and PAR-Q form to activate your membership and book classes.';
-  consentForm = {
-    parqResponses: '{}',
-    medicalAcknowledged: false,
-    liabilityAcknowledged: false,
-    privacyAcknowledged: false
-  };
 
   constructor(
     private authService: AuthService,
@@ -149,43 +140,7 @@ export class MemberDashboardComponent implements OnInit {
     this.showAlert = false;
   }
 
-  openConsentModal(): void {
-    this.showConsentModal = true;
-  }
 
-  closeConsentModal(): void {
-    this.showConsentModal = false;
-  }
-
-  submitConsent(): void {
-    if (!this.currentMember) return;
-    if (!this.consentForm.medicalAcknowledged || !this.consentForm.liabilityAcknowledged || !this.consentForm.privacyAcknowledged) {
-      this.errorMessage = 'Please acknowledge all waivers.';
-      return;
-    }
-
-    this.isLoading = true;
-    this.frontdeskApi.submitConsent({
-      memberId: this.currentMember.memberId || 0,
-      formVersion: '1.0',
-      parqResponses: JSON.stringify({ q1: 'No', q2: 'No', q3: 'No' }), // Mocked for simplicity
-      medicalAcknowledged: this.consentForm.medicalAcknowledged,
-      liabilityAcknowledged: this.consentForm.liabilityAcknowledged,
-      privacyAcknowledged: this.consentForm.privacyAcknowledged
-    }).subscribe({
-      next: () => {
-        this.isLoading = false;
-        this.showConsentModal = false;
-        this.requiresConsent = false;
-        this.showAlert = false;
-        this.loadMemberSummary(); // Reload to update status if pending
-      },
-      error: (err) => {
-        this.isLoading = false;
-        this.errorMessage = err.error?.message || 'Failed to submit consent.';
-      }
-    });
-  }
 
   toggleClasses(showPast: boolean): void {
     this.showPastClasses = showPast;
@@ -271,7 +226,6 @@ export class MemberDashboardComponent implements OnInit {
         this.frontdeskApi.getConsentStatus(memberId).subscribe({
           next: (status) => {
             this.showAlert = status.consentRequired;
-            this.requiresConsent = status.consentRequired;
             this.consentAlertText = status.requiresReconfirmation
               ? `Health consent must be re-confirmed for policy ${status.currentVersion}.`
               : 'Health consent is missing or expired. Please complete it before check-in.';
@@ -707,7 +661,8 @@ export class MemberDashboardComponent implements OnInit {
   }
   
   goToCheckout(): void {
-    this.router.navigate(['/member/checkout']);
+    // Unify the payment flow: use the invoice payment modal for activation
+    this.payInvoice();
   }
 
   payInvoice(invoiceToPay?: any): void {

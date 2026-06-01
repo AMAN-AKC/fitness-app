@@ -195,7 +195,7 @@ export class CheckoutComponent implements OnInit {
     if (!this.promoCode.trim()) return;
     this.errorMessage = '';
 
-    this.adminApi.validatePromoCode(this.promoCode.trim()).subscribe({
+    this.adminApi.validatePromoCode(this.promoCode.trim(), this.currentMemberId).subscribe({
       next: (promo) => {
         if (promo.discountType === 'PERCENT' && this.breakdown) {
           this.appliedDiscount =

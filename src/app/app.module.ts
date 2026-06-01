@@ -45,6 +45,7 @@ import { PlansCatalogComponent } from './components/plans-catalog/plans-catalog.
 import { GlobalErrorComponent } from './components/global-error/global-error.component';
 import { PlaceholderPageComponent } from './components/placeholder-page/placeholder-page.component';
 import { ManagerScheduleComponent } from './components/manager-schedule/manager-schedule.component';
+import { AdminPromosComponent } from './components/admin-promos/admin-promos.component';
 
 @NgModule({
   declarations: [
@@ -76,6 +77,7 @@ import { ManagerScheduleComponent } from './components/manager-schedule/manager-
     GlobalErrorComponent,
     PlaceholderPageComponent,
     ManagerScheduleComponent,
+    AdminPromosComponent,
   ],
   imports: [
     BrowserModule,

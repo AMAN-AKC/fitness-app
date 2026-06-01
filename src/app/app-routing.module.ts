@@ -22,6 +22,7 @@ import { ManagerScheduleComponent } from './components/manager-schedule/manager-
 import { ClassBookingComponent } from './components/class-booking/class-booking.component';
 import { AuditLogViewerComponent } from './components/audit-log-viewer/audit-log-viewer.component';
 import { DataImportExportComponent } from './components/data-import-export/data-import-export.component';
+import { AdminPromosComponent } from './components/admin-promos/admin-promos.component';
 
 import { TrainerProfileComponent } from './components/trainer-profile/trainer-profile.component';
 import { AuthGuard } from './guards/auth.guard';
@@ -44,6 +45,7 @@ const routes: Routes = [
       { path: 'notifications', component: NotificationsCenterComponent },
       { path: 'audit-logs', component: AuditLogViewerComponent },
       { path: 'import-export', component: DataImportExportComponent },
+      { path: 'promos', component: AdminPromosComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

@@ -41,7 +41,7 @@
             accept=".csv" 
             style="display: none;"
           >
-          <div class="upload-icon">📤</div>
+          <div class="upload-icon">📥</div>
           <p class="upload-text">DRAG & DROP CSV FILE OR CLICK TO BROWSE</p>
         </div>
 
@@ -106,15 +106,7 @@
           </div>
 
           <!-- Action buttons -->
-          <div class="results-actions">
-            <button class="btn-primary" (click)="proceedWithImport()" [disabled]="importReport.successCount === 0">
-              PROCEED →
-            </button>
-            <button class="btn-secondary" (click)="cancelImport()">
-              CANCEL
-            </button>
-          </div>
-        </div>
+          <div class="results-actions"><button class="btn-primary" (click)="proceedWithImport()" [disabled]="importReport.successCount === 0">PROCEED -></button><button class="btn-secondary" (click)="cancelImport()">CANCEL</button></div></div>
       </div>
     </section>
 
@@ -203,3 +195,5 @@
     </section>
   </div>
 </div>
+
+

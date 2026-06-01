@@ -125,44 +125,16 @@ export class DataImportExportComponent {
     this.isImporting = true;
     this.importStatus = 'VALIDATING DATA...';
 
-    // Mock validation logic for non-members, call real endpoint for members
-    if (this.activeImportTab !== 'MEMBERS') {
-      setTimeout(() => {
-        this.isImporting = false;
-        // Generate mock reports based on the type
-        const total = 10;
-        let success = 8;
-        let valErrors = 2;
+    let endpoint = 'members';
+    if (this.activeImportTab === 'PLANS') endpoint = 'plans';
+    else if (this.activeImportTab === 'CLASSES') endpoint = 'classes';
+    else if (this.activeImportTab === 'SCHEDULE') endpoint = 'schedule';
 
-        this.importReport = {
-          success: false,
-          message: `PARTIAL SUCCESS: ${success} PASSED, ${valErrors} FAILED.`,
-          fileName: this.selectedFile?.name || 'import.csv',
-          overallStatus: 'WARNING',
-          totalRows: total,
-          successCount: success,
-          duplicateCount: 0,
-          validationErrorCount: valErrors,
-          systemErrorCount: 0,
-          rowResults: []
-        };
-
-        this.failedRows = [
-          { row: 3, column: 'PRICE', error: 'MUST BE GREATER THAN ZERO.' },
-          { row: 7, column: 'BRANCH_ID', error: 'SPECIFIED BRANCH DOES NOT EXIST.' }
-        ];
-
-        this.showValidationResults = true;
-        this.importStatus = 'VALIDATION COMPLETE. REVIEW ERRORS BELOW.';
-      }, 1500);
-      return;
-    }
-
-    // Call actual backend for members
     const formData = new FormData();
     formData.append('file', this.selectedFile);
+    formData.append('dryRun', 'true');
 
-    this.http.post<any>(`${this.apiUrl}/import/members/csv`, formData).subscribe({
+    this.http.post<any>(`${this.apiUrl}/import/${endpoint}/csv`, formData).subscribe({
       next: (res) => {
         this.isImporting = false;
         
@@ -263,8 +235,29 @@ export class DataImportExportComponent {
 
   // PROCEED & CANCEL
   proceedWithImport(): void {
-    alert('DATA HAS BEEN COMMITTED TO THE DATABASE.');
-    this.resetImportState();
+    if (!this.selectedFile) return;
+    this.isImporting = true;
+    this.importStatus = 'COMMITTING DATA...';
+    let endpoint = 'members';
+    if (this.activeImportTab === 'PLANS') endpoint = 'plans';
+    else if (this.activeImportTab === 'CLASSES') endpoint = 'classes';
+    else if (this.activeImportTab === 'SCHEDULE') endpoint = 'schedule';
+
+    const formData = new FormData();
+    formData.append('file', this.selectedFile);
+    formData.append('dryRun', 'false');
+
+    this.http.post<any>(`${this.apiUrl}/import/${endpoint}/csv`, formData).subscribe({
+      next: (res) => {
+        this.isImporting = false;
+        alert('DATA HAS BEEN COMMITTED TO THE DATABASE.');
+        this.resetImportState();
+      },
+      error: (err) => {
+        this.isImporting = false;
+        alert(`❌ ERROR: ${err?.error?.message || 'COMMIT FAILED.'}`);
+      }
+    });
   }
 
   cancelImport(): void {

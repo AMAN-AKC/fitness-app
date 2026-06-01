@@ -65,6 +65,7 @@ export class GlobalDashboardComponent implements OnInit {
           { label: 'Users', icon: '👥', route: '/admin/users' },
           { label: 'Plans', icon: '📋', route: '/admin/plans' },
           { label: 'Branches', icon: '📍', route: '/admin/branches' },
+          { label: 'Promos', icon: '🏷️', route: '/admin/promos' },
           { label: 'Audit Logs', icon: '📜', route: '/admin/audit-logs' },
           { label: 'Bulk Data', icon: '📦', route: '/admin/import-export' }
         ],
@@ -165,6 +166,7 @@ export class GlobalDashboardComponent implements OnInit {
     if (url.includes('/admin/users')) return 'User Management';
     if (url.includes('/admin/plans')) return 'Plan Catalog';
     if (url.includes('/admin/branches')) return 'Branch Management';
+    if (url.includes('/admin/promos')) return 'Promotions & Referrals';
     if (url.includes('/frontdesk/dashboard')) return 'Check-In';
     if (url.includes('/frontdesk/registration')) return 'Member Registration';
     if (url.includes('/manager/dashboard')) return 'Branch Statistics';
