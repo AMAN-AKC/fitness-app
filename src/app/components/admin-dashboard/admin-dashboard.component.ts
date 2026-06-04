@@ -147,6 +147,17 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  onLogoUpload(event: any): void {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.systemConfigs['branding.logoUrl'] = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   applyBranding(): void {
     if (this.systemConfigs['branding.primaryColor']) {
       document.documentElement.style.setProperty('--primary-color', this.systemConfigs['branding.primaryColor']);

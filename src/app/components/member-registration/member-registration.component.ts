@@ -42,6 +42,7 @@ export class MemberRegistrationComponent implements OnInit {
   errorMessage = '';
   selectedPhotoFile: File | null = null;
   photoError = '';
+  ageError = '';
 
   formData = {
     fullName: '',
@@ -134,10 +135,10 @@ export class MemberRegistrationComponent implements OnInit {
     if (this.step === 1) {
       const age = Number(this.getAge());
       if (isNaN(age) || age < 14) {
-        this.photoError = 'Member must be at least 14 years old to register.';
+        this.ageError = 'Member must be at least 14 years old to register.';
         return;
       } else {
-        this.photoError = '';
+        this.ageError = '';
       }
     }
     if (this.step < 4) {

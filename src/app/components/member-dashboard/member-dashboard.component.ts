@@ -228,7 +228,7 @@ export class MemberDashboardComponent implements OnInit {
             this.showAlert = status.consentRequired;
             this.consentAlertText = status.requiresReconfirmation
               ? `Health consent must be re-confirmed for policy ${status.currentVersion}.`
-              : 'Health consent is missing or expired. Please complete it before check-in.';
+              : 'Health consent is missing or expired. Please complete it to activate your membership and book classes.';
           },
         });
         this.loadMemberDetails(member, memberId);

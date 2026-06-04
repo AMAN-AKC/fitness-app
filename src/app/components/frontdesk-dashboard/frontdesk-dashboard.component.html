@@ -208,7 +208,7 @@
           <button class="confirm-checkin-btn" (click)="addHealthNote()" style="background-color: var(--orange); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
             Add Health Note
           </button>
-          <button *ngIf="memberFound.membershipStatus === 'SUSPENDED' || memberFound.membershipStatus === 'DEACTIVATED' || memberFound.membershipStatus === 'DUNNING' || memberFound.membershipStatus === 'PENDING'" class="confirm-checkin-btn" (click)="reactivateMember()" style="background-color: var(--green); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
+          <button *ngIf="memberFound.membershipStatus === 'SUSPENDED' || memberFound.membershipStatus === 'DEACTIVATED' || memberFound.membershipStatus === 'DUNNING' || memberFound.membershipStatus === 'PENDING' || memberFound.membershipStatus === 'EXPIRED'" class="confirm-checkin-btn" (click)="reactivateMember()" style="background-color: var(--green); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">
             Reactivate Membership
           </button>
           <button *ngIf="memberFound.membershipStatus !== 'SUSPENDED' && memberFound.membershipStatus !== 'DEACTIVATED'" class="confirm-checkin-btn" (click)="suspendMember()" style="background-color: var(--orange); margin: 0; padding: 8px 16px; font-size: 13px; box-shadow: 4px 4px 0 var(--black);">

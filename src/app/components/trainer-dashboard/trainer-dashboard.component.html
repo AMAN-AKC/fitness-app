@@ -151,6 +151,7 @@
               <span class="resolved-badge" [class.accepted]="req.status === 'accepted'">
                 {{ req.status | uppercase }}
               </span>
+              <button *ngIf="req.status === 'accepted'" class="btn-primary btn-sm" (click)="markSessionCompleted(req.id)" style="margin-left: 10px; font-size: 10px;">MARK COMPLETED</button>
             </ng-template>
           </div>
         </div>

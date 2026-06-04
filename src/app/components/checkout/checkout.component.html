@@ -37,7 +37,7 @@
           <div class="flex justify-between items-center mb-4">
             <span class="font-black uppercase text-sm">Payment Amount</span>
             <div class="flex items-center gap-2">
-              <span class="font-black text-xl">₹</span>
+              <span class="font-black text-xl">{{ currencySymbol }}</span>
               <input 
                 type="number" 
                 [(ngModel)]="paymentAmount" 
@@ -95,7 +95,7 @@
               </div>
             </div>
             <div class="plan-tile-price">
-              <span class="currency">₹</span>
+              <span class="currency">{{ currencySymbol }}</span>
               <span class="amount">{{ plan.price | number }}</span>
               <span class="tax-tag">+{{ plan.taxPercent || 0 }}% TAX</span>
             </div>
@@ -161,7 +161,7 @@
         
         <div *ngIf="!breakdown && !isLoadingBreakdown && isPendingInvoiceFlow" class="text-center py-12">
           <p class="font-black uppercase text-lg text-red-600 mb-4">Payment Required for Activation</p>
-          <p class="font-bold text-sm mb-6">Total Due: ₹{{ paymentAmount }}</p>
+          <p class="font-bold text-sm mb-6">Total Due: {{ currencySymbol }}{{ paymentAmount }}</p>
           <button (click)="placeOrder()" class="place-order-btn">CONTINUE TO PAY →</button>
         </div>
 
@@ -173,41 +173,41 @@
         <div *ngIf="breakdown && !isLoadingBreakdown" class="space-y-6">
           <div class="detail-row">
             <span class="uppercase">Membership</span>
-            <span>₹{{ breakdown.basePrice | number }}</span>
+            <span>{{ currencySymbol }}{{ breakdown.basePrice | number }}</span>
           </div>
           
           <div *ngIf="breakdown.discount > 0" class="detail-row text-green-600">
             <span class="uppercase">Discount</span>
-            <span>-₹{{ breakdown.discount | number }}</span>
+            <span>-{{ currencySymbol }}{{ breakdown.discount | number }}</span>
           </div>
 
           <div *ngIf="breakdown.proration" class="p-4 border-4 border-black mb-4 bg-gray-50">
             <div class="detail-row mb-0 border-none">
               <span class="uppercase">Upgrade Credit</span>
-              <span class="text-green-600">-₹{{ breakdown.proration.creditApplied | number }}</span>
+              <span class="text-green-600">-{{ currencySymbol }}{{ breakdown.proration.creditApplied | number }}</span>
             </div>
             <p class="text-[10px] font-black uppercase mt-1">From {{ breakdown.proration.currentPlanName }}</p>
           </div>
 
           <div class="detail-row">
             <span class="uppercase">Tax ({{ breakdown.taxPercent }}%)</span>
-            <span>₹{{ breakdown.taxAmount | number }}</span>
+            <span>{{ currencySymbol }}{{ breakdown.taxAmount | number }}</span>
           </div>
 
           <div class="mt-8">
             <div *ngIf="walletBalance > 0" class="p-4 border-2 border-black bg-gray-100 mb-4">
               <label class="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" [checked]="useWallet" (change)="toggleWallet()" class="w-5 h-5 border-2 border-black" />
-                <span class="font-bold">Use Wallet Balance (₹{{ walletBalance }})</span>
+                <span class="font-bold">Use Wallet Balance ({{ currencySymbol }}{{ walletBalance }})</span>
               </label>
               <div *ngIf="useWallet && walletAppliedAmount > 0" class="mt-2 text-green-600 font-bold text-sm text-right">
-                -₹{{ walletAppliedAmount | number }} Applied
+                -{{ currencySymbol }}{{ walletAppliedAmount | number }} Applied
               </div>
             </div>
 
             <div class="flex justify-between items-center mb-6">
               <span class="font-black uppercase text-xl">Total To Pay</span>
-              <span class="total-amount">₹{{ paymentAmount | number }}</span>
+              <span class="total-amount">{{ currencySymbol }}{{ paymentAmount | number }}</span>
             </div>
           </div>
 

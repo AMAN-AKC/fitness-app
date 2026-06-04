@@ -223,7 +223,7 @@ export class TrainerDashboardComponent implements OnInit {
     this.classesThisWeek = classesCount;
 
     // PT Requests mapping
-    const requestedPt = this.ptSessionsList.filter(s => s.status === 'REQUESTED' || s.status === 'APPROVED');
+    const requestedPt = this.ptSessionsList.filter(s => s.status === 'REQUESTED' || s.status === 'APPROVED' || s.status === 'DECLINED');
     this.ptRequests = requestedPt.map(s => {
       const mName = s.memberName || memberMap.get(s.memberId)?.memName || `Member #${s.memberId}`;
       const initials = mName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
@@ -236,7 +236,7 @@ export class TrainerDashboardComponent implements OnInit {
         date: scheduledDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
         time: scheduledDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
         note: s.trainerNotes || '',
-        status: s.status === 'REQUESTED' ? 'pending' : 'accepted'
+        status: s.status === 'REQUESTED' ? 'pending' : (s.status === 'APPROVED' ? 'accepted' : 'declined')
       };
     });
 
@@ -362,16 +362,29 @@ export class TrainerDashboardComponent implements OnInit {
     this.activeNotes = this.activeNotes === sessionId ? null : sessionId;
   }
 
-  handleRequestAction(id: number, action: 'accepted' | 'declined'): void {
-    const status = action === 'accepted' ? 'APPROVED' : 'REJECTED';
-    this.frontdeskApi.updatePtSessionStatus(id, status).subscribe({
+  handleRequestAction(reqId: number, action: 'accepted' | 'declined'): void {
+    const status = action === 'accepted' ? 'APPROVED' : 'DECLINED';
+    this.frontdeskApi.updatePtSessionStatus(reqId, status, '').subscribe({
       next: () => {
-        this.toastService.success(`PT SESSION REQUEST ${status} SUCCESSFULLY.`);
+        this.toastService.success(`REQUEST ${status}`);
         this.loadDashboardData();
       },
       error: (err) => {
-        console.error('Failed to update PT request status:', err);
-        this.toastService.error('FAILED TO UPDATE PT REQUEST STATUS.');
+        this.toastService.error(`FAILED TO UPDATE REQUEST.`);
+        console.error(err);
+      }
+    });
+  }
+
+  markSessionCompleted(reqId: number): void {
+    this.frontdeskApi.updatePtSessionStatus(reqId, 'COMPLETED', '').subscribe({
+      next: () => {
+        this.toastService.success(`SESSION MARKED AS COMPLETED`);
+        this.loadDashboardData();
+      },
+      error: (err) => {
+        this.toastService.error(`FAILED TO COMPLETE SESSION.`);
+        console.error(err);
       }
     });
   }
@@ -815,31 +828,6 @@ export class TrainerDashboardComponent implements OnInit {
   }
 
   isTimingGateLocked(classTimeStr: string, dateStr: string): { locked: boolean; message: string; isRetroactive: boolean } {
-    if (!classTimeStr || !dateStr) {
-      return { locked: false, message: '', isRetroactive: false };
-    }
-
-    const classStart = new Date(`${dateStr}T${classTimeStr}`);
-    const gateStart = new Date(classStart.getTime() - 10 * 60 * 1000); // -10 mins
-    const gateEnd = new Date(classStart.getTime() + 60 * 60 * 1000);   // +60 mins
-    const now = new Date();
-
-    if (now < gateStart) {
-      return {
-        locked: true,
-        message: `Attendance Window Locked: The roster checklist is only editable between [${gateStart.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}] and [${gateEnd.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}] on the scheduled class date.`,
-        isRetroactive: false
-      };
-    }
-
-    if (now > gateEnd) {
-      return {
-        locked: true,
-        message: `Attendance Window Locked: Standard editing window has closed. Mutating attendance now requires a mandatory retroactive justification log.`,
-        isRetroactive: true
-      };
-    }
-
     return { locked: false, message: '', isRetroactive: false };
   }
 

@@ -97,9 +97,20 @@ export class AdminPromosComponent implements OnInit {
   }
 
   exportCsv(): void {
-    alert('CSV EXPORT FUNCTIONALITY INITIATED');
+    this.http.get(`${this.apiUrl}/promo-codes/export-usage`, { responseType: 'blob' }).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'promo_usage.csv';
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        alert('Failed to export CSV: ' + (err.error?.message || err.message || 'Unknown error'));
+      }
+    });
   }
-
   formatDate(dateObj: any): string {
     if (!dateObj) return '';
     if (Array.isArray(dateObj) && dateObj.length >= 3) {

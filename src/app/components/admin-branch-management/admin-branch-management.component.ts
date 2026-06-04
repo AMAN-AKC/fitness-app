@@ -283,7 +283,10 @@ export class AdminBranchManagementComponent implements OnInit {
     const newRoomName = prompt("Enter new room name:");
     if (!newRoomName) return;
     const capacityStr = prompt("Enter capacity:");
-    const capacity = parseInt(capacityStr || '20', 10);
+    let capacity = parseInt(capacityStr || '20', 10);
+    if (isNaN(capacity) || capacity < 1) {
+      capacity = 20; // fallback if invalid
+    }
     
     const payload = {
       facilityName: newRoomName,
@@ -292,8 +295,17 @@ export class AdminBranchManagementComponent implements OnInit {
       isActive: true,
       underMaintenance: false
     };
-    this.adminApi.createFacility(payload).subscribe(() => {
-      this.loadBranches();
+    
+    this.isLoading = true;
+    this.adminApi.createFacility(payload).subscribe({
+      next: () => {
+        alert('Room added successfully!');
+        this.loadBranches();
+      },
+      error: (err) => {
+        alert('Failed to add room: ' + (err.error?.message || err.message || 'Unknown error'));
+        this.isLoading = false;
+      }
     });
   }
 

@@ -114,6 +114,7 @@ export class GlobalDashboardComponent implements OnInit {
           { label: 'Book Classes', icon: '📅', route: '/member/class-booking' },
           { label: 'Find Trainer', icon: '🏋️', route: '/member/trainers' },
           { label: 'Buy Membership', icon: '💳', route: '/member/plans' },
+          { label: 'Referral & Wallet', icon: '🎁', route: '/member/referral' },
           { label: 'Health & Consent', icon: '📝', route: '/member/health-forms' },
           { label: 'Notifications', icon: '🔔', route: '/member/notifications' },
         ],

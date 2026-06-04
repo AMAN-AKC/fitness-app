@@ -124,7 +124,13 @@
                   name="dateOfBirth"
                   required
                   class="form-input"
+                  (change)="ageError = ''"
                 />
+                <span
+                  *ngIf="ageError"
+                  class="form-label-hint"
+                  style="color: #DC2626; margin-top: 4px; display: block"
+                  >{{ ageError }}</span>
               </div>
               <div class="age-display">Age: {{ getAge() }}</div>
             </div>

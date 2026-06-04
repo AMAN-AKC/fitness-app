@@ -46,6 +46,7 @@ import { GlobalErrorComponent } from './components/global-error/global-error.com
 import { PlaceholderPageComponent } from './components/placeholder-page/placeholder-page.component';
 import { ManagerScheduleComponent } from './components/manager-schedule/manager-schedule.component';
 import { AdminPromosComponent } from './components/admin-promos/admin-promos.component';
+import { MemberReferralComponent } from './components/member-referral/member-referral.component';
 
 @NgModule({
   declarations: [
@@ -78,6 +79,7 @@ import { AdminPromosComponent } from './components/admin-promos/admin-promos.com
     PlaceholderPageComponent,
     ManagerScheduleComponent,
     AdminPromosComponent,
+    MemberReferralComponent,
   ],
   imports: [
     BrowserModule,

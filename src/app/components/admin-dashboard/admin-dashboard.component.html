@@ -219,11 +219,11 @@
           </div>
         </div>
         <div class="form-group mb-4">
-          <label class="font-heading font-bold uppercase block mb-1">LOGO URL</label>
-          <input type="text" [(ngModel)]="systemConfigs['branding.logoUrl']" placeholder="https://..." class="brutal-input w-full p-2" style="border: 2px solid #000;">
+          <label class="font-heading font-bold uppercase block mb-1">LOGO UPLOAD</label>
+          <input type="file" accept="image/*" (change)="onLogoUpload($event)" class="brutal-input w-full p-2" style="border: 2px solid #000; cursor: pointer;">
           <div class="mt-4 p-4 flex items-center justify-center h-32" style="border: 2px dashed #000; background: #f9f9f9;">
             <img *ngIf="systemConfigs['branding.logoUrl']" [src]="systemConfigs['branding.logoUrl']" alt="Logo Preview" style="max-height: 100%; max-width: 100%; object-fit: contain;">
-            <span *ngIf="!systemConfigs['branding.logoUrl']" class="font-mono text-muted text-sm uppercase">NO LOGO URL PROVIDED</span>
+            <span *ngIf="!systemConfigs['branding.logoUrl']" class="font-mono text-muted text-sm uppercase">NO LOGO PROVIDED</span>
           </div>
         </div>
       </div>

@@ -43,6 +43,7 @@ export class CheckoutComponent implements OnInit {
   walletBalance: number = 0;
   useWallet: boolean = false;
   walletAppliedAmount: number = 0;
+  currencySymbol: string = '₹';
   
   // Pending Flow
   pendingMembershipId: number | null = null;
@@ -79,10 +80,15 @@ export class CheckoutComponent implements OnInit {
           next: (member) => {
             this.currentMemberId = Number(member.memberId);
             this.walletBalance = member.walletBalance || 0;
-            this.loadPlans();
-            if (params['planId']) {
-              this.selectPlan(Number(params['planId']));
-            } else {
+      this.loadPlans();
+      this.frontdeskApi.getPublicConfigs().subscribe(configs => {
+        if (configs['billing.currency']) {
+          this.currencySymbol = configs['billing.currency'];
+        }
+      });
+      if (params['planId']) {
+        this.selectPlan(Number(params['planId']));
+      } else {
               this.isLoadingBreakdown = false;
             }
           },

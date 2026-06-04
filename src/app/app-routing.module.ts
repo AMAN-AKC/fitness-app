@@ -25,6 +25,7 @@ import { DataImportExportComponent } from './components/data-import-export/data-
 import { AdminPromosComponent } from './components/admin-promos/admin-promos.component';
 
 import { TrainerProfileComponent } from './components/trainer-profile/trainer-profile.component';
+import { MemberReferralComponent } from './components/member-referral/member-referral.component';
 import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
@@ -99,6 +100,7 @@ const routes: Routes = [
       { path: 'checkout', component: CheckoutComponent },
       { path: 'notifications', component: NotificationsCenterComponent },
       { path: 'trainers', component: TrainerProfileComponent },
+      { path: 'referral', component: MemberReferralComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },

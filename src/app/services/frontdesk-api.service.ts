@@ -22,6 +22,8 @@ export interface MemberDto {
   referralCode?: string;
   corporateCode?: string;
   myReferralCode?: string;
+  referralStatus?: 'INACTIVE' | 'ACTIVE' | 'USED' | 'REWARDED';
+  referralCodeActivatedAt?: string;
   walletBalance?: number;
   notes?: string;
   status?: MemberStatus;
@@ -257,6 +259,10 @@ export class FrontdeskApiService {
 
   getMemberById(memberId: number): Observable<MemberDto> {
     return this.http.get<MemberDto>(`${this.baseUrl}/members/${memberId}`);
+  }
+
+  activateReferralCode(memberId: number): Observable<MemberDto> {
+    return this.http.post<MemberDto>(`${this.baseUrl}/members/${memberId}/referral/activate`, {});
   }
 
   createMember(member: MemberDto): Observable<MemberDto> {
@@ -650,6 +656,13 @@ export class FrontdeskApiService {
 
   cancelClassBooking(bookingId: number): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/bookings/${bookingId}/cancel`, {});
+  }
+
+  // ==========================================
+  // SYSTEM CONFIGURATION
+  // ==========================================
+  getPublicConfigs(): Observable<{ [key: string]: string }> {
+    return this.http.get<{ [key: string]: string }>(`${this.baseUrl}/config/public`);
   }
 
 }
